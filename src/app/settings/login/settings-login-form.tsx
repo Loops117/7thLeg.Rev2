@@ -27,7 +27,7 @@ export function SettingsLoginForm({ authConfigured = true }: { authConfigured?: 
       if (res?.error) {
         if (res.error === "Configuration") {
           setError(
-            "Auth configuration error on the server. Redeploy after setting AUTH_SECRET, or check /api/health on this same URL.",
+            "Auth configuration error. On Vercel, set AUTH_URL to this site URL (not localhost), ensure AUTH_SECRET is set, redeploy, then check /api/health.",
           );
         } else if (res.error === "CredentialsSignin") {
           setError("Invalid email or password.");

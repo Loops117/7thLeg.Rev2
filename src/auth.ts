@@ -2,7 +2,10 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { hasAuthSecretConfigured } from "@/lib/auth-secret";
+import { ensureProductionAuthUrl } from "@/lib/auth-url";
 import { prisma } from "@/lib/prisma";
+
+ensureProductionAuthUrl();
 
 if (!hasAuthSecretConfigured() && process.env.NODE_ENV === "production") {
   console.error(

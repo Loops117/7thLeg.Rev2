@@ -28,7 +28,13 @@ Generate `AUTH_SECRET`: `openssl rand -base64 32`
 
 **Vercel:** copy the same `DATABASE_URL` and `AUTH_SECRET` from your local `.env` into Project → Settings → Environment Variables (Production + Preview), then redeploy.
 
-Check deployment: open `/api/health` — `hasAuthSecret` and `hasDatabaseUrl` should both be `true`.
+Set **`AUTH_URL`** to your live URL, e.g. `https://7thleg-rev2.vercel.app` (no trailing slash). **Do not** use `http://localhost:3000` on Vercel — sign-in will fail even when `/api/health` shows `hasAuthSecret: true`.
+
+Check deployment: open `/api/health` — `hasAuthSecret` and `hasDatabaseUrl` should both be `true`, and `authUrlLooksLocal` should be `false`.
+
+### Branding, theme colors, and site name
+
+Those are stored in **Postgres** (`site_config`, theme JSON), not in git. Local admin changes only appear on production if Vercel’s **`DATABASE_URL`** is the **same Supabase project** you use locally. If production still shows “Inverts Oasis”, either the DB is different or you haven’t saved settings against the production database yet.
 
 ## Deploy (7th Leg Vercel project only)
 
