@@ -17,7 +17,7 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const email = process.env.ADMIN_EMAIL ?? "admin@example.com";
+  const email = (process.env.ADMIN_EMAIL ?? "admin@example.com").trim().toLowerCase();
   const password = process.env.ADMIN_PASSWORD ?? "admin-change-me";
   const passwordHash = await bcrypt.hash(password, 12);
 

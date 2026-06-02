@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { btnMainLg } from "@/lib/btn-theme-classes";
 import { useState } from "react";
 
-export function SettingsLoginForm() {
+export function SettingsLoginForm({ authConfigured = true }: { authConfigured?: boolean }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -25,7 +25,13 @@ export function SettingsLoginForm() {
         redirect: false,
       });
       if (res?.error) {
-        setError("Invalid email or password.");
+        if (res.error === "Configuration") {
+          setError(
+            "Server auth is not configured (missing AUTH_SECRET). Add it in Vercel/host env vars and redeploy.",
+          );
+        } else {
+          setError("Invalid email or password.");
+        }
         setPending(false);
         return;
       }
@@ -66,7 +72,7 @@ export function SettingsLoginForm() {
       {error ? <p className="text-sm font-medium text-coral">{error}</p> : null}
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || !authConfigured}
         className={btnMainLg}
       >
         {pending ? "Signing in…" : "Sign in"}

@@ -3,7 +3,17 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
+const authSecret =
+  process.env.AUTH_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim() || undefined;
+
+if (!authSecret && process.env.NODE_ENV === "production") {
+  console.error(
+    "[auth] Missing AUTH_SECRET (or NEXTAUTH_SECRET). Admin/customer sign-in will fail with a configuration error.",
+  );
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  secret: authSecret,
   trustHost: true,
   providers: [
     Credentials({
@@ -20,7 +30,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
-        const admin = await prisma.adminUser.findUnique({ where: { email } });
+        const normalizedEmail = email.trim().toLowerCase();
+        const admin = await prisma.adminUser.findFirst({
+          where: { email: { equals: normalizedEmail, mode: "insensitive" } },
+        });
         if (!admin) return null;
 
         const valid = await bcrypt.compare(password, admin.passwordHash);
