@@ -49,6 +49,7 @@ function VariantEditorRow({
   const [stock, setStock] = useState(String(v.stock));
   const [unlimitedStock, setUnlimitedStock] = useState(v.unlimitedStock);
   const [active, setActive] = useState(v.active);
+  const [shippingUnits, setShippingUnits] = useState(String(v.shippingUnits));
   const [priceTiers, setPriceTiers] = useState<ProductPriceTier[] | null>(v.priceTiers ?? null);
   const [useBulkPricing, setUseBulkPricing] = useState(() => (v.priceTiers?.length ?? 0) > 0);
   const [useCustomPickerColors, setUseCustomPickerColors] = useState(() =>
@@ -67,6 +68,7 @@ function VariantEditorRow({
     setStock(String(v.stock));
     setUnlimitedStock(v.unlimitedStock);
     setActive(v.active);
+    setShippingUnits(String(v.shippingUnits));
     setPriceTiers(v.priceTiers ?? null);
     setUseBulkPricing((v.priceTiers?.length ?? 0) > 0);
     setUseCustomPickerColors(hasCustomVariantPickerColors(v));
@@ -79,6 +81,11 @@ function VariantEditorRow({
     setMsg(null);
     startTransition(async () => {
       try {
+        const units = Number.parseInt(shippingUnits, 10);
+        if (!Number.isFinite(units) || units < 1 || units > 10) {
+          setMsg("Shipping units must be 1–10.");
+          return;
+        }
         await saveProductVariantRow({
           productId: v.productId,
           variantId: v.id,
@@ -87,6 +94,7 @@ function VariantEditorRow({
           stock: Number(stock) || 0,
           unlimitedStock,
           active,
+          shippingUnits: units,
           priceTiers: useBulkPricing ? priceTiers : null,
           pickerBgHex: useCustomPickerColors ? pickerBgHex : null,
           pickerFgHex: useCustomPickerColors ? pickerFgHex : null,
@@ -183,6 +191,18 @@ function VariantEditorRow({
         <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} disabled={busy} />
       </td>
       <td className="px-2 py-2">
+        <input
+          type="number"
+          min={1}
+          max={10}
+          value={shippingUnits}
+          onChange={(e) => setShippingUnits(e.target.value)}
+          disabled={busy}
+          className="w-14 border border-palm-mid px-1 py-1 text-sm"
+          title="Shipping units (1–10, admin only)"
+        />
+      </td>
+      <td className="px-2 py-2">
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
@@ -205,7 +225,7 @@ function VariantEditorRow({
       </td>
     </tr>
     <tr className="border-b border-palm/15 bg-surf/25">
-      <td colSpan={7} className="px-3 py-3">
+      <td colSpan={8} className="px-3 py-3">
         <p className="text-xs font-bold text-palm">Storefront option button (product page)</p>
         <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs font-bold text-ink">
           <input
@@ -264,7 +284,7 @@ function VariantEditorRow({
       </td>
     </tr>
     <tr className="border-b border-palm/15 bg-surf/25">
-      <td colSpan={7} className="px-3 py-3">
+      <td colSpan={8} className="px-3 py-3">
         <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-ink">
           <input
             type="checkbox"
@@ -414,10 +434,11 @@ export function ProductVariantsSection({
     <section className="mt-0 border-t-0 pt-0">
       <h2 className="text-lg font-black text-palm">Pricing &amp; stock (by variation)</h2>
       <p className="mt-1 text-sm text-ink/70">
-        Set <strong>list price (USD)</strong>, quantity, unlimited stock, active state, and optional <strong>bulk
-        pricing</strong>, <strong>display order</strong>, and optional <strong>storefront button colors</strong> per
-        variation. A single row is the whole listing; with multiple rows, the database keeps a base list price and an
-        adjustment per row (you only edit the displayed list price in each cell).
+        Set <strong>list price (USD)</strong>, quantity, unlimited stock, active state, optional{" "}
+        <strong>shipping units</strong> (admin-only, for checkout box sizing), and optional <strong>bulk pricing</strong>
+        , <strong>display order</strong>, and optional <strong>storefront button colors</strong> per variation. A single
+        row is the whole listing; with multiple rows, the database keeps a base list price and an adjustment per row
+        (you only edit the displayed list price in each cell).
       </p>
       {variants.length > 1 ? (
         <div className="mt-4 rounded border border-palm/25 bg-surf/30 p-3">
@@ -451,6 +472,9 @@ export function ProductVariantsSection({
                 <th className="px-2 py-2">Qty</th>
                 <th className="px-2 py-2">∞</th>
                 <th className="px-2 py-2">On</th>
+                <th className="px-2 py-2" title="Shipping units (1–10, admin only)">
+                  Ship
+                </th>
                 <th className="px-2 py-2"> </th>
               </tr>
             </thead>

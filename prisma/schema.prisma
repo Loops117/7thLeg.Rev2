@@ -453,8 +453,6 @@ model Product {
   pointsMultiplier Decimal? @db.Decimal(8, 4)
   /// Storefront option buttons: `full` = list price; `difference` = +/- from base.
   variantPriceDisplay String @default("difference") @map("variant_price_display")
-  /// Admin-only size for shipping box capacity (1–10). Not shown on the storefront.
-  shippingUnits Int @default(1) @map("shipping_units")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -494,6 +492,8 @@ model ProductVariant {
   pickerBgHex     String? @map("picker_bg_hex")
   pickerFgHex     String? @map("picker_fg_hex")
   pickerBorderHex String? @map("picker_border_hex")
+  /// Admin-only size for shipping box capacity (1–10). Not shown on the storefront.
+  shippingUnits   Int     @default(1) @map("shipping_units")
 
   images    ProductImage[]
   cartItems CartItem[]

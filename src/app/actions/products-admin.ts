@@ -9,7 +9,6 @@ import { loadProductTypeIndex } from "@/lib/product-type-tree";
 import { prisma } from "@/lib/prisma";
 import { parseVariantPriceDisplay } from "@/lib/product-variant-price-display";
 import { parsePriceToCents, slugifyProductName } from "@/lib/product-slug";
-import { clampShippingUnits } from "@/lib/shipping-units";
 
 async function requireAdmin() {
   const session = await auth();
@@ -56,7 +55,6 @@ export type CreateProductInput = {
   /** Extra automatic footers attached to this product (in addition to type defaults). */
   footerIds: string[];
   variantPriceDisplay?: "full" | "difference";
-  shippingUnits?: number;
   excludedShippingOptionIds?: string[];
 };
 
@@ -110,8 +108,6 @@ export async function createProduct(input: CreateProductInput): Promise<CreatePr
     validFooterIds = found.map((f) => f.id);
   }
 
-  const shippingUnits = clampShippingUnits(input.shippingUnits ?? 1);
-
   const excludedIds = Array.isArray(input.excludedShippingOptionIds)
     ? [...new Set(input.excludedShippingOptionIds.filter(Boolean))]
     : [];
@@ -142,7 +138,6 @@ export async function createProduct(input: CreateProductInput): Promise<CreatePr
           onSale: !!input.onSale,
           saleEndsAt,
           variantPriceDisplay: parseVariantPriceDisplay(input.variantPriceDisplay),
-          shippingUnits,
         },
       });
       newProductId = product.id;
@@ -204,7 +199,6 @@ export type UpdateProductInput = {
   typeIds: string[];
   footerIds: string[];
   variantPriceDisplay?: "full" | "difference";
-  shippingUnits?: number;
   excludedShippingOptionIds?: string[];
 };
 
@@ -270,8 +264,6 @@ export async function updateProduct(input: UpdateProductInput): Promise<UpdatePr
     validFooterIds = found.map((f) => f.id);
   }
 
-  const shippingUnits = clampShippingUnits(input.shippingUnits ?? 1);
-
   const excludedIds = Array.isArray(input.excludedShippingOptionIds)
     ? [...new Set(input.excludedShippingOptionIds.filter(Boolean))]
     : [];
@@ -307,7 +299,6 @@ export async function updateProduct(input: UpdateProductInput): Promise<UpdatePr
           ...(input.variantPriceDisplay !== undefined
             ? { variantPriceDisplay: parseVariantPriceDisplay(input.variantPriceDisplay) }
             : {}),
-          shippingUnits,
         },
       });
 
@@ -448,6 +439,7 @@ export async function getProductCatalogEditPayload(id: string): Promise<ProductC
           pickerBgHex: true,
           pickerFgHex: true,
           pickerBorderHex: true,
+          shippingUnits: true,
         },
       },
     },
@@ -470,7 +462,6 @@ export async function getProductCatalogEditPayload(id: string): Promise<ProductC
     typeIds: product.types.map((t) => t.typeId),
     footerIds: product.footers.map((f) => f.footerId),
     variantPriceDisplay: parseVariantPriceDisplay(product.variantPriceDisplay),
-    shippingUnits: product.shippingUnits,
     excludedShippingOptionIds: product.shippingOptionExclusions.map((row) => row.shippingOptionId),
   };
   const media: ProductMediaAdmin = {
@@ -495,6 +486,7 @@ export async function getProductCatalogEditPayload(id: string): Promise<ProductC
       pickerBgHex: r.pickerBgHex,
       pickerFgHex: r.pickerFgHex,
       pickerBorderHex: r.pickerBorderHex,
+      shippingUnits: r.shippingUnits,
     })),
   };
   return { initial, media };

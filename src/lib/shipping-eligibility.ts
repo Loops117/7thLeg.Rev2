@@ -35,6 +35,17 @@ export function filterEligibleShippingOptions<T extends { id: string; maxShippin
   return options.filter((option) => isShippingOptionEligible(option, lines));
 }
 
+function shippingUnitsForCartItem(item: {
+  variant: { shippingUnits: number } | null;
+  product: {
+    variants: { shippingUnits: number }[];
+  };
+}): number {
+  if (item.variant) return clampShippingUnits(item.variant.shippingUnits);
+  const fallback = item.product.variants[0];
+  return fallback ? clampShippingUnits(fallback.shippingUnits) : 1;
+}
+
 export async function loadCartShippingLines(customerId: string): Promise<CartShippingLine[]> {
   const cart = await prisma.cart.findUnique({
     where: { customerId },
@@ -42,11 +53,18 @@ export async function loadCartShippingLines(customerId: string): Promise<CartShi
       items: {
         select: {
           quantity: true,
+          variant: {
+            select: { shippingUnits: true },
+          },
           product: {
             select: {
               id: true,
-              shippingUnits: true,
               shippingOptionExclusions: { select: { shippingOptionId: true } },
+              variants: {
+                orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
+                take: 1,
+                select: { shippingUnits: true },
+              },
             },
           },
         },
@@ -58,7 +76,7 @@ export async function loadCartShippingLines(customerId: string): Promise<CartShi
   return cart.items.map((item) => ({
     productId: item.product.id,
     quantity: item.quantity,
-    shippingUnits: clampShippingUnits(item.product.shippingUnits),
+    shippingUnits: shippingUnitsForCartItem(item),
     excludedShippingOptionIds: item.product.shippingOptionExclusions.map((row) => row.shippingOptionId),
   }));
 }

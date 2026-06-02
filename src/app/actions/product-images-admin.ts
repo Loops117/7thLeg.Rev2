@@ -92,6 +92,7 @@ export async function getProductMediaAdmin(productId: string): Promise<ProductMe
         pickerBgHex: true,
         pickerFgHex: true,
         pickerBorderHex: true,
+        shippingUnits: true,
       },
     }),
   ]);
@@ -109,6 +110,7 @@ export async function getProductMediaAdmin(productId: string): Promise<ProductMe
       pickerBgHex: r.pickerBgHex,
       pickerFgHex: r.pickerFgHex,
       pickerBorderHex: r.pickerBorderHex,
+      shippingUnits: r.shippingUnits,
     })),
   };
 }

@@ -10,6 +10,7 @@ import {
 } from "@/lib/product-price-tiers";
 import { normalizePaneColorHex } from "@/lib/pane-config";
 import { parsePriceToCents } from "@/lib/product-slug";
+import { clampShippingUnits } from "@/lib/shipping-units";
 import {
   parseVariantPriceDisplay,
   type VariantPriceDisplay,
@@ -57,6 +58,7 @@ export type ProductVariantAdminRow = {
   pickerBgHex: string | null;
   pickerFgHex: string | null;
   pickerBorderHex: string | null;
+  shippingUnits: number;
 };
 
 async function revalidateProduct(productId: string) {
@@ -69,6 +71,7 @@ async function revalidateProduct(productId: string) {
   revalidatePath(`/settings/products/${productId}/edit`);
   revalidatePath(`/product/${p.slug}`);
   revalidatePath("/store");
+  revalidatePath("/cart");
 }
 
 export async function listProductVariantsForAdmin(productId: string): Promise<ProductVariantAdminRow[]> {
@@ -88,6 +91,7 @@ export async function listProductVariantsForAdmin(productId: string): Promise<Pr
       pickerBgHex: true,
       pickerFgHex: true,
       pickerBorderHex: true,
+      shippingUnits: true,
     },
   });
   return rows.map((r) => ({
@@ -102,6 +106,7 @@ export async function listProductVariantsForAdmin(productId: string): Promise<Pr
     pickerBgHex: r.pickerBgHex,
     pickerFgHex: r.pickerFgHex,
     pickerBorderHex: r.pickerBorderHex,
+    shippingUnits: r.shippingUnits,
   }));
 }
 
@@ -236,6 +241,7 @@ export async function saveProductVariantRow(input: {
   pickerBgHex?: string | null;
   pickerFgHex?: string | null;
   pickerBorderHex?: string | null;
+  shippingUnits?: number;
 }): Promise<void> {
   await requireAdmin();
   const listCents = parsePriceToCents(input.listPriceUsd);
@@ -244,6 +250,8 @@ export async function saveProductVariantRow(input: {
   }
   const label = input.label.trim();
   if (!label) throw new Error("Label is required.");
+
+  const shippingUnits = clampShippingUnits(input.shippingUnits ?? 1);
 
   let tiersJson;
   try {
@@ -282,6 +290,7 @@ export async function saveProductVariantRow(input: {
           unlimitedStock: input.unlimitedStock,
           active: input.active,
           priceTiersJson: tiersJson,
+          shippingUnits,
           ...picker,
         },
       }),
@@ -297,6 +306,7 @@ export async function saveProductVariantRow(input: {
         unlimitedStock: input.unlimitedStock,
         active: input.active,
         priceTiersJson: tiersJson,
+        shippingUnits,
         ...picker,
       },
     });

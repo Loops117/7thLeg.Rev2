@@ -53,6 +53,5 @@ export type ProductEditInitial = {
   typeIds: string[];
   footerIds: string[];
   variantPriceDisplay: VariantPriceDisplay;
-  shippingUnits: number;
   excludedShippingOptionIds: string[];
 };
