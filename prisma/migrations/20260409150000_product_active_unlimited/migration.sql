@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "unlimitedQuantity" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "active" BOOLEAN NOT NULL DEFAULT true;

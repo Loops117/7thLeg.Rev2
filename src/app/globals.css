@@ -1,0 +1,537 @@
+@import "tailwindcss";
+
+/* Class-based dark variant (Tailwind v4 — used under #settings-admin-shell.dark) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Inverts Oasis — tropical: sand, palm, lagoon, coral */
+:root {
+  --site-bg: #faf6ef;
+  --sand: #faf6ef;
+  --header-fg: #faf6ef;
+  --header-bg: #1b4332;
+  --header-brand-fg: #faf6ef;
+  --header-nav-fg: #faf6ef;
+  --header-border-color: #2d6a4f;
+  --header-border-width: 4px;
+  --footer-bg: #f4efe4;
+  --footer-brand-fg: #1b4332;
+  --footer-fg: #2c2416;
+  --footer-link-fg: #1d7a6e;
+  --footer-border-color: #1b4332;
+  --footer-border-width: 4px;
+  --main-column-side-gap: 0px;
+  --main-column-border-color: #2d6a4f;
+  --main-column-border-width: 4px;
+  --parchment: #f4efe4;
+  --palm: #1b4332;
+  --palm-mid: #2d6a4f;
+  --lagoon: #2a9d8f;
+  --lagoon-dark: #1d7a6e;
+  --coral: #e76f51;
+  --mango: #f4a261;
+  --ink: #2c2416;
+  --surf: #cfe8e4;
+  --btn-main-fg: #faf6ef;
+  --btn-main-bg: #1b4332;
+  --btn-secondary-fg: #1b4332;
+  --btn-secondary-bg: #ffffff;
+  --btn-important-fg: #000000;
+  --btn-important-bg: #e76f51;
+  --product-card-bg: #ffffff;
+  --product-card-border: #2d6a4f;
+  --product-card-title: #1b4332;
+  --product-card-description: #2c2416;
+  --product-card-price: #2c2416;
+  --product-card-sale: #e76f51;
+  --product-card-image-bg: #cfe8e4;
+  --product-card-hover-glow: #2a9d8f;
+  --product-footer-bg: #ffffff;
+  --product-footer-bg-opacity-pct: 70%;
+  --product-footer-border: #1b4332;
+  --product-footer-border-width: 2px;
+  --product-footer-title: #1b4332;
+  --product-footer-title-size: 18px;
+  --product-footer-body: #2c2416;
+  --product-footer-body-size: 16px;
+  --product-footer-link: #1d7a6e;
+  --product-footer-section-border: #1b4332;
+  --product-footer-section-border-width: 4px;
+}
+
+@theme inline {
+  --color-site-bg: var(--site-bg);
+  --color-header-fg: var(--header-fg);
+  --color-header-bg: var(--header-bg);
+  --color-header-brand-fg: var(--header-brand-fg);
+  --color-header-nav-fg: var(--header-nav-fg);
+  --color-footer-bg: var(--footer-bg);
+  --color-footer-brand-fg: var(--footer-brand-fg);
+  --color-footer-fg: var(--footer-fg);
+  --color-footer-link-fg: var(--footer-link-fg);
+  --color-sand: var(--sand);
+  --color-parchment: var(--parchment);
+  --color-palm: var(--palm);
+  --color-palm-mid: var(--palm-mid);
+  --color-lagoon: var(--lagoon);
+  --color-lagoon-dark: var(--lagoon-dark);
+  --color-coral: var(--coral);
+  --color-mango: var(--mango);
+  --color-ink: var(--ink);
+  --color-surf: var(--surf);
+  --color-background: var(--sand);
+  --color-foreground: var(--ink);
+}
+
+body {
+  background: var(--site-bg);
+  color: var(--ink);
+}
+
+/** Customer-facing main column + aligned header/footer inner rows. */
+.storefront-content-width {
+  box-sizing: border-box;
+  width: calc(100% - 2 * var(--main-column-side-gap));
+  max-width: calc(100vw - 2 * var(--main-column-side-gap));
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.storefront-shell {
+  background-color: var(--site-bg);
+}
+
+.storefront-main-column {
+  background-color: color-mix(in srgb, var(--sand) 95%, transparent);
+  border-left: var(--main-column-border-width) solid var(--main-column-border-color);
+  border-right: var(--main-column-border-width) solid var(--main-column-border-color);
+}
+
+.store-product-card {
+  background-color: color-mix(in srgb, var(--product-card-bg) 80%, transparent);
+  border: 2px solid color-mix(in srgb, var(--product-card-border) 30%, transparent);
+}
+
+.store-product-card__image-area {
+  background-color: color-mix(in srgb, var(--product-card-image-bg) 50%, transparent);
+}
+
+.store-product-card__title {
+  color: var(--product-card-title);
+}
+
+.store-product-card__description {
+  color: color-mix(in srgb, var(--product-card-description) 70%, transparent);
+}
+
+.store-product-card__price {
+  color: var(--product-card-price);
+}
+
+.store-product-card__sale,
+.store-product-card__stock-warn {
+  color: var(--product-card-sale);
+}
+
+[data-store-card-hover="zoom"] .store-product-card {
+  transition: transform 150ms ease;
+}
+
+[data-store-card-hover="zoom"] .store-product-card:hover {
+  transform: scale(1.02);
+}
+
+[data-store-card-hover="glow"] .store-product-card {
+  transition: box-shadow 150ms ease;
+}
+
+[data-store-card-hover="glow"] .store-product-card:hover {
+  box-shadow:
+    0 0 0 3px var(--product-card-hover-glow),
+    0 10px 28px color-mix(in srgb, var(--product-card-border) 18%, transparent);
+}
+
+.site-header-chrome {
+  background-color: var(--header-bg);
+  color: var(--header-nav-fg);
+  border-bottom: var(--header-border-width) solid var(--header-border-color);
+}
+
+.site-footer-chrome {
+  background-color: color-mix(in srgb, var(--footer-bg) 92%, transparent);
+  color: var(--footer-fg);
+  border-top: var(--footer-border-width) solid var(--footer-border-color);
+}
+
+.site-footer-rich p:first-child {
+  margin-top: 0;
+}
+
+.site-footer-rich p:last-child {
+  margin-bottom: 0;
+}
+
+/* Rich HTML from admin editor (product descriptions, store footer, panes, etc.) */
+.store-rich {
+  line-height: 1.65;
+}
+
+.store-rich > * + * {
+  margin-top: 0.875rem;
+}
+
+.store-rich p {
+  margin: 0;
+}
+
+.store-rich p:empty,
+.store-rich p:has(> br:only-child) {
+  min-height: 1.25rem;
+}
+
+.store-rich ul,
+.store-rich ol {
+  padding-left: 1.25rem;
+}
+
+.store-rich li + li {
+  margin-top: 0.35em;
+}
+
+.store-rich ul {
+  list-style: disc;
+}
+
+.store-rich ol {
+  list-style: decimal;
+}
+
+.store-rich a {
+  color: var(--lagoon-dark);
+  text-decoration: underline;
+}
+
+/* Product page — automatic footer blocks (theme: Settings → Theme → Product footers) */
+.product-footer-section {
+  border-top: var(--product-footer-section-border-width, 4px) solid
+    var(--product-footer-section-border, #1b4332);
+}
+
+.product-footer-block {
+  border: var(--product-footer-border-width, 2px) solid var(--product-footer-border, #1b4332);
+  background-color: color-mix(
+    in srgb,
+    var(--product-footer-bg, #ffffff) var(--product-footer-bg-opacity-pct, 70%),
+    transparent
+  );
+  border-radius: 0.25rem;
+  padding: 1rem;
+  box-shadow: 0 1px 2px rgb(44 36 22 / 0.06);
+}
+
+@media (min-width: 640px) {
+  .product-footer-block {
+    padding: 1.5rem;
+  }
+}
+
+.product-footer-block__title {
+  margin-bottom: 0.75rem;
+  font-size: var(--product-footer-title-size, 18px);
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--product-footer-title, #1b4332);
+}
+
+.product-footer-block__body,
+.product-footer-block__body.store-rich,
+.product-footer-block__body.store-rich p,
+.product-footer-block__body.store-rich li {
+  font-size: var(--product-footer-body-size, 16px);
+  line-height: 1.65;
+  color: var(--product-footer-body, #2c2416);
+}
+
+.product-footer-block__body a,
+.product-footer-block__body.store-rich a {
+  color: var(--product-footer-link, #1d7a6e);
+  text-decoration: underline;
+}
+
+.store-rich strong {
+  font-weight: 700;
+}
+
+.store-rich em {
+  font-style: italic;
+}
+
+/* ── Theme button tiers (storefront + settings body; not site header menu) ── */
+.btn-main {
+  border-color: var(--btn-main-fg);
+  background-color: var(--btn-main-bg);
+  color: var(--btn-main-fg);
+}
+
+.btn-secondary {
+  border-color: var(--btn-secondary-fg);
+  background-color: var(--btn-secondary-bg);
+  color: var(--btn-secondary-fg);
+}
+
+.btn-secondary.btn-chip--active,
+.btn-secondary.btn-chip[aria-current="true"] {
+  border-color: var(--btn-secondary-bg);
+  background-color: var(--btn-secondary-fg);
+  color: var(--btn-secondary-bg);
+}
+
+.btn-important {
+  border-color: var(--btn-important-fg);
+  background-color: var(--btn-important-bg);
+  color: var(--btn-important-fg);
+}
+
+.dark .btn-main,
+#settings-admin-shell.dark .admin-settings-body .btn-main {
+  border-color: #fafafa;
+  background-color: #047857;
+  color: #fafafa;
+}
+
+.dark .btn-secondary,
+#settings-admin-shell.dark .admin-settings-body .btn-secondary:not(.btn-chip--active):not([aria-current="true"]) {
+  border-color: #6ee7b7;
+  background-color: #09090b;
+  color: #6ee7b7;
+}
+
+.dark .btn-secondary.btn-chip--active,
+.dark .btn-secondary.btn-chip[aria-current="true"],
+#settings-admin-shell.dark .admin-settings-body .btn-secondary.btn-chip--active,
+#settings-admin-shell.dark .admin-settings-body .btn-secondary.btn-chip[aria-current="true"] {
+  border-color: #09090b;
+  background-color: #6ee7b7;
+  color: #09090b;
+}
+
+.dark .btn-important,
+#settings-admin-shell.dark .admin-settings-body .btn-important {
+  border-color: #fafafa;
+  background-color: #ea580c;
+  color: #fafafa;
+}
+
+.btn-important-link {
+  color: var(--btn-important-bg);
+}
+
+.dark .btn-important-link,
+#settings-admin-shell.dark .admin-settings-body .btn-important-link {
+  color: #fb923c;
+}
+
+/* Admin /settings: let flex children shrink; wide tables scroll inside the shell */
+#settings-admin-shell .admin-settings-body {
+  min-width: 0;
+}
+#settings-admin-shell .admin-settings-body .admin-table-shell {
+  max-width: 100%;
+}
+
+/* ── Admin /settings: dark mode surfaces (parent is #settings-admin-shell.dark) ── */
+#settings-admin-shell.dark {
+  color-scheme: dark;
+}
+
+#settings-admin-shell.dark .admin-settings-body h1 {
+  color: #f4f4f5;
+  border-color: #52525b;
+}
+
+#settings-admin-shell.dark .admin-settings-body h2,
+#settings-admin-shell.dark .admin-settings-body h3 {
+  color: #e4e4e7;
+}
+
+#settings-admin-shell.dark .admin-settings-body > p,
+#settings-admin-shell.dark .admin-settings-body .max-w-3xl > p,
+#settings-admin-shell.dark .admin-settings-body .max-w-5xl > p {
+  color: #d4d4d8;
+}
+
+#settings-admin-shell.dark .admin-settings-body fieldset {
+  background-color: #18181b;
+  border-color: #71717a !important;
+  color: #f4f4f5;
+}
+
+#settings-admin-shell.dark .admin-settings-body fieldset legend {
+  color: #fafafa;
+}
+
+#settings-admin-shell.dark
+  .admin-settings-body
+  :is(textarea, select, input:not([type="file"]):not([type="checkbox"]):not([type="radio"])) {
+  background-color: #09090b;
+  border-color: #52525b !important;
+  color: #fafafa;
+}
+
+#settings-admin-shell.dark .admin-settings-body :is(details.rounded) {
+  background-color: #18181b;
+  border-color: #71717a !important;
+  color: #f4f4f5;
+}
+
+#settings-admin-shell.dark .admin-settings-body details summary {
+  color: #fafafa;
+}
+
+/* White “card” shells (tables, notices) */
+#settings-admin-shell.dark .admin-settings-body .admin-table-shell {
+  background-color: #18181b !important;
+  border-color: #52525b !important;
+}
+
+#settings-admin-shell.dark .admin-settings-body table.admin-striped {
+  color: #e4e4e7;
+}
+
+#settings-admin-shell.dark .admin-settings-body table.admin-striped thead tr {
+  background-color: #52525b;
+  color: #fafafa;
+}
+
+#settings-admin-shell.dark .admin-settings-body table.admin-striped thead th {
+  color: #fafafa;
+}
+
+#settings-admin-shell.dark .admin-settings-body table.admin-striped tbody tr:nth-child(odd) {
+  background-color: #27272a; /* zinc-800 */
+}
+
+#settings-admin-shell.dark .admin-settings-body table.admin-striped tbody tr:nth-child(even) {
+  background-color: #18181b; /* zinc-900 */
+}
+
+/* Tailwind odd:bg-white on rows — force dark grays (utilities load after this file) */
+#settings-admin-shell.dark .admin-settings-body table tbody > tr:nth-child(odd),
+#settings-admin-shell.dark .admin-settings-body table tbody > tr:nth-child(odd) > td {
+  background-color: #27272a !important; /* zinc-800 */
+}
+
+#settings-admin-shell.dark .admin-settings-body table tbody > tr:nth-child(even),
+#settings-admin-shell.dark .admin-settings-body table tbody > tr:nth-child(even) > td {
+  background-color: #18181b !important; /* zinc-900 */
+}
+
+#settings-admin-shell.dark .admin-settings-body table tbody > tr:nth-child(odd) {
+  color: #e4e4e7;
+}
+
+#settings-admin-shell.dark .admin-settings-body table.admin-striped tbody td {
+  border-color: #3f3f46;
+  color: #e4e4e7;
+}
+
+/* TipTap / HTML rich text editors in admin dark mode */
+#settings-admin-shell.dark .admin-settings-body .rt-editor__content .ProseMirror {
+  color: #e4e4e7;
+  background-color: #09090b;
+}
+
+#settings-admin-shell.dark .admin-settings-body .rt-editor__content .ProseMirror:focus-visible {
+  box-shadow: inset 0 0 0 2px rgba(63, 63, 70, 0.7);
+}
+
+#settings-admin-shell.dark .admin-settings-body .rt-editor__content .ProseMirror .text-lagoon-dark {
+  color: #86efac !important;
+}
+
+#settings-admin-shell.dark .admin-settings-body .rt-editor__content p.is-editor-empty:first-child::before {
+  color: #71717a;
+}
+
+#settings-admin-shell.dark .admin-settings-body table.admin-striped tbody tr.admin-empty-row {
+  background-color: #18181b !important;
+}
+
+#settings-admin-shell.dark .admin-settings-body table.admin-striped tbody tr.admin-empty-row td {
+  background-color: #18181b !important;
+  color: #a1a1aa;
+}
+
+/* Common admin panes that use bg-white + borders (events, panes, editors) */
+#settings-admin-shell.dark .admin-settings-body .rounded.border-2.border-palm,
+#settings-admin-shell.dark .admin-settings-body .rounded.border-2.border-palm\/30,
+#settings-admin-shell.dark .admin-settings-body .rounded.border-2.border-palm\/40,
+#settings-admin-shell.dark .admin-settings-body .rounded.border-2.border-lagoon-dark,
+#settings-admin-shell.dark .admin-settings-body .rounded.border-2.border-black {
+  background-color: #18181b !important;
+  border-color: #71717a !important;
+  color: #e4e4e7;
+}
+
+#settings-admin-shell.dark .admin-settings-body .rounded.border-2.border-black.bg-black {
+  background-color: #000 !important;
+  border-color: #a1a1aa !important;
+  color: #fff;
+}
+
+#settings-admin-shell.dark .admin-settings-body code {
+  background-color: #27272a;
+  color: #e4e4e7;
+}
+
+#settings-admin-shell.dark .admin-settings-body .text-ink {
+  color: #e4e4e7 !important;
+}
+
+#settings-admin-shell.dark .admin-settings-body .text-ink\/80,
+#settings-admin-shell.dark .admin-settings-body .text-ink\/75,
+#settings-admin-shell.dark .admin-settings-body .text-ink\/70,
+#settings-admin-shell.dark .admin-settings-body .text-ink\/65,
+#settings-admin-shell.dark .admin-settings-body .text-ink\/60,
+#settings-admin-shell.dark .admin-settings-body .text-ink\/55 {
+  color: #a1a1aa !important;
+}
+
+#settings-admin-shell.dark .admin-settings-body .text-palm {
+  color: #86efac !important;
+}
+
+@keyframes storeBannerFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes storeBannerNudge {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.012);
+  }
+}
+
+/* Last — wins over Tailwind odd:bg-white / even:bg-surf on admin table rows */
+#settings-admin-shell.dark .admin-settings-body table tbody > tr:nth-child(odd),
+#settings-admin-shell.dark .admin-settings-body table tbody > tr:nth-child(odd) > td {
+  background-color: #27272a !important;
+}
+
+#settings-admin-shell.dark .admin-settings-body table tbody > tr:nth-child(even),
+#settings-admin-shell.dark .admin-settings-body table tbody > tr:nth-child(even) > td {
+  background-color: #18181b !important;
+}
+
+#settings-admin-shell.dark .admin-settings-body table tbody > tr:nth-child(odd) > td,
+#settings-admin-shell.dark .admin-settings-body table tbody > tr:nth-child(even) > td {
+  color: #e4e4e7;
+}

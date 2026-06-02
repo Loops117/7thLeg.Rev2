@@ -1,0 +1,1137 @@
+// Inverts Oasis — Postgres (Supabase) + Prisma
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  ACCEPTED
+  FULFILLED
+  SHIPPED
+  COMPLETE
+  CANCELLED
+}
+
+/// Carrier for building customer tracking URLs (NONE = not set yet).
+enum TrackingCarrier {
+  NONE
+  USPS
+  UPS
+  FEDEX
+  DHL
+  OTHER
+}
+
+enum PageKey {
+  HOME
+  FEATURED
+  ABOUT
+}
+
+enum PaneType {
+  PRODUCT_CAROUSEL
+  CONTENT_DUAL
+  GIVEAWAY
+  /// Hero-style pane: company logo, optional CTAs (text or custom images).
+  STORE_BANNER
+  /// Row of social profile links (Facebook, Instagram, etc.).
+  SOCIAL_LINKS
+  /// Shipped orders heat map (US, Canada, Mexico + Hawaii in US features).
+  ORDER_SHIPPING_MAP
+  /// Customer artwork upload (coloring page, etc.) grouped by admin-defined art group key.
+  ART_SUB
+  /// Species / design suggestion box with community list and approved history.
+  SUGGESTION_BOX
+}
+
+enum SpeciesSuggestionStatus {
+  PENDING
+  APPROVED
+  REMOVED
+}
+
+model SiteConfig {
+  id Int @id @default(1)
+
+  companyName String @default("Inverts Oasis")
+  /// Show company name link/text in public header (desktop + mobile layouts).
+  headerShowCompanyName Boolean @default(true) @map("header_show_company_name")
+  /// Show uploaded company logo in public header when a logo URL exists.
+  headerShowCompanyLogo Boolean @default(true) @map("header_show_company_logo")
+  /// Repeat store name diagonally over product hero/thumbnail images (CSS overlay; separate from watermark file).
+  productDiagonalBrandOverlay Boolean @default(false) @map("product_diagonal_brand_overlay")
+  /// Public path to the storefront logo (optional).
+  companyLogoUrl         String @default("")
+  /// beside | above | center — layout relative to the company name in the header.
+  companyLogoPlacement   String @default("beside")
+  /// Favicon / OG source: default | companyLogo | custom (see siteBrandingAssets).
+  siteBrandingSource String @default("default") @map("site_branding_source")
+  /// Generated icon + OG URLs: { icon16, icon32, apple180, og1200 }.
+  siteBrandingAssets Json? @map("site_branding_assets")
+  /// Longest edge in pixels for server-side downscaling on uploads.
+  uploadImageMaxEdgePx   Int @default(2400)
+  /// JPEG quality (1–100) when uploads are saved as JPEG.
+  uploadImageJpegQuality Int @default(85)
+
+  /// Optional default image composited in the center of generated QR PNGs (Settings → QR Codes).
+  qrDefaultCenterImageUrl String @default("") @map("qr_default_center_image_url")
+
+  loyaltyEnabled  Boolean @default(false)
+  pointsPerDollar Int     @default(10) // whole points earned per $1.00 (applied to eligible subtotal)
+  /// Whole cents each point is worth when applied at checkout (e.g. 10 = $0.10 per point).
+  loyaltyRedemptionCentsPerPoint Int @default(10) @map("loyalty_redemption_cents_per_point")
+
+  /// When false, Stripe Checkout is hidden even if STRIPE_SECRET_KEY is set.
+  paymentStripeEnabled Boolean @default(true) @map("payment_stripe_enabled")
+  /// When true, Square Web Payments is shown when SQUARE_* env vars are set.
+  paymentSquareEnabled Boolean @default(false) @map("payment_square_enabled")
+
+  /// Sales tax on checkout merchandise subtotal, in basis points (825 = 8.25%). 0 disables tax line.
+  checkoutTaxRateBps Int @default(0) @map("checkout_tax_rate_bps")
+
+  /// Public storefront palette, typography, pane defaults, decor image URLs (see `lib/theme-config.ts`).
+  themeConfig Json?
+
+  bgEnabled          Boolean @default(true)
+  bgMaxImages        Int     @default(10)
+  bgSpawnIntervalMs  Int     @default(2000)
+  /// Opacity 0–100 of the top anti-theft / overlay layer (see `bgSandOverlayMode`).
+  bgOpacityPercent   Int     @default(88)
+  /// `solid` = flat sand; `diagonal` = static diagonal line texture in that top layer.
+  bgSandOverlayMode  String  @default("diagonal") @map("bg_sand_overlay_mode")
+  /// Font size (px) for sparse store-name anti-theft SVG text.
+  storeWatermarkScatteredFontPx  Int @default(15) @map("store_watermark_scattered_font_px")
+  /// Font size (px) for continuous store-name band SVG text.
+  storeWatermarkContinuousFontPx Int @default(15) @map("store_watermark_continuous_font_px")
+  /// Extra spacing between name repeats (scattered) and between diagonal lines (continuous), px 0–64.
+  storeWatermarkNameGapPx Int @default(8) @map("store_watermark_name_gap_px")
+  /// Opacity 0–100 of floating decorative images (independent of anti-theft overlay).
+  bgImageOpacityPercent Int @default(85) @map("bg_image_opacity_percent")
+  /// Decorative tile min scale (percent of base tile size, e.g. 50 = half).
+  bgTileScaleMin Int @default(50) @map("bg_tile_scale_min")
+  /// Decorative tile max scale (percent). Random per tile in [min, max]; base size is 4rem in layout.
+  bgTileScaleMax Int @default(100) @map("bg_tile_scale_max")
+  /// Min degrees for random rotation of each floating background sticker (must be <= max).
+  bgStickerRotMinDeg Int @default(-45) @map("bg_sticker_rot_min_deg")
+  /// Max degrees for random rotation of each floating background sticker.
+  bgStickerRotMaxDeg Int @default(45) @map("bg_sticker_rot_max_deg")
+  bgProductIds       Json? // string[] — pool of product ids; null = all with images
+
+  rightRailEnabled Boolean @default(false)
+  rightRailSlots   Json? // { html?: string, imageUrl?: string }[] 
+
+  storeBannerEnabled         Boolean @default(false)
+  storeBannerHtml            String  @default("") @db.Text
+  storeFeaturedStripEnabled  Boolean @default(false)
+  storeFeaturedStripConfig   Json?
+  /// When true, `/labels` is available (direct URL works for anyone who has it).
+  labelBuilderEnabled Boolean @default(false) @map("label_builder_enabled")
+  /// When true and label builder is enabled, main nav shows Labels after Featured.
+  labelBuilderNavEnabled Boolean @default(true) @map("label_builder_nav_enabled")
+  /// Main header link to `/store` (label customizable; default Shop).
+  navShopEnabled Boolean @default(true) @map("nav_shop_enabled")
+  navShopLabel String @default("Shop") @map("nav_shop_label")
+  navFeaturedEnabled Boolean @default(true) @map("nav_featured_enabled")
+  navFeaturedLabel String @default("Featured") @map("nav_featured_label")
+  navAboutEnabled Boolean @default(true) @map("nav_about_enabled")
+  navAboutLabel String @default("About") @map("nav_about_label")
+  /// Public site footer content & layout (`lib/site-footer-settings.ts`).
+  siteFooterConfig Json? @map("site_footer_config")
+  /// JSON: per-tool guide HTML + tour popup copy for /labels editor (see label-editor-help.ts).
+  labelEditorHelpJson String? @map("label_editor_help_json") @db.Text
+  /// Label builder: show quantity × unit price subtotal before add to cart.
+  labelCartShowSubtotalPreview Boolean @default(true) @map("label_cart_show_subtotal_preview")
+  /// Label builder: add label lines to the same storefront cart (vs separate flow later).
+  labelCartMergeWithStoreCart Boolean @default(true) @map("label_cart_merge_with_store_cart")
+  /// Minimum label quantity per add-to-cart action.
+  labelCartMinQuantity Int @default(1) @map("label_cart_min_quantity")
+  /// Label builder customer preview: composite store watermark image like product photos.
+  labelPreviewMatchProductWatermark Boolean @default(true) @map("label_preview_match_product_watermark")
+  /// Label preview watermark: global | custom | text | off.
+  labelPreviewWatermarkKind String @default("global") @map("label_preview_watermark_kind")
+  /// Label-only watermark image (when kind = custom).
+  labelPreviewWatermarkImageUrl String @default("") @map("label_preview_watermark_image_url")
+  /// Placement for label image/text watermarks.
+  labelPreviewWatermarkPlacement String @default("bottomRight") @map("label_preview_watermark_placement")
+  /// Opacity 0–100 for label preview image or text watermark.
+  labelPreviewWatermarkOpacityPercent Int @default(38) @map("label_preview_watermark_opacity_percent")
+  /// Zoom 25–300 (% of default size) for label preview image watermark.
+  labelPreviewWatermarkScalePercent Int @default(100) @map("label_preview_watermark_scale_percent")
+  /// Text shown when label_preview_watermark_kind = text.
+  labelPreviewWatermarkText String @default("This is a preview") @map("label_preview_watermark_text")
+  /// Label builder customer preview: diagonal store-name band like product cards.
+  labelPreviewMatchDiagonalBrand Boolean @default(true) @map("label_preview_match_diagonal_brand")
+  /// Label builder preview: discourage right-click / selection on preview surface.
+  labelPreviewProtectInteraction Boolean @default(true) @map("label_preview_protect_interaction")
+  /// Production print/export uses unwatermarked assets (not the customer preview).
+  labelProductionUnwatermarked Boolean @default(true) @map("label_production_unwatermarked")
+  /// Sales admin: surface label batches on order detail (when label orders exist).
+  labelFulfillmentShowOnOrders Boolean @default(true) @map("label_fulfillment_show_on_orders")
+  /// Save customer label layouts to their account for reuse.
+  labelFulfillmentSaveLayouts Boolean @default(true) @map("label_fulfillment_save_layouts")
+  /// Let customers start a new batch from a past purchase layout + values.
+  labelFulfillmentAllowReorder Boolean @default(true) @map("label_fulfillment_allow_reorder")
+  /// Fulfillment export: multi-label PDF sheets (future pipeline).
+  labelFulfillmentExportPdf Boolean @default(true) @map("label_fulfillment_export_pdf")
+  /// Fulfillment export: per-label raster (PNG/JPEG).
+  labelFulfillmentExportRaster Boolean @default(true) @map("label_fulfillment_export_raster")
+  /// Target resolution for print rasterization (150–600).
+  labelFulfillmentPrintDpi Int @default(300) @map("label_fulfillment_print_dpi")
+  /// Imposition sheet: letter | a4.
+  labelFulfillmentSheetFormat String @default("letter") @map("label_fulfillment_sheet_format")
+  /// Printable margin on imposition sheet (mm).
+  labelFulfillmentSheetMarginMm Float @default(12.7) @map("label_fulfillment_sheet_margin_mm")
+  /// Gap between labels on imposition sheet (mm).
+  labelFulfillmentLabelGapMm Float @default(2) @map("label_fulfillment_label_gap_mm")
+  /// Print/export PNGs with transparent area outside each label (die-cut friendly).
+  labelFulfillmentPrintTransparentBg Boolean @default(false) @map("label_fulfillment_print_transparent_bg")
+  storeFooterEnabled         Boolean @default(false)
+  storeFooterHtml            String  @default("") @db.Text
+  cardHoverMode              String  @default("zoom") // zoom | glow
+
+  /// Public URL path to watermark image used when compositing product photos (e.g. /uploads/site/watermark.png).
+  watermarkImageUrl String @default("")
+  /// Placement for composited product watermark image (bottomRight, stretch, etc).
+  watermarkPlacement String @default("bottomRight") @map("watermark_placement")
+  /// Opacity 0-100 for product image watermark compositing and diagonal text overlay.
+  watermarkOpacityPercent Int @default(38) @map("watermark_opacity_percent")
+  /// Gap 0-64 between repeated diagonal store-name lines on product imagery.
+  productDiagonalNameGapPx Int @default(8) @map("product_diagonal_name_gap_px")
+
+  /// Shown on `/` only; blocks the rest of the site until dismissed (per revision; stored in localStorage).
+  homeUrgentNotificationEnabled  Boolean @default(false)
+  homeUrgentNotificationTitle    String  @default("")
+  homeUrgentNotificationBody     String  @default("") @db.Text
+  /// Bumped when enabled/title/body change so customers see a new notice after a previous dismiss.
+  homeUrgentNotificationRevision Int     @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  @@map("site_config")
+}
+
+enum QrRedirectTarget {
+  HOME
+  STORE
+  FEATURED
+  ABOUT
+  CART
+  ACCOUNT
+  CUSTOM
+}
+
+enum QrStyle {
+  CLASSIC
+  SOFT
+  INVERTED
+}
+
+enum QrModuleShape {
+  SQUARE
+  DOT
+  ROUNDED_SQUARE
+}
+
+enum QrFrameShape {
+  SQUARE
+  CIRCLE
+}
+
+/// Short public URLs like `/QR1` that redirect to a storefront page or custom URL and track visits.
+model QrRedirect {
+  id         String           @id @default(cuid())
+  /// Human-friendly label in admin (e.g. "Test QR").
+  name       String
+  /// Public path segment only, e.g. `QR1` (unique). Full scan URL is `${origin}/${publicCode}`.
+  publicCode String           @unique
+  target     QrRedirectTarget
+  /// When `target` is CUSTOM, or to override with a full URL or site-relative path.
+  customUrl  String           @default("")
+  visitCount Int              @default(0)
+  style      QrStyle          @default(CLASSIC)
+  /// Dark/light module drawing (square pixels, dots, or rounded squares).
+  moduleShape QrModuleShape   @default(SQUARE) @map("module_shape")
+  /// Square canvas or circular clip (corners transparent on circle).
+  frameShape  QrFrameShape     @default(SQUARE) @map("frame_shape")
+  /// When true, keep center image in color; when false, grayscale the center image.
+  centerUseColor Boolean      @default(false) @map("center_use_color")
+  /// Optional per-code center image URL; when empty, site default then company logo is used.
+  centerImageUrl String        @default("") @map("center_image_url")
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@map("qr_redirects")
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("admin_users")
+}
+
+enum SupportMessageSender {
+  CUSTOMER
+  ADMIN
+}
+
+model Customer {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  /// Kept in sync with first + last name when those are set (legacy / display).
+  displayName   String?
+  firstName     String?
+  lastName      String?
+  pointsBalance Int      @default(0)
+
+  /// Saved shipping / contact address (optional).
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  stateRegion  String?
+  postalCode   String?
+  country      String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  orders              Order[]
+  pointsLedger        PointsLedger[]
+  carts               Cart[]
+  eventEntries        EventEntry[]
+  passwordResetTokens CustomerPasswordResetToken[]
+  supportThread       SupportThread?
+  wishlistItems       CustomerWishlistItem[]
+  labelDesigns        CustomerLabelDesign[]
+  labelDesignFolders  CustomerLabelDesignFolder[]
+  labelUploads        CustomerLabelUpload[]
+  labelBag            CustomerLabelBag?
+  artSubmissions           CustomerArtSubmission[]
+  speciesSuggestionVotes   SpeciesSuggestionVote[]
+
+  @@map("customers")
+}
+
+/// Customer-uploaded artwork (e.g. coloring pages), grouped for admin review.
+model CustomerArtSubmission {
+  id         String   @id @default(cuid())
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  /// Matches `artGroup` on storefront ART_SUB panes (e.g. "Cursor").
+  artGroup   String   @map("art_group")
+  imageUrl   String   @map("image_url")
+  approved   Boolean  @default(false)
+  /// Set when the customer removes the upload from their portal; keeps record for coupons/admin.
+  customerRemovedAt DateTime? @map("customer_removed_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([artGroup, createdAt(sort: Desc)])
+  @@index([customerId, createdAt(sort: Desc)])
+  @@index([approved])
+  @@index([customerRemovedAt])
+  @@map("customer_art_submissions")
+}
+
+/// Canonical species/design suggestion (deduped by normalized key).
+model SpeciesSuggestion {
+  id               String                   @id @default(cuid())
+  label            String
+  normalizedKey    String                   @unique @map("normalized_key")
+  status           SpeciesSuggestionStatus  @default(PENDING)
+  firstSuggestedAt DateTime                 @default(now()) @map("first_suggested_at")
+  suggestionCount  Int                      @default(1) @map("suggestion_count")
+  approvedAt       DateTime?                @map("approved_at")
+  removedAt        DateTime?                @map("removed_at")
+  createdAt        DateTime                 @default(now()) @map("created_at")
+  updatedAt        DateTime                 @updatedAt @map("updated_at")
+
+  votes SpeciesSuggestionVote[]
+
+  @@index([status, firstSuggestedAt(sort: Desc)])
+  @@index([status, approvedAt(sort: Desc)])
+  @@map("species_suggestions")
+}
+
+model SpeciesSuggestionVote {
+  id           String   @id @default(cuid())
+  suggestionId String   @map("suggestion_id")
+  customerId   String   @map("customer_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  suggestion SpeciesSuggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+  customer   Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([suggestionId, customerId])
+  @@index([customerId])
+  @@map("species_suggestion_votes")
+}
+
+model CustomerPasswordResetToken {
+  id         String    @id @default(cuid())
+  customerId String
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  token      String    @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+
+  @@index([customerId])
+  @@map("customer_password_reset_tokens")
+}
+
+model ProductType {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  /// When false, hidden from store filters and from visible type badges on product pages (admin still sees it).
+  storefrontVisible Boolean @default(true)
+  sortOrder Int      @default(0) @map("sort_order")
+  parentId  String?  @map("parent_id")
+  parent    ProductType?  @relation("ProductTypeTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children  ProductType[] @relation("ProductTypeTree")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products       ProductOnType[]
+  defaultFooters ProductTypeDefaultFooter[]
+  eventTypeLinks EventOnProductType[]
+
+  @@index([sortOrder])
+  @@index([parentId])
+  @@map("product_types")
+}
+
+/// Reusable HTML blocks; linked to types (defaults) and/or individual products.
+model AutomaticFooter {
+  id    String @id @default(cuid())
+  title String
+  html  String @db.Text
+
+  typeDefaults ProductTypeDefaultFooter[]
+  products     ProductOnFooter[]
+
+  @@map("automatic_footers")
+}
+
+/// Which automatic footers apply by default to all products of this type.
+model ProductTypeDefaultFooter {
+  typeId   String
+  footerId String
+  type     ProductType     @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  footer   AutomaticFooter @relation(fields: [footerId], references: [id], onDelete: Cascade)
+
+  @@id([typeId, footerId])
+  @@map("product_type_default_footers")
+}
+
+model Product {
+  id              String    @id @default(cuid())
+  name            String
+  slug            String    @unique
+  description     String    @default("") @db.Text
+  shortDescription String?  @db.Text
+  basePriceCents  Int
+  quantity        Int       @default(0)
+  /// When true, storefront treats stock as unlimited (made-to-order, etc.); `quantity` may still be used internally.
+  unlimitedQuantity Boolean @default(false)
+  /// When false, hidden from store listing and product URL returns not found.
+  active          Boolean   @default(true)
+  featured        Boolean   @default(false)
+  onSale          Boolean   @default(false)
+  saleEndsAt      DateTime?
+  /// Optional multiplier on points earned for this product (1.0000 = default). Null = 1.
+  pointsMultiplier Decimal? @db.Decimal(8, 4)
+  /// Storefront option buttons: `full` = list price; `difference` = +/- from base.
+  variantPriceDisplay String @default("difference") @map("variant_price_display")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  variants ProductVariant[]
+  images   ProductImage[]
+  types    ProductOnType[]
+  footers  ProductOnFooter[]
+
+  cartItems CartItem[]
+  lineItems OrderLineItem[]
+  eventProductLinks EventOnProduct[]
+  couponPickRows EventCouponProductPick[]
+  wishlistItems CustomerWishlistItem[]
+
+  @@map("products")
+}
+
+model ProductVariant {
+  id             String  @id @default(cuid())
+  productId      String
+  product        Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  label          String
+  /// Display order on the product page and in admin (lower = first).
+  sortOrder      Int     @default(0) @map("sort_order")
+  sku            String?
+  stock          Int     @default(0)
+  /// When true, storefront treats this variant as always purchasable (ignores `stock`).
+  unlimitedStock Boolean @default(false)
+  /// When false, hidden from customer variant picker and cannot be added to cart.
+  active         Boolean @default(true)
+  priceDeltaCents Int    @default(0)
+  /// Bulk unit pricing for this variation: [{ minQty, unitCents }] (full unit price at each tier).
+  priceTiersJson  Json?  @map("price_tiers_json")
+  /// Storefront “Choose an option” button colors (hex). All null = automatic logo green shades.
+  pickerBgHex     String? @map("picker_bg_hex")
+  pickerFgHex     String? @map("picker_fg_hex")
+  pickerBorderHex String? @map("picker_border_hex")
+
+  images    ProductImage[]
+  cartItems CartItem[]
+  lineItems OrderLineItem[]
+  wishlistItems CustomerWishlistItem[]
+
+  @@map("product_variants")
+}
+
+model CustomerWishlistItem {
+  id                      String   @id @default(cuid())
+  customerId              String
+  customer                Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productId               String
+  product                 Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  /// Selected variant when the product has variants; null when the catalog item has no variants.
+  variantId               String?
+  variant                 ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  /// Unit price in cents at add time (event-adjusted list base from the page + variant delta).
+  unitPriceCentsAtAdd     Int
+  /// `?event=` timed sale id when added, if any — used to recompute current timed pricing when still in scope.
+  timedSaleEventIdAtAdd   String?
+  createdAt               DateTime @default(now())
+
+  @@unique([customerId, productId])
+  @@index([customerId])
+  @@index([productId])
+  @@map("customer_wishlist_items")
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  /// Original file name for admin display (uploads); optional for legacy URL-only rows.
+  originalFilename String @default("")
+  /// Original upload (full resolution).
+  url       String
+  /// Server-generated watermarked copy; null until generated or upload-with-watermark.
+  watermarkedUrl String?
+  /// When true, storefront uses `watermarkedUrl` when set; otherwise `url`.
+  useWatermarkedPublic Boolean @default(false)
+  sortOrder Int     @default(0)
+  /// Null = applies to the whole product / default gallery; set = only for that variant.
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@map("product_images")
+}
+
+model ProductOnType {
+  productId String
+  typeId    String
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type      ProductType @relation(fields: [typeId], references: [id], onDelete: Cascade)
+
+  @@id([productId, typeId])
+  @@map("product_on_types")
+}
+
+model ProductOnFooter {
+  productId String
+  footerId  String
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  footer    AutomaticFooter @relation(fields: [footerId], references: [id], onDelete: Cascade)
+
+  @@id([productId, footerId])
+  @@map("product_on_footers")
+}
+
+enum EventKind {
+  /// Sale window: optional points-per-dollar override and storefront “sale” pricing for linked products.
+  TIMED
+  /// Giveaway: sign-up CTA, entry list; optional linked products shown on the event page.
+  SIGNUP
+  /// Checkout coupon: code entered by customers; discount applies to eligible cart lines (see coupon pick list).
+  COUPON
+}
+
+enum EventSaleDiscountMode {
+  NONE
+  PERCENT
+  FIXED_CENTS
+}
+
+enum EventGiveawayRole {
+  PRIMARY
+  BACKUP
+}
+
+/// Promotions / sales windows; linked to product types and/or specific products for storefront event blocks.
+model Event {
+  id        String   @id @default(cuid())
+  kind      EventKind @default(TIMED)
+  name      String
+  details   String   @default("") @db.Text
+  startAt   DateTime
+  endAt     DateTime
+  /// Storefront CTA label for SIGNUP events (e.g. “Enter giveaway”).
+  signupButtonLabel String @default("Sign up")
+  /// Whole loyalty points earned per $1.00 on eligible lines in cart when this timed event is active (null = site default).
+  pointsPerDollarOverride Int?
+  saleDiscountMode     EventSaleDiscountMode @default(NONE)
+  /// When mode is PERCENT: 1–100.
+  saleDiscountPercent  Int?
+  /// When mode is FIXED_CENTS: subtract from base price (cents).
+  saleDiscountCents    Int?
+  /// SIGNUP: number of random primary winners to draw.
+  giveawayPrimaryCount Int @default(1)
+  /// SIGNUP: backup entries if a primary cannot accept the prize.
+  giveawayBackupCount  Int @default(0)
+  /// SIGNUP: send Resend email to each selected address immediately after a draw.
+  giveawaySendEmailOnDraw Boolean @default(false)
+  giveawayEmailSubject   String  @default("Congratulations — you won!") @db.Text
+  giveawayEmailBody        String  @default("") @db.Text
+  /// COUPON: single code matched case-insensitively at checkout (trimmed).
+  couponCode                   String @default("") @db.Text
+  /// COUPON: When false (default), products checked in “coupon picker” are excluded from the discount; unchecked products are discounted.
+  /// When true, only checked picker products receive the discount.
+  couponPickerMeansIncluded    Boolean @default(false)
+  /// TIMED / COUPON: when true, custom label cart lines receive the event sale discount.
+  includesLabelMaker           Boolean @default(false) @map("includes_label_maker")
+  /// TIMED / COUPON: when true, checkout shipping is waived while the event is active.
+  includesFreeShipping         Boolean @default(false) @map("includes_free_shipping")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  typeLinks    EventOnProductType[]
+  productLinks EventOnProduct[]
+  couponPickProducts EventCouponProductPick[]
+  entries          EventEntry[]
+  giveawayWinners  EventGiveawayWinner[]
+  cartItemsTimedPricing CartItem[] @relation("CartItemTimedSaleEvent")
+  cartsWithCouponApplied Cart[] @relation("CartAppliedCouponEvent")
+
+  @@map("events")
+}
+
+/// COUPON: products selected in the admin “inventory” picker — meaning depends on couponPickerMeansIncluded.
+model EventCouponProductPick {
+  eventId   String
+  event     Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, productId])
+  @@map("event_coupon_product_picks")
+}
+
+/// One sign-up per email per giveaway event.
+model EventEntry {
+  id         String   @id @default(cuid())
+  eventId    String
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  email      String
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+
+  @@unique([eventId, email])
+  @@index([eventId, createdAt])
+  giveawayResults EventGiveawayWinner[]
+
+  @@map("event_entries")
+}
+
+/// Random draw result for a SIGNUP event (replaced on re-draw).
+model EventGiveawayWinner {
+  id          String   @id @default(cuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventEntryId String
+  entry       EventEntry @relation(fields: [eventEntryId], references: [id], onDelete: Cascade)
+  role        EventGiveawayRole
+  /// Order within role (0 = first primary, etc.)
+  position    Int
+  emailSentAt DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([eventId, role, position])
+  @@map("event_giveaway_winners")
+}
+
+model EventOnProductType {
+  eventId String
+  typeId  String
+  event   Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  type    ProductType @relation(fields: [typeId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, typeId])
+  @@map("event_on_product_types")
+}
+
+model EventOnProduct {
+  eventId   String
+  productId String
+  event     Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, productId])
+  @@map("event_on_products")
+}
+
+/// One support conversation per customer (storefront chat + account messages).
+model SupportThread {
+  id                 String   @id @default(cuid())
+  customerId         String   @unique
+  customer           Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  /// Admin inbox: treat customer messages created after this as unread (null = never opened).
+  adminLastReadAt    DateTime?
+  /// Customer: treat admin messages after this as unread for bubble badge (null = never opened).
+  customerLastReadAt DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  messages SupportMessage[]
+
+  @@map("support_threads")
+}
+
+model SupportMessage {
+  id        String               @id @default(cuid())
+  threadId  String
+  thread    SupportThread        @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender    SupportMessageSender
+  body      String               @db.Text
+  /// When store staff has seen this customer message (only used when sender = CUSTOMER).
+  readByAdminAt DateTime?
+  /// When customer has seen this admin reply (only used when sender = ADMIN).
+  readByCustomerAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([threadId, createdAt])
+  @@map("support_messages")
+}
+
+model Pane {
+  id        String   @id @default(cuid())
+  page      PageKey
+  sortOrder Int      @default(0)
+  type      PaneType
+  config    Json     @default("{}")
+
+  @@index([page, sortOrder])
+  @@map("panes")
+}
+
+/// Admin-defined label format: dimensions, editor grid/limit, tiered per-label pricing (USD cents).
+model LabelTemplate {
+  id          String @id @default(cuid())
+  name        String
+  /// Notes for admins (and optional future customer copy).
+  description String @default("") @db.Text
+  active      Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  /// Physical size in millimeters (print reference).
+  widthMm  Int @map("width_mm")
+  heightMm Int @map("height_mm")
+
+  /// Non-editable inset from the label edge (design px); customer fields stay inside the inner rect.
+  marginPx Int @default(20) @map("margin_px")
+
+  /// Design canvas in px at fixed DPI (computed from mm on save).
+  canvasWidthPx  Int @map("canvas_width_px")
+  canvasHeightPx Int @map("canvas_height_px")
+
+  /// Snap grid in canvas pixels (computed on save from canvas + margin).
+  gridStepPx Int @default(8) @map("grid_step_px")
+
+  /// Maximum draggable elements on this template.
+  maxElements Int @default(24) @map("max_elements")
+
+  /// JSON: `[{ "minQty": number, "unitCents": number }, ...]` sorted ascending by `minQty`.
+  priceTiersJson Json @map("price_tiers_json")
+
+  /// Optional base layout image (upload); drawn under customer content in editor/export.
+  baseLayoutImageUrl String @default("") @map("base_layout_image_url")
+  /// Zoom percent for base layout (50–300).
+  baseLayoutScalePercent Int @default(100) @map("base_layout_scale_percent")
+  /// Rotation in degrees (-180–180).
+  baseLayoutRotationDeg Int @default(0) @map("base_layout_rotation_deg")
+  /// Opacity 0–100 for base layout image.
+  baseLayoutOpacityPercent Int @default(100) @map("base_layout_opacity_percent")
+  /// Pan offset for base layout in design px (admin preview drag).
+  baseLayoutOffsetXPx Int @default(0) @map("base_layout_offset_x_px")
+  baseLayoutOffsetYPx Int @default(0) @map("base_layout_offset_y_px")
+
+  /// Border style (none | solid | solid_with_bottom_text), stroke, color, bottom text — see `label-template-border.ts`.
+  borderConfigJson Json @default("{}") @map("border_config_json")
+
+  /// Admin premade layout: text/images with optional locked elements (customer can unlock).
+  starterDocumentJson Json? @map("starter_document_json")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customerDesigns CustomerLabelDesign[]
+  cartLines       CartLabelItem[]
+  orderLines      OrderLabelLine[]
+  finishOptions   LabelTemplateFinishOption[]
+
+  @@map("label_templates")
+}
+
+/// Global label finish (material, coating, etc.) — enabled per template with optional price override.
+model LabelFinishOption {
+  id              String   @id @default(cuid())
+  name            String
+  groupName       String   @default("") @map("group_name")
+  active          Boolean  @default(true)
+  sortOrder       Int      @default(0) @map("sort_order")
+  priceDeltaCents Int      @default(0) @map("price_delta_cents")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  templateLinks LabelTemplateFinishOption[]
+
+  @@index([active, sortOrder])
+  @@map("label_finish_options")
+}
+
+model LabelTemplateFinishOption {
+  templateId       String @map("template_id")
+  template         LabelTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  finishOptionId   String @map("finish_option_id")
+  finishOption     LabelFinishOption @relation(fields: [finishOptionId], references: [id], onDelete: Cascade)
+  enabled          Boolean @default(true)
+  /// When null, use the global option's priceDeltaCents.
+  priceDeltaCents  Int?    @map("price_delta_cents")
+
+  @@id([templateId, finishOptionId])
+  @@map("label_template_finish_options")
+}
+
+/// Admin-uploaded sticker images for the customer label editor.
+model LabelStickerAsset {
+  id        String   @id @default(cuid())
+  name      String
+  imageUrl  String   @map("image_url")
+  sortOrder Int      @default(0) @map("sort_order")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([active, sortOrder])
+  @@map("label_sticker_assets")
+}
+
+/// Customer folder for organizing saved label designs.
+model CustomerLabelDesignFolder {
+  id         String   @id @default(cuid())
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  name       String
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  designs CustomerLabelDesign[]
+
+  @@index([customerId, sortOrder])
+  @@map("customer_label_design_folders")
+}
+
+/// Customer-saved label layout (editor document JSON).
+model CustomerLabelDesign {
+  id           String        @id @default(cuid())
+  customerId   String        @map("customer_id")
+  customer     Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  templateId   String        @map("template_id")
+  template     LabelTemplate   @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  folderId     String?       @map("folder_id")
+  folder       CustomerLabelDesignFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  name         String
+  documentJson Json          @map("document_json")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  cartLines CartLabelItem[]
+
+  @@index([customerId, updatedAt(sort: Desc)])
+  @@index([customerId, folderId])
+  @@map("customer_label_designs")
+}
+
+/// Server copy of a customer's label bag / selection (synced from the editor).
+model CustomerLabelBag {
+  customerId  String   @id @map("customer_id")
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  itemsJson   Json     @map("items_json")
+  foldersJson Json?    @map("folders_json")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("customer_label_bags")
+}
+
+/// Customer image library for the label editor (reusable across sessions).
+model CustomerLabelUpload {
+  id         String   @id @default(cuid())
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  imageUrl   String   @map("image_url")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([customerId, createdAt(sort: Desc)])
+  @@map("customer_label_uploads")
+}
+
+/// Searchable genus/species/morph names for the label builder (admin-approved entries are visible to customers).
+model SpeciesCatalogEntry {
+  id          String   @id @default(cuid())
+  /// e.g. coral, fish, plant — free-form label type for filtering.
+  type        String   @default("")
+  genus       String
+  species     String
+  commonName  String   @default("") @map("common_name")
+  morph       String   @default("")
+  approved    Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([type])
+  @@index([genus])
+  @@index([species])
+  @@index([approved])
+  @@index([createdAt])
+  @@map("species_catalog_entries")
+}
+
+model ShippingOption {
+  id          String   @id @default(cuid())
+  label       String
+  description String   @default("") @db.Text
+  /// Price in USD cents (0 = free).
+  priceCents  Int
+  sortOrder   Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  carts  Cart[]
+  orders Order[]
+
+  @@map("shipping_options")
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  customerId  String?
+  customer    Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  status      OrderStatus @default(PENDING)
+  subtotalCents Int
+  taxCents      Int       @default(0)
+  shippingCents Int       @default(0)
+  totalCents    Int
+  /// Snapshot: promo code normalized for receipts (checkout coupon events only).
+  checkoutCouponCodeSnap      String @default("") @db.Text
+  /// Total cents discounted from merchandise via checkout coupon vs pre-coupon merchandise on this order.
+  checkoutCouponDiscountCents Int    @default(0)
+  /// Points redeemed on this order (deducted from customer balance when paid).
+  loyaltyPointsRedeemed Int @default(0) @map("loyalty_points_redeemed")
+  /// Merchandise discount from loyalty redemption (cents), included in line totals / subtotal.
+  loyaltyRedemptionDiscountCents Int @default(0) @map("loyalty_redemption_discount_cents")
+  /// Snapshot of redemption rate at checkout (cents per point).
+  loyaltyRedemptionCentsPerPointSnap Int @default(0) @map("loyalty_redemption_cents_per_point_snap")
+  /// Optional link to the option used at checkout (SetNull if option removed).
+  shippingOptionId  String?
+  shippingOption    ShippingOption? @relation(fields: [shippingOptionId], references: [id], onDelete: SetNull)
+  /// Label copied at checkout time for receipts and admin.
+  shippingLabelSnap String @default("")
+
+  /// Shown to the customer on /account when set (e.g. carrier tracking id or URL).
+  trackingNumber String @default("") @map("tracking_number")
+  trackingCarrier TrackingCarrier @default(NONE) @map("tracking_carrier")
+
+  /// Stripe Checkout Session ID while awaiting payment (`cs_…`).
+  stripeCheckoutSessionId String? @unique @map("stripe_checkout_session_id")
+  /// Square Payments API payment id once successfully charged.
+  squarePaymentId String? @unique @map("square_payment_id")
+
+  /// Custom label merchandise subtotal at checkout (0 when no labels).
+  labelMerchandiseCentsSnap Int @default(0) @map("label_merchandise_cents_snap")
+
+  /// Hidden from default sales list when set (admin can show archived).
+  archivedAt DateTime? @map("archived_at")
+  /// Admin pick checklist: keys like `li:{id}` / `label:{id}` → checked (fulfillment UI only).
+  adminPickChecksJson Json @default("{}") @map("admin_pick_checks_json")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lineItems     OrderLineItem[]
+  labelLines    OrderLabelLine[]
+  pointsLedgers PointsLedger[]
+
+  @@index([archivedAt])
+  @@map("orders")
+}
+
+/// Snapshot of custom label cart lines at checkout (for admin fulfillment and print export).
+model OrderLabelLine {
+  id             String   @id @default(cuid())
+  orderId        String   @map("order_id")
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  templateId     String   @map("template_id")
+  template       LabelTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  savedDesignId  String?  @map("saved_design_id")
+  displayName    String   @map("display_name")
+  documentJson   Json     @map("document_json")
+  quantity       Int      @default(1)
+  unitCents      Int      @map("unit_cents")
+  lineTotalCents Int      @map("line_total_cents")
+  dataRowLabel   String?  @map("data_row_label")
+  widthMm        Float    @map("width_mm")
+  heightMm       Float    @map("height_mm")
+  labelsPerSheet Int      @map("labels_per_sheet")
+  sheetsCount    Int      @map("sheets_count")
+  sheetFormat    String   @map("sheet_format")
+  sortOrder      Int      @default(0) @map("sort_order")
+
+  @@index([orderId])
+  @@map("order_label_lines")
+}
+
+model OrderLineItem {
+  id               String @id @default(cuid())
+  orderId          String
+  order            Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId        String
+  product          Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  variantId        String?
+  variant          ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  productNameSnap  String
+  variantLabelSnap String?
+  quantity         Int
+  unitPriceCents   Int
+  lineTotalCents   Int
+
+  @@map("order_line_items")
+}
+
+model PointsLedger {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  delta      Int
+  reason     String
+  orderId    String?
+  order      Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+
+  @@index([customerId, createdAt])
+  @@map("points_ledger")
+}
+
+model Cart {
+  id         String    @id @default(cuid())
+  customerId String?   @unique
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  sessionId  String?   @unique
+  selectedShippingOptionId String?
+  selectedShippingOption   ShippingOption? @relation(fields: [selectedShippingOptionId], references: [id], onDelete: SetNull)
+  appliedCouponEventId String?
+  appliedCoupon Event? @relation("CartAppliedCouponEvent", fields: [appliedCouponEventId], references: [id], onDelete: SetNull)
+  /// Whole points the customer intends to redeem at checkout (clamped server-side when building the order).
+  appliedLoyaltyPoints Int @default(0) @map("applied_loyalty_points")
+  updatedAt  DateTime  @updatedAt
+
+  items      CartItem[]
+  labelItems CartLabelItem[]
+
+  @@map("carts")
+}
+
+/// Custom label line in the storefront cart (printable sheet pricing; document stored for fulfillment).
+model CartLabelItem {
+  id              String   @id @default(cuid())
+  cartId          String   @map("cart_id")
+  cart            Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  templateId      String   @map("template_id")
+  template        LabelTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  savedDesignId   String?  @map("saved_design_id")
+  savedDesign     CustomerLabelDesign? @relation(fields: [savedDesignId], references: [id], onDelete: SetNull)
+  displayName     String   @map("display_name")
+  documentJson    Json     @map("document_json")
+  quantity        Int      @default(1)
+  unitCents       Int      @map("unit_cents")
+  lineTotalCents  Int      @map("line_total_cents")
+  dataRowLabel    String?  @map("data_row_label")
+  widthMm         Float    @map("width_mm")
+  heightMm        Float    @map("height_mm")
+  labelsPerSheet  Int      @map("labels_per_sheet")
+  sheetsCount     Int      @map("sheets_count")
+  sheetFormat     String   @map("sheet_format")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([cartId])
+  @@map("cart_label_items")
+}
+
+model CartItem {
+  id        String @id @default(cuid())
+  cartId    String
+  cart      Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  quantity  Int    @default(1)
+  /// When set (TIMED storefront context), timed sale rules apply server-side while the sale is active.
+  timedSaleEventId String?
+  timedSaleEvent   Event?  @relation("CartItemTimedSaleEvent", fields: [timedSaleEventId], references: [id], onDelete: SetNull)
+  /// Discriminates merged lines — `__none__` for normal adds, else equals timedSaleEventId (Prisma rejects null-compound-uniq sentinel).
+  pricingScopeKey String @default("__none__")
+
+  @@unique([cartId, productId, variantId, pricingScopeKey])
+  @@map("cart_items")
+}
+
+/// Storefront page load (every navigation).
+model AnalyticsPageImpression {
+  id         String   @id @default(cuid())
+  path       String
+  sessionKey String   @map("session_key")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([path, createdAt])
+  @@map("analytics_page_impressions")
+}
+
+/// One counted visit per browser session, path, and calendar day.
+model AnalyticsPageVisit {
+  id         String   @id @default(cuid())
+  path       String
+  sessionKey String   @map("session_key")
+  visitDay   DateTime @db.Date @map("visit_day")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([sessionKey, path, visitDay])
+  @@index([visitDay])
+  @@index([path, visitDay])
+  @@map("analytics_page_visits")
+}

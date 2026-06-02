@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "PaneType" ADD VALUE 'STORE_BANNER';

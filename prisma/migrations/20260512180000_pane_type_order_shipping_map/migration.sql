@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "PaneType" ADD VALUE 'ORDER_SHIPPING_MAP';
