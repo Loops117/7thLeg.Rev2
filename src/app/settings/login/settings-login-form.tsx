@@ -27,10 +27,12 @@ export function SettingsLoginForm({ authConfigured = true }: { authConfigured?: 
       if (res?.error) {
         if (res.error === "Configuration") {
           setError(
-            "Server auth is not configured (missing AUTH_SECRET). Add it in Vercel/host env vars and redeploy.",
+            "Auth configuration error on the server. Redeploy after setting AUTH_SECRET, or check /api/health on this same URL.",
           );
-        } else {
+        } else if (res.error === "CredentialsSignin") {
           setError("Invalid email or password.");
+        } else {
+          setError(`Sign-in failed (${res.error}). Check that this deployment has your admin user in admin_users.`);
         }
         setPending(false);
         return;

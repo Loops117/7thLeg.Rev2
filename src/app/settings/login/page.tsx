@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { hasAuthSecretConfigured } from "@/lib/auth-secret";
 import { SettingsLoginForm } from "./settings-login-form";
 
+export const dynamic = "force-dynamic";
+
 function authEnvReady() {
-  const secret =
-    process.env.AUTH_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim() || "";
-  const db = process.env.DATABASE_URL?.trim() || "";
-  return { hasAuthSecret: secret.length >= 16, hasDatabaseUrl: db.length > 0 };
+  return {
+    hasAuthSecret: hasAuthSecretConfigured(),
+    hasDatabaseUrl: Boolean(process.env.DATABASE_URL?.trim()),
+  };
 }
 
 export default function SettingsLoginPage() {

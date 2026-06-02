@@ -1,19 +1,17 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { hasAuthSecretConfigured } from "@/lib/auth-secret";
 import { prisma } from "@/lib/prisma";
 
-const authSecret =
-  process.env.AUTH_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim() || undefined;
-
-if (!authSecret && process.env.NODE_ENV === "production") {
+if (!hasAuthSecretConfigured() && process.env.NODE_ENV === "production") {
   console.error(
     "[auth] Missing AUTH_SECRET (or NEXTAUTH_SECRET). Admin/customer sign-in will fail with a configuration error.",
   );
 }
 
+/** Do not pass `secret` here — Auth.js reads AUTH_SECRET at runtime (Vercel only injects env then). */
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  secret: authSecret,
   trustHost: true,
   providers: [
     Credentials({
