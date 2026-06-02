@@ -23,14 +23,17 @@ npm run dev
 | `DATABASE_URL` | Postgres connection (Supabase pooler on Vercel) |
 | `AUTH_SECRET` | NextAuth signing secret — **required** or admin login shows “server configuration” error |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Used by `npm run db:seed` only |
+| `BLOB_READ_WRITE_TOKEN` | **Required on Vercel** for admin image uploads (product, theme, logo). Serverless disk is read-only. |
 
 Generate `AUTH_SECRET`: `openssl rand -base64 32`
+
+**Vercel Blob:** Project → **Storage** → **Blob** → create/connect store to `7thleg-rev2` (adds `BLOB_READ_WRITE_TOKEN` automatically). Or: `npx vercel blob create-store 7thleg-rev2 --access public --yes` from this directory. Local dev: `vercel env pull` for `.env.local`.
 
 **Vercel:** copy the same `DATABASE_URL` and `AUTH_SECRET` from your local `.env` into Project → Settings → Environment Variables (Production + Preview), then redeploy.
 
 Set **`AUTH_URL`** to your live URL, e.g. `https://7thleg-rev2.vercel.app` (no trailing slash). **Do not** use `http://localhost:3000` on Vercel — sign-in will fail even when `/api/health` shows `hasAuthSecret: true`.
 
-Check deployment: open `/api/health` — `hasAuthSecret` and `hasDatabaseUrl` should both be `true`, and `authUrlLooksLocal` should be `false`.
+Check deployment: open `/api/health` — `hasAuthSecret`, `hasDatabaseUrl`, and `hasBlobStorage` should be `true`, and `authUrlLooksLocal` should be `false`.
 
 ### Branding, theme colors, and site name
 

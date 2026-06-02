@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isRemoteBlobStorage } from "@/lib/app-uploads";
 import { hasAuthSecretConfigured } from "@/lib/auth-secret";
 import { ensureProductionAuthUrl, publicAuthBaseUrl } from "@/lib/auth-url";
 
@@ -25,6 +26,7 @@ export async function GET() {
     ok: true,
     hasDatabaseUrl: Boolean(process.env.DATABASE_URL?.trim()),
     hasAuthSecret: hasAuthSecretConfigured(),
+    hasBlobStorage: isRemoteBlobStorage(),
     authBaseUrl,
     authUrlLooksLocal,
     vercelUrl: process.env.VERCEL_URL?.trim() || null,
