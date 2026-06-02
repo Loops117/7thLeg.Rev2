@@ -9,6 +9,7 @@ import { loadProductTypeIndex } from "@/lib/product-type-tree";
 import { prisma } from "@/lib/prisma";
 import { parseVariantPriceDisplay } from "@/lib/product-variant-price-display";
 import { parsePriceToCents, slugifyProductName } from "@/lib/product-slug";
+import { clampShippingUnits } from "@/lib/shipping-units";
 
 async function requireAdmin() {
   const session = await auth();
@@ -55,6 +56,8 @@ export type CreateProductInput = {
   /** Extra automatic footers attached to this product (in addition to type defaults). */
   footerIds: string[];
   variantPriceDisplay?: "full" | "difference";
+  shippingUnits?: number;
+  excludedShippingOptionIds?: string[];
 };
 
 export type CreateProductResult =
@@ -107,6 +110,20 @@ export async function createProduct(input: CreateProductInput): Promise<CreatePr
     validFooterIds = found.map((f) => f.id);
   }
 
+  const shippingUnits = clampShippingUnits(input.shippingUnits ?? 1);
+
+  const excludedIds = Array.isArray(input.excludedShippingOptionIds)
+    ? [...new Set(input.excludedShippingOptionIds.filter(Boolean))]
+    : [];
+  let validExcludedShippingOptionIds: string[] = [];
+  if (excludedIds.length > 0) {
+    const found = await prisma.shippingOption.findMany({
+      where: { id: { in: excludedIds } },
+      select: { id: true },
+    });
+    validExcludedShippingOptionIds = found.map((o) => o.id);
+  }
+
   let newProductId = "";
   try {
     await prisma.$transaction(async (tx) => {
@@ -125,6 +142,7 @@ export async function createProduct(input: CreateProductInput): Promise<CreatePr
           onSale: !!input.onSale,
           saleEndsAt,
           variantPriceDisplay: parseVariantPriceDisplay(input.variantPriceDisplay),
+          shippingUnits,
         },
       });
       newProductId = product.id;
@@ -151,6 +169,12 @@ export async function createProduct(input: CreateProductInput): Promise<CreatePr
           data: { productId: product.id, footerId },
         });
       }
+
+      for (const shippingOptionId of validExcludedShippingOptionIds) {
+        await tx.productShippingOptionExclusion.create({
+          data: { productId: product.id, shippingOptionId },
+        });
+      }
     });
   } catch (e) {
     console.error(e);
@@ -159,6 +183,7 @@ export async function createProduct(input: CreateProductInput): Promise<CreatePr
 
   revalidatePath("/store");
   revalidatePath("/settings/products");
+  revalidatePath("/cart");
   revalidatePath(`/product/${slug}`);
   return { ok: true, slug, id: newProductId };
 }
@@ -179,6 +204,8 @@ export type UpdateProductInput = {
   typeIds: string[];
   footerIds: string[];
   variantPriceDisplay?: "full" | "difference";
+  shippingUnits?: number;
+  excludedShippingOptionIds?: string[];
 };
 
 export type UpdateProductResult =
@@ -243,6 +270,20 @@ export async function updateProduct(input: UpdateProductInput): Promise<UpdatePr
     validFooterIds = found.map((f) => f.id);
   }
 
+  const shippingUnits = clampShippingUnits(input.shippingUnits ?? 1);
+
+  const excludedIds = Array.isArray(input.excludedShippingOptionIds)
+    ? [...new Set(input.excludedShippingOptionIds.filter(Boolean))]
+    : [];
+  let validExcludedShippingOptionIds: string[] = [];
+  if (excludedIds.length > 0) {
+    const found = await prisma.shippingOption.findMany({
+      where: { id: { in: excludedIds } },
+      select: { id: true },
+    });
+    validExcludedShippingOptionIds = found.map((o) => o.id);
+  }
+
   try {
     await prisma.$transaction(async (tx) => {
       await tx.product.update({
@@ -266,6 +307,7 @@ export async function updateProduct(input: UpdateProductInput): Promise<UpdatePr
           ...(input.variantPriceDisplay !== undefined
             ? { variantPriceDisplay: parseVariantPriceDisplay(input.variantPriceDisplay) }
             : {}),
+          shippingUnits,
         },
       });
 
@@ -278,6 +320,13 @@ export async function updateProduct(input: UpdateProductInput): Promise<UpdatePr
       for (const footerId of validFooterIds) {
         await tx.productOnFooter.create({ data: { productId: input.id, footerId } });
       }
+
+      await tx.productShippingOptionExclusion.deleteMany({ where: { productId: input.id } });
+      for (const shippingOptionId of validExcludedShippingOptionIds) {
+        await tx.productShippingOptionExclusion.create({
+          data: { productId: input.id, shippingOptionId },
+        });
+      }
     });
   } catch (e) {
     console.error(e);
@@ -286,6 +335,7 @@ export async function updateProduct(input: UpdateProductInput): Promise<UpdatePr
 
   revalidatePath("/store");
   revalidatePath("/settings/products");
+  revalidatePath("/cart");
   revalidatePath(`/settings/products/${input.id}/edit`);
   revalidatePath(`/product/${existing.slug}`);
   if (slug !== existing.slug) {
@@ -382,6 +432,7 @@ export async function getProductCatalogEditPayload(id: string): Promise<ProductC
     include: {
       types: { select: { typeId: true } },
       footers: { select: { footerId: true } },
+      shippingOptionExclusions: { select: { shippingOptionId: true } },
       images: { orderBy: { sortOrder: "asc" } },
       variants: {
         orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
@@ -419,6 +470,8 @@ export async function getProductCatalogEditPayload(id: string): Promise<ProductC
     typeIds: product.types.map((t) => t.typeId),
     footerIds: product.footers.map((f) => f.footerId),
     variantPriceDisplay: parseVariantPriceDisplay(product.variantPriceDisplay),
+    shippingUnits: product.shippingUnits,
+    excludedShippingOptionIds: product.shippingOptionExclusions.map((row) => row.shippingOptionId),
   };
   const media: ProductMediaAdmin = {
     images: product.images.map((im) => ({

@@ -1,3 +1,8 @@
+import {
+  getEligibleShippingOptionsForCustomer,
+  loadCartShippingLines,
+  totalShippingUnitsForCart,
+} from "@/lib/shipping-eligibility";
 import { prisma } from "@/lib/prisma";
 
 export type StorefrontShippingOption = {
@@ -16,13 +21,25 @@ export async function getActiveShippingOptionsForStorefront(): Promise<Storefron
   return rows;
 }
 
+/** Active shipping options that fit the customer's current cart (units + per-product exclusions). */
+export async function getCartEligibleShippingOptionsForCustomer(
+  customerId: string,
+): Promise<StorefrontShippingOption[]> {
+  return getEligibleShippingOptionsForCustomer(customerId);
+}
+
+export async function getCartShippingUnitsTotal(customerId: string): Promise<number> {
+  const lines = await loadCartShippingLines(customerId);
+  return totalShippingUnitsForCart(lines);
+}
+
 /**
- * Keeps cart selection aligned with currently active options: clears stale FKs,
+ * Keeps cart selection aligned with eligible options: clears stale FKs,
  * picks the first option when any exist and none is selected.
  */
 export async function ensureCartShippingSelection(
   customerId: string,
-  activeOptions: StorefrontShippingOption[],
+  eligibleOptions: StorefrontShippingOption[],
 ): Promise<string | null> {
   const cart = await prisma.cart.findUnique({
     where: { customerId },
@@ -30,7 +47,7 @@ export async function ensureCartShippingSelection(
   });
   if (!cart) return null;
 
-  if (activeOptions.length === 0) {
+  if (eligibleOptions.length === 0) {
     if (cart.selectedShippingOptionId != null) {
       await prisma.cart.update({
         where: { id: cart.id },
@@ -40,12 +57,12 @@ export async function ensureCartShippingSelection(
     return null;
   }
 
-  const allowed = new Set(activeOptions.map((o) => o.id));
+  const allowed = new Set(eligibleOptions.map((o) => o.id));
   let sel = cart.selectedShippingOptionId;
   if (sel && !allowed.has(sel)) sel = null;
 
   if (sel === null) {
-    sel = activeOptions[0].id;
+    sel = eligibleOptions[0].id;
     await prisma.cart.update({
       where: { id: cart.id },
       data: { selectedShippingOptionId: sel },
@@ -53,4 +70,10 @@ export async function ensureCartShippingSelection(
   }
 
   return sel;
+}
+
+/** Recompute eligible options after cart changes and fix the selected shipping method. */
+export async function reconcileCartShippingSelection(customerId: string): Promise<void> {
+  const eligible = await getEligibleShippingOptionsForCustomer(customerId);
+  await ensureCartShippingSelection(customerId, eligible);
 }

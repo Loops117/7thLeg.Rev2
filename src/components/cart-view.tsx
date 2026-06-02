@@ -68,6 +68,8 @@ type Props = {
   payments: CartPaymentAvailability;
   shippingOptions: StorefrontShippingOption[];
   selectedShippingOptionId: string | null;
+  cartShippingUnitsTotal?: number;
+  shippingRequiredButUnavailable?: boolean;
   loyaltyPreview: LoyaltyCartPreview | null;
   labelBuilderPublicConfig?: LabelBuilderPublicConfig | null;
   freeShippingActive?: boolean;
@@ -86,6 +88,8 @@ export function CartView({
   payments,
   shippingOptions,
   selectedShippingOptionId,
+  cartShippingUnitsTotal = 0,
+  shippingRequiredButUnavailable = false,
   loyaltyPreview,
   labelBuilderPublicConfig = null,
   freeShippingActive = false,
@@ -546,6 +550,9 @@ export function CartView({
         <div className="rounded border-2 border-palm/25 bg-white/80 p-4 shadow-sm">
           <h2 className="text-xs font-black uppercase tracking-wide text-palm-mid">Shipping</h2>
           <p className="mt-1 text-sm text-ink/75">Choose how this order should be delivered or picked up.</p>
+          {cartShippingUnitsTotal > 0 ? (
+            <p className="mt-1 text-xs text-ink/60">Order size: {cartShippingUnitsTotal} shipping units</p>
+          ) : null}
           {shippingError ? <p className="mt-2 text-sm font-medium text-coral">{shippingError}</p> : null}
           <ul className="mt-4 space-y-3">
             {shippingOptions.map((opt) => {
@@ -580,6 +587,13 @@ export function CartView({
               );
             })}
           </ul>
+        </div>
+      ) : shippingRequiredButUnavailable ? (
+        <div className="rounded border-2 border-coral/40 bg-coral/5 p-4 shadow-sm">
+          <h2 className="text-xs font-black uppercase tracking-wide text-coral">Shipping unavailable</h2>
+          <p className="mt-2 text-sm text-ink/85">
+            No shipping method fits this cart ({cartShippingUnitsTotal} units). Remove items or contact the store.
+          </p>
         </div>
       ) : null}
 
@@ -651,7 +665,11 @@ export function CartView({
         ) : null}
 
         <div className="mt-6 max-w-md space-y-4 sm:ml-auto">
-          {orderTotalPreview <= 0 ? (
+          {shippingRequiredButUnavailable ? (
+            <p className="text-sm font-medium text-coral">
+              Checkout is blocked until your cart fits an available shipping box.
+            </p>
+          ) : orderTotalPreview <= 0 ? (
             <CartFreeCheckoutButton disabled={lines.length === 0 && labelLines.length === 0} />
           ) : (
             <>

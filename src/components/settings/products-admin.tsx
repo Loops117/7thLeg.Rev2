@@ -32,6 +32,7 @@ export function ProductsAdminPanel({
   filterTypes,
   typeHierarchy,
   footers,
+  shippingOptions,
   editPayload,
   editIdFromUrl,
   editNotFound,
@@ -41,6 +42,7 @@ export function ProductsAdminPanel({
   filterTypes: { id: string; pathLabel: string }[];
   typeHierarchy: ProductTypeFlat[];
   footers: ProductFooterOption[];
+  shippingOptions: { id: string; label: string }[];
   editPayload: ProductCatalogEditPayload | null;
   editIdFromUrl: string | null;
   editNotFound?: boolean;
@@ -216,6 +218,7 @@ export function ProductsAdminPanel({
             initial={editorInitial}
             typePickerGroups={typePickerGroups}
             footers={footers}
+            shippingOptions={shippingOptions}
             catalogMode
             onCatalogSaved={handleCatalogSaved}
             onClear={handleClear}

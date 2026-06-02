@@ -16,6 +16,7 @@ export type ShippingOptionAdminRow = {
   label: string;
   description: string;
   priceCents: number;
+  maxShippingUnits: number;
   sortOrder: number;
   active: boolean;
 };
@@ -38,6 +39,7 @@ function OptionCard({ row }: { row: ShippingOptionAdminRow }) {
   const [label, setLabel] = useState(row.label);
   const [description, setDescription] = useState(row.description);
   const [priceStr, setPriceStr] = useState(() => centsToUsdInput(row.priceCents));
+  const [maxShippingUnits, setMaxShippingUnits] = useState(String(row.maxShippingUnits));
   const [sortOrder, setSortOrder] = useState(String(row.sortOrder));
   const [active, setActive] = useState(row.active);
 
@@ -45,9 +47,10 @@ function OptionCard({ row }: { row: ShippingOptionAdminRow }) {
     setLabel(row.label);
     setDescription(row.description);
     setPriceStr(centsToUsdInput(row.priceCents));
+    setMaxShippingUnits(String(row.maxShippingUnits));
     setSortOrder(String(row.sortOrder));
     setActive(row.active);
-  }, [row.label, row.description, row.priceCents, row.sortOrder, row.active, row.id]);
+  }, [row.label, row.description, row.priceCents, row.maxShippingUnits, row.sortOrder, row.active, row.id]);
 
   function save() {
     setMsg("");
@@ -57,11 +60,17 @@ function OptionCard({ row }: { row: ShippingOptionAdminRow }) {
       return;
     }
     const ord = Number.parseInt(sortOrder, 10);
+    const maxUnits = Number.parseInt(maxShippingUnits, 10);
+    if (!Number.isFinite(maxUnits) || maxUnits < 1) {
+      setMsg("Enter a valid max shipping units (1 or more).");
+      return;
+    }
     startTransition(async () => {
       const r = await adminUpdateShippingOption(row.id, {
         label,
         description,
         priceCents: cents,
+        maxShippingUnits: maxUnits,
         sortOrder: Number.isFinite(ord) ? ord : 0,
         active,
       });
@@ -100,6 +109,8 @@ function OptionCard({ row }: { row: ShippingOptionAdminRow }) {
           <span className="shrink-0 text-xs font-medium text-ink/70 dark:text-zinc-400">
             {previewPrice !== null ? formatPriceUsd(previewPrice) : formatPriceUsd(row.priceCents)}
             {" · "}
+            {maxShippingUnits.trim() || row.maxShippingUnits} units
+            {" · "}
             {active ? "Active" : "Inactive"}
           </span>
         </summary>
@@ -124,6 +135,22 @@ function OptionCard({ row }: { row: ShippingOptionAdminRow }) {
             onChange={(e) => setPriceStr(e.target.value)}
             disabled={pending}
           />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-black uppercase tracking-wide text-palm dark:text-emerald-300">
+            Max shipping units
+          </span>
+          <input
+            type="number"
+            min={1}
+            className="border-2 border-palm/25 px-2 py-1.5 text-sm dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
+            value={maxShippingUnits}
+            onChange={(e) => setMaxShippingUnits(e.target.value)}
+            disabled={pending}
+          />
+          <span className="text-[11px] text-ink/60 dark:text-zinc-500">
+            Total units from the cart must fit in this box.
+          </span>
         </label>
         <label className="flex flex-col gap-1 sm:col-span-2">
           <span className="text-xs font-black uppercase tracking-wide text-palm dark:text-emerald-300">
@@ -196,6 +223,7 @@ function AddShippingForm() {
         label: "Standard shipping",
         description: "",
         priceCents: 500,
+        maxShippingUnits: 10,
         sortOrder: 0,
         active: true,
       });

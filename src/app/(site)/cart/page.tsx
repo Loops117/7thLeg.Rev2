@@ -2,7 +2,11 @@ import Link from "next/link";
 import { auth as readAuthSession } from "@/auth";
 import { CartView } from "@/components/cart-view";
 import { getCartPaymentAvailability } from "@/lib/cart-payment-availability";
-import { ensureCartShippingSelection, getActiveShippingOptionsForStorefront } from "@/lib/shipping-options-public";
+import {
+  ensureCartShippingSelection,
+  getCartEligibleShippingOptionsForCustomer,
+  getCartShippingUnitsTotal,
+} from "@/lib/shipping-options-public";
 import { prisma } from "@/lib/prisma";
 import { getLabelBuilderPublicConfig } from "@/lib/label-builder-public";
 import { priceLabelCartForCustomer } from "@/lib/label-cart-event-pricing";
@@ -111,11 +115,20 @@ export default async function CartPage({ searchParams }: Props) {
     ? 0
     : Math.max(0, merchandiseListSubtotalCents - merchandiseBeforeCouponSubtotalCents);
 
-  let shippingOptions: Awaited<ReturnType<typeof getActiveShippingOptionsForStorefront>> = [];
+  let shippingOptions: Awaited<ReturnType<typeof getCartEligibleShippingOptionsForCustomer>> = [];
   let selectedShippingOptionId: string | null = null;
+  let cartShippingUnitsTotal = 0;
+  let shippingRequiredButUnavailable = false;
 
   if (lines.length > 0 || labelLines.length > 0) {
-    shippingOptions = await getActiveShippingOptionsForStorefront();
+    const [eligible, unitsTotal, activeCount] = await Promise.all([
+      getCartEligibleShippingOptionsForCustomer(session.user.id),
+      getCartShippingUnitsTotal(session.user.id),
+      prisma.shippingOption.count({ where: { active: true } }),
+    ]);
+    shippingOptions = eligible;
+    cartShippingUnitsTotal = unitsTotal;
+    shippingRequiredButUnavailable = lines.length > 0 && activeCount > 0 && eligible.length === 0;
     selectedShippingOptionId = await ensureCartShippingSelection(session.user.id, shippingOptions);
   }
 
@@ -141,6 +154,8 @@ export default async function CartPage({ searchParams }: Props) {
         payments={payments}
         shippingOptions={shippingOptions}
         selectedShippingOptionId={selectedShippingOptionId}
+        cartShippingUnitsTotal={cartShippingUnitsTotal}
+        shippingRequiredButUnavailable={shippingRequiredButUnavailable}
         loyaltyPreview={loyaltyPreview}
         labelBuilderPublicConfig={labelBuilderPublicConfig}
         freeShippingActive={freeShippingActive}

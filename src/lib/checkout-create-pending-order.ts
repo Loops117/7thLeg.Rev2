@@ -3,6 +3,7 @@ import { computeCheckoutMerchandiseTotals } from "@/lib/checkout-merchandise-tot
 import { checkoutHasActiveFreeShipping } from "@/lib/checkout-shipping";
 import { shippingCentsAfterEventDiscount } from "@/lib/checkout-shipping-display";
 import { taxCentsFromSubtotal } from "@/lib/checkout-tax";
+import { getEligibleShippingOptionsForCustomer, loadCartShippingLines } from "@/lib/shipping-eligibility";
 import { applyLoyaltyDiscountToPendingLineCreates } from "@/lib/loyalty-line-discount";
 import { planLoyaltyRedemptionForCheckout } from "@/lib/loyalty-redemption-preview";
 import { snapshotCartLabelsToOrder } from "@/lib/order-label-snapshot";
@@ -43,16 +44,14 @@ export async function createFreshPendingCheckoutOrder(
     lineTotalCents: l.lineTotalCents,
   }));
 
-  const [activeShippingOpts, siteCfg, customerRow] = await Promise.all([
-    prisma.shippingOption.findMany({
-      where: { active: true },
-      orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
-    }),
+  const [eligibleShippingOpts, siteCfg, customerRow, cartShippingLines] = await Promise.all([
+    getEligibleShippingOptionsForCustomer(customerId),
     prisma.siteConfig.findUnique({
       where: { id: 1 },
       select: { checkoutTaxRateBps: true, loyaltyEnabled: true, loyaltyRedemptionCentsPerPoint: true },
     }),
     prisma.customer.findUnique({ where: { id: customerId }, select: { pointsBalance: true } }),
+    loadCartShippingLines(customerId),
   ]);
 
   const merchBeforeLoyalty = totals.combinedPayableCents;
@@ -92,9 +91,18 @@ export async function createFreshPendingCheckoutOrder(
 
   const freeShipping = await checkoutHasActiveFreeShipping(customerId);
 
-  if (activeShippingOpts.length > 0) {
+  const activeShippingCount = await prisma.shippingOption.count({ where: { active: true } });
+
+  if (activeShippingCount > 0) {
+    if (cartShippingLines.length > 0 && eligibleShippingOpts.length === 0) {
+      return {
+        ok: false,
+        error: "No shipping method fits this cart. Remove items or contact the store.",
+      };
+    }
+
     const sel = totals.selectedShippingOptionId;
-    const picked = sel ? activeShippingOpts.find((o) => o.id === sel) : null;
+    const picked = sel ? eligibleShippingOpts.find((o) => o.id === sel) : null;
     if (!picked) {
       return { ok: false, error: "Choose a shipping method before checkout." };
     }

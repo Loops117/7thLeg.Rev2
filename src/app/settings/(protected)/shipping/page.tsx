@@ -9,6 +9,7 @@ export default async function SettingsShippingPage() {
       label: true,
       description: true,
       priceCents: true,
+      maxShippingUnits: true,
       sortOrder: true,
       active: true,
     },
@@ -20,9 +21,11 @@ export default async function SettingsShippingPage() {
         Shipping
       </h1>
       <p className="mt-4 max-w-2xl text-sm text-ink/80 dark:text-zinc-400">
-        Define pickup or delivery tiers customers choose on the cart. When at least one option is{" "}
-        <strong className="text-ink dark:text-zinc-200">active</strong>, checkout requires a selection and totals include
-        the chosen amount. Leave every option inactive (or none at all) to keep free shipping behaviour.
+        Define pickup or delivery tiers customers choose on the cart. Set each option&apos;s{" "}
+        <strong className="text-ink dark:text-zinc-200">max shipping units</strong> to match box capacity. When at least
+        one option is <strong className="text-ink dark:text-zinc-200">active</strong>, checkout requires a selection
+        that fits the cart (product units × quantity, minus per-product box exclusions). Leave every option inactive (or
+        none at all) to keep free shipping behaviour.
       </p>
       <div className="mt-10">
         <ShippingOptionsEditor initial={options} />

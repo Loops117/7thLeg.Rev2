@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { clampMaxShippingUnitsForOption } from "@/lib/shipping-units";
 
 async function requireAdmin() {
   const session = await auth();
@@ -15,6 +16,7 @@ export type ShippingOptionAdminPayload = {
   label: string;
   description?: string;
   priceCents: number;
+  maxShippingUnits: number;
   sortOrder: number;
   active: boolean;
 };
@@ -28,6 +30,8 @@ function normalizePayload(input: ShippingOptionAdminPayload): { ok: true; data: 
     return { ok: false, error: "Price must be between $0 and a reasonable upper bound." };
   }
 
+  const maxShippingUnits = clampMaxShippingUnitsForOption(input.maxShippingUnits);
+
   const sortOrder = Math.round(Number(input.sortOrder));
   if (!Number.isFinite(sortOrder)) return { ok: false, error: "Sort order must be a number." };
 
@@ -37,6 +41,7 @@ function normalizePayload(input: ShippingOptionAdminPayload): { ok: true; data: 
       label,
       description: input.description ?? "",
       priceCents: price,
+      maxShippingUnits,
       sortOrder,
       active: !!input.active,
     },

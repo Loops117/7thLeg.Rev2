@@ -453,6 +453,8 @@ model Product {
   pointsMultiplier Decimal? @db.Decimal(8, 4)
   /// Storefront option buttons: `full` = list price; `difference` = +/- from base.
   variantPriceDisplay String @default("difference") @map("variant_price_display")
+  /// Admin-only size for shipping box capacity (1–10). Not shown on the storefront.
+  shippingUnits Int @default(1) @map("shipping_units")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -461,6 +463,7 @@ model Product {
   images   ProductImage[]
   types    ProductOnType[]
   footers  ProductOnFooter[]
+  shippingOptionExclusions ProductShippingOptionExclusion[]
 
   cartItems CartItem[]
   lineItems OrderLineItem[]
@@ -926,6 +929,8 @@ model ShippingOption {
   description String   @default("") @db.Text
   /// Price in USD cents (0 = free).
   priceCents  Int
+  /// Maximum total shipping units this box/preset can hold.
+  maxShippingUnits Int @default(10) @map("max_shipping_units")
   sortOrder   Int      @default(0)
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -933,8 +938,20 @@ model ShippingOption {
 
   carts  Cart[]
   orders Order[]
+  productExclusions ProductShippingOptionExclusion[]
 
   @@map("shipping_options")
+}
+
+/// Products that cannot ship in a given box (e.g. too long for a small flat rate).
+model ProductShippingOptionExclusion {
+  productId        String @map("product_id")
+  shippingOptionId String @map("shipping_option_id")
+  product          Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  shippingOption   ShippingOption @relation(fields: [shippingOptionId], references: [id], onDelete: Cascade)
+
+  @@id([productId, shippingOptionId])
+  @@map("product_shipping_option_exclusions")
 }
 
 model Order {

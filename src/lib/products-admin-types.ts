@@ -34,6 +34,8 @@ export type ProductTypePickerGroup = {
 
 export type ProductFooterOption = { id: string; title: string };
 
+export type ProductShippingOptionRef = { id: string; label: string };
+
 /** Admin product editor (create uses null id only in client state until after create). */
 export type ProductEditInitial = {
   id: string;
@@ -51,4 +53,6 @@ export type ProductEditInitial = {
   typeIds: string[];
   footerIds: string[];
   variantPriceDisplay: VariantPriceDisplay;
+  shippingUnits: number;
+  excludedShippingOptionIds: string[];
 };

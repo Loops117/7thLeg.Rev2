@@ -5,6 +5,8 @@ import { auth as readAuthSession } from "@/auth";
 import { EventKind } from "@/generated/prisma/client";
 import { pricingScopeKeyFromTimedSaleEventId } from "@/lib/checkout-cart-pricing";
 import { prisma } from "@/lib/prisma";
+import { reconcileCartShippingSelection } from "@/lib/shipping-options-public";
+import { isShippingOptionEligibleForCustomer } from "@/lib/shipping-eligibility";
 import { getOrCreateCart } from "@/lib/store-cart";
 import { productAppearsInStock, variantIsPurchasable } from "@/lib/product-stock";
 
@@ -111,6 +113,8 @@ export async function addToCartAction(input: {
     });
   }
 
+  await reconcileCartShippingSelection(customerId);
+
   revalidatePath("/cart");
   revalidatePath("/");
   return { ok: true };
@@ -152,6 +156,8 @@ export async function setCartItemQuantityAction(lineId: string, quantity: number
     await prisma.cartItem.update({ where: { id: lineId }, data: { quantity: qty } });
   }
 
+  await reconcileCartShippingSelection(customerId);
+
   revalidatePath("/cart");
   revalidatePath("/");
   return { ok: true };
@@ -171,6 +177,8 @@ export async function removeCartLineAction(lineId: string): Promise<CartActionRe
   if (remaining === 0) {
     await prisma.cart.update({ where: { customerId }, data: { appliedLoyaltyPoints: 0 } });
   }
+  await reconcileCartShippingSelection(customerId);
+
   revalidatePath("/cart");
   revalidatePath("/");
   return { ok: true };
@@ -183,16 +191,15 @@ export async function setCartShippingOptionAction(shippingOptionId: string): Pro
   const id = shippingOptionId.trim();
   if (!id) return { ok: false, error: "Invalid shipping option." };
 
-  const allowed = await prisma.shippingOption.findFirst({
-    where: { id, active: true },
-    select: { id: true },
-  });
-  if (!allowed) return { ok: false, error: "That shipping option isn’t available." };
+  const eligible = await isShippingOptionEligibleForCustomer(customerId, id);
+  if (!eligible) {
+    return { ok: false, error: "That shipping option doesn’t fit this cart." };
+  }
 
   await getOrCreateCart(customerId);
   await prisma.cart.update({
     where: { customerId },
-    data: { selectedShippingOptionId: allowed.id },
+    data: { selectedShippingOptionId: id },
   });
 
   revalidatePath("/cart");

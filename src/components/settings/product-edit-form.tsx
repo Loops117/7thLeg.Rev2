@@ -10,6 +10,7 @@ import { RichTextEditor } from "@/components/rich-text-editor";
 import type {
   ProductEditInitial,
   ProductFooterOption,
+  ProductShippingOptionRef,
   ProductTypePickerGroup,
 } from "@/lib/products-admin-types";
 export type { ProductEditInitial } from "@/lib/products-admin-types";
@@ -35,6 +36,8 @@ function emptyCreateDefaults(): Omit<ProductEditInitial, "id"> & { id: "" } {
     typeIds: [],
     footerIds: [],
     variantPriceDisplay: "difference",
+    shippingUnits: 1,
+    excludedShippingOptionIds: [],
   };
 }
 
@@ -42,6 +45,7 @@ export function ProductEditForm({
   initial,
   typePickerGroups,
   footers,
+  shippingOptions = [],
   catalogMode = false,
   onCatalogSaved,
   onClear,
@@ -50,6 +54,7 @@ export function ProductEditForm({
   initial: ProductEditInitial | null;
   typePickerGroups: ProductTypePickerGroup[];
   footers: ProductFooterOption[];
+  shippingOptions?: ProductShippingOptionRef[];
   /** Catalog panel: allow null initial = new product; show Clear / Cancel. */
   catalogMode?: boolean;
   /** After successful create or update in catalog mode: reset + collapse (parent handles navigation/refresh). */
@@ -78,6 +83,10 @@ export function ProductEditForm({
   const [saleEndsAt, setSaleEndsAt] = useState(base.saleEndsAt);
   const [typeIds, setTypeIds] = useState<string[]>(base.typeIds);
   const [footerIds, setFooterIds] = useState<string[]>(base.footerIds);
+  const [shippingUnits, setShippingUnits] = useState(String(base.shippingUnits));
+  const [excludedShippingOptionIds, setExcludedShippingOptionIds] = useState<string[]>(
+    base.excludedShippingOptionIds,
+  );
 
   useEffect(() => {
     if (!initial) {
@@ -95,6 +104,8 @@ export function ProductEditForm({
       setSaleEndsAt(d.saleEndsAt);
       setTypeIds(d.typeIds);
       setFooterIds(d.footerIds);
+      setShippingUnits(String(d.shippingUnits));
+      setExcludedShippingOptionIds(d.excludedShippingOptionIds);
       return;
     }
     setName(initial.name);
@@ -110,6 +121,8 @@ export function ProductEditForm({
     setSaleEndsAt(initial.saleEndsAt);
     setTypeIds(initial.typeIds);
     setFooterIds(initial.footerIds);
+    setShippingUnits(String(initial.shippingUnits));
+    setExcludedShippingOptionIds(initial.excludedShippingOptionIds);
   }, [initial]);
 
   function toggleType(id: string) {
@@ -119,10 +132,27 @@ export function ProductEditForm({
     setFooterIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
+  function toggleExcludedShippingOption(id: string) {
+    setExcludedShippingOptionIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }
+
+  function parseShippingUnitsInput(): number | null {
+    const n = Number.parseInt(shippingUnits, 10);
+    if (!Number.isFinite(n) || n < 1 || n > 10) return null;
+    return n;
+  }
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
     setErr(null);
+    const units = parseShippingUnitsInput();
+    if (units === null) {
+      setErr("Shipping units must be between 1 and 10.");
+      return;
+    }
     startTransition(async () => {
       if (!initial) {
         const result = await createProduct({
@@ -139,6 +169,8 @@ export function ProductEditForm({
           saleEndsAt,
           typeIds,
           footerIds,
+          shippingUnits: units,
+          excludedShippingOptionIds,
         });
         if (!result.ok) {
           setErr(result.error);
@@ -168,6 +200,8 @@ export function ProductEditForm({
         saleEndsAt,
         typeIds,
         footerIds,
+        shippingUnits: units,
+        excludedShippingOptionIds,
       });
       if (!result.ok) {
         setErr(result.error);
@@ -357,6 +391,56 @@ export function ProductEditForm({
           </div>
         </fieldset>
       ) : null}
+      <fieldset className="rounded border border-palm/25 bg-sand/30 px-3 py-3">
+        <legend className="px-1 text-sm font-bold text-ink">Shipping (admin only)</legend>
+        <p className="mb-3 text-xs text-ink/60">
+          Not shown to customers. Used to match cart size to shipping boxes at checkout.
+        </p>
+        <label className="block text-sm font-bold text-ink">
+          Shipping units (1–10)
+          <input
+            type="number"
+            min={1}
+            max={10}
+            required
+            value={shippingUnits}
+            onChange={(e) => setShippingUnits(e.target.value)}
+            className="mt-1 w-24 border-2 border-palm-mid px-2 py-2 text-sm"
+          />
+          <span className="mt-1 block text-xs font-normal text-ink/65">
+            Small items 1–3; larger items 4–10.
+          </span>
+        </label>
+        {shippingOptions.length > 0 ? (
+          <div className="mt-4">
+            <p className="text-sm font-bold text-ink">Cannot ship in these boxes</p>
+            <p className="mb-2 text-xs text-ink/60">
+              Leave all unchecked if this item can use any box that has enough capacity (e.g. too long for a small flat
+              rate).
+            </p>
+            <div className="flex flex-wrap gap-3">
+              {shippingOptions.map((opt) => (
+                <label key={opt.id} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={excludedShippingOptionIds.includes(opt.id)}
+                    onChange={() => toggleExcludedShippingOption(opt.id)}
+                  />
+                  {opt.label}
+                </label>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="mt-3 text-xs text-ink/60">
+            Add shipping options under{" "}
+            <Link href="/settings/shipping" className="font-medium text-lagoon-dark underline">
+              Settings → Shipping
+            </Link>{" "}
+            to exclude specific boxes for this product.
+          </p>
+        )}
+      </fieldset>
       <div className="flex flex-wrap items-center gap-3 pt-2">
         <button
           type="submit"

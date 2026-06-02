@@ -10,7 +10,7 @@ export default async function SettingsProductsPage({ searchParams }: Props) {
   const { edit: editId } = await searchParams;
   const trimmedEdit = editId?.trim() || null;
 
-  const [products, types, footers, editPayload] = await Promise.all([
+  const [products, types, footers, shippingOptions, editPayload] = await Promise.all([
     prisma.product.findMany({
       orderBy: { updatedAt: "desc" },
       select: {
@@ -40,6 +40,10 @@ export default async function SettingsProductsPage({ searchParams }: Props) {
     prisma.automaticFooter.findMany({
       orderBy: { title: "asc" },
       select: { id: true, title: true },
+    }),
+    prisma.shippingOption.findMany({
+      orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
+      select: { id: true, label: true },
     }),
     trimmedEdit ? getProductCatalogEditPayload(trimmedEdit) : Promise.resolve(null),
   ]);
@@ -91,6 +95,7 @@ export default async function SettingsProductsPage({ searchParams }: Props) {
           filterTypes={filterTypes}
           typeHierarchy={typeHierarchy}
           footers={footers}
+          shippingOptions={shippingOptions}
           editPayload={editPayload}
           editIdFromUrl={trimmedEdit}
           editNotFound={editNotFound}
