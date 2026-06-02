@@ -40,6 +40,9 @@ export type HomePaneConfig = {
   // CONTENT_DUAL
   leftEnabled?: boolean;
   rightEnabled?: boolean;
+  /** When true, `leftHtml` is edited and rendered as raw HTML (tables, embeds, etc.). */
+  leftRawHtml?: boolean;
+  rightRawHtml?: boolean;
   leftHtml?: string;
   rightHtml?: string;
 
@@ -191,6 +194,8 @@ export function defaultPaneConfig(type: PaneType): HomePaneConfig {
       carouselTypeIds: [],
       leftEnabled: true,
       rightEnabled: true,
+      leftRawHtml: false,
+      rightRawHtml: false,
       leftHtml: "<p>Left column content (HTML)</p>",
       rightHtml: "<p>Right column content (HTML)</p>",
       eventId: "",
@@ -347,6 +352,8 @@ export function parseHomePaneConfig(raw: unknown, type: PaneType): HomePaneConfi
       : defaults.carouselTypeIds ?? [],
     leftEnabled: typeof o.leftEnabled === "boolean" ? o.leftEnabled : defaults.leftEnabled,
     rightEnabled: typeof o.rightEnabled === "boolean" ? o.rightEnabled : defaults.rightEnabled,
+    leftRawHtml: typeof o.leftRawHtml === "boolean" ? o.leftRawHtml : defaults.leftRawHtml,
+    rightRawHtml: typeof o.rightRawHtml === "boolean" ? o.rightRawHtml : defaults.rightRawHtml,
     leftHtml: typeof o.leftHtml === "string" ? o.leftHtml : defaults.leftHtml,
     rightHtml: typeof o.rightHtml === "string" ? o.rightHtml : defaults.rightHtml,
     eventId: typeof o.eventId === "string" ? o.eventId : (defaults.eventId ?? ""),

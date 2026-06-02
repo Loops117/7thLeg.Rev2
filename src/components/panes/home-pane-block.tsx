@@ -162,13 +162,13 @@ export async function HomePaneBlock({
           >
             {cfg.leftEnabled !== false ? (
               <div
-                className="min-h-[4rem] rounded border-2 border-palm/20 bg-white/30 p-4 text-ink [&_a]:text-lagoon-dark [&_a]:underline"
+                className="pane-content-html min-h-[4rem] overflow-x-auto rounded border-2 border-palm/20 bg-white/30 p-4 text-ink [&_a]:text-lagoon-dark [&_a]:underline [&_img]:max-w-full [&_table]:max-w-full"
                 dangerouslySetInnerHTML={{ __html: cfg.leftHtml ?? "" }}
               />
             ) : null}
             {cfg.rightEnabled !== false ? (
               <div
-                className="min-h-[4rem] rounded border-2 border-palm/20 bg-white/30 p-4 text-ink [&_a]:text-lagoon-dark [&_a]:underline"
+                className="pane-content-html min-h-[4rem] overflow-x-auto rounded border-2 border-palm/20 bg-white/30 p-4 text-ink [&_a]:text-lagoon-dark [&_a]:underline [&_img]:max-w-full [&_table]:max-w-full"
                 dangerouslySetInnerHTML={{ __html: cfg.rightHtml ?? "" }}
               />
             ) : null}

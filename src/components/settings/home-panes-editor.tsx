@@ -33,6 +33,60 @@ export type HomePaneRow = {
 
 export type ProductTypeOptionForPanes = { id: string; name: string };
 
+function ContentColumnEditor({
+  columnLabel,
+  enabled,
+  onEnabledChange,
+  rawHtml,
+  onRawHtmlChange,
+  html,
+  onHtmlChange,
+}: {
+  columnLabel: string;
+  enabled: boolean;
+  onEnabledChange: (on: boolean) => void;
+  rawHtml: boolean;
+  onRawHtmlChange: (raw: boolean) => void;
+  html: string;
+  onHtmlChange: (html: string) => void;
+}) {
+  return (
+    <div className="space-y-2 border-t border-palm/15 pt-4 first:border-t-0 first:pt-0">
+      <label className="flex items-center gap-2 text-sm font-bold text-ink">
+        <input type="checkbox" checked={enabled} onChange={(e) => onEnabledChange(e.target.checked)} />
+        {columnLabel} on
+      </label>
+      <label className="flex items-center gap-2 text-sm font-medium text-ink">
+        <input type="checkbox" checked={rawHtml} onChange={(e) => onRawHtmlChange(e.target.checked)} />
+        Raw HTML mode
+      </label>
+      {rawHtml ? (
+        <label className="block text-sm font-bold text-ink">
+          {columnLabel} (HTML)
+          <textarea
+            value={html}
+            onChange={(e) => onHtmlChange(e.target.value)}
+            spellCheck={false}
+            rows={14}
+            className="mt-1 w-full border-2 border-palm-mid bg-white px-3 py-2 font-mono text-xs leading-relaxed text-ink"
+            placeholder="<table>...</table>"
+          />
+          <span className="mt-1 block text-xs font-normal text-ink/60">
+            Paste full HTML. Tables and inline styles are rendered as-is on the storefront.
+          </span>
+        </label>
+      ) : (
+        <RichTextEditor
+          label={columnLabel}
+          value={html}
+          onChange={onHtmlChange}
+          minHeightClassName="min-h-[8rem]"
+        />
+      )}
+    </div>
+  );
+}
+
 function paneIdsSignature(panes: HomePaneRow[]) {
   return panes.map((p) => p.id).join("|");
 }
@@ -399,33 +453,23 @@ function PaneCard({
 
         {pane.type === "CONTENT_DUAL" ? (
           <>
-            <label className="flex items-center gap-2 text-sm font-bold text-ink">
-              <input
-                type="checkbox"
-                checked={form.leftEnabled !== false}
-                onChange={(e) => setForm((f) => ({ ...f, leftEnabled: e.target.checked }))}
-              />
-              Left column on
-            </label>
-            <RichTextEditor
-              label="Left column"
-              value={form.leftHtml ?? ""}
-              onChange={(html) => setForm((f) => ({ ...f, leftHtml: html }))}
-              minHeightClassName="min-h-[8rem]"
+            <ContentColumnEditor
+              columnLabel="Left column"
+              enabled={form.leftEnabled !== false}
+              onEnabledChange={(on) => setForm((f) => ({ ...f, leftEnabled: on }))}
+              rawHtml={form.leftRawHtml === true}
+              onRawHtmlChange={(raw) => setForm((f) => ({ ...f, leftRawHtml: raw }))}
+              html={form.leftHtml ?? ""}
+              onHtmlChange={(html) => setForm((f) => ({ ...f, leftHtml: html }))}
             />
-            <label className="flex items-center gap-2 text-sm font-bold text-ink">
-              <input
-                type="checkbox"
-                checked={form.rightEnabled !== false}
-                onChange={(e) => setForm((f) => ({ ...f, rightEnabled: e.target.checked }))}
-              />
-              Right column on
-            </label>
-            <RichTextEditor
-              label="Right column"
-              value={form.rightHtml ?? ""}
-              onChange={(html) => setForm((f) => ({ ...f, rightHtml: html }))}
-              minHeightClassName="min-h-[8rem]"
+            <ContentColumnEditor
+              columnLabel="Right column"
+              enabled={form.rightEnabled !== false}
+              onEnabledChange={(on) => setForm((f) => ({ ...f, rightEnabled: on }))}
+              rawHtml={form.rightRawHtml === true}
+              onRawHtmlChange={(raw) => setForm((f) => ({ ...f, rightRawHtml: raw }))}
+              html={form.rightHtml ?? ""}
+              onHtmlChange={(html) => setForm((f) => ({ ...f, rightHtml: html }))}
             />
           </>
         ) : null}
