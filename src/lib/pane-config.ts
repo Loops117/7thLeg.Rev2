@@ -76,6 +76,14 @@ export type HomePaneConfig = {
   // ART_SUB
   /** Line under the pane title on the storefront. */
   artSubHeading?: string;
+  /** Primary button before a file is chosen. */
+  artSubChooseButtonLabel?: string;
+  /** Submit button after a file is selected. */
+  artSubSubmitButtonLabel?: string;
+  /** Label while upload is in progress. */
+  artSubSubmitPendingLabel?: string;
+  /** Clears the selected file. */
+  artSubCancelButtonLabel?: string;
   /** Submissions are tagged with this group (shown in admin Customer Art). */
   artGroup?: string;
   /** Show scrolling banner of approved artwork above the upload form. */
@@ -260,6 +268,10 @@ export function defaultPaneConfig(type: PaneType): HomePaneConfig {
       title: "Share your art",
       carouselTypeIds: [],
       artSubHeading: "Upload your finished coloring page as an image.",
+      artSubChooseButtonLabel: "Choose artwork",
+      artSubSubmitButtonLabel: "Submit artwork",
+      artSubSubmitPendingLabel: "Uploading…",
+      artSubCancelButtonLabel: "Cancel",
       artGroup: "Coloring",
       artGalleryEnabled: true,
       artGalleryScope: "same_group",
@@ -404,6 +416,22 @@ export function parseHomePaneConfig(raw: unknown, type: PaneType): HomePaneConfi
 
     artSubHeading:
       typeof o.artSubHeading === "string" ? o.artSubHeading.slice(0, 500) : (defaults.artSubHeading ?? ""),
+    artSubChooseButtonLabel:
+      typeof o.artSubChooseButtonLabel === "string"
+        ? o.artSubChooseButtonLabel.trim().slice(0, 80) || (defaults.artSubChooseButtonLabel ?? "Choose artwork")
+        : (defaults.artSubChooseButtonLabel ?? "Choose artwork"),
+    artSubSubmitButtonLabel:
+      typeof o.artSubSubmitButtonLabel === "string"
+        ? o.artSubSubmitButtonLabel.trim().slice(0, 80) || (defaults.artSubSubmitButtonLabel ?? "Submit artwork")
+        : (defaults.artSubSubmitButtonLabel ?? "Submit artwork"),
+    artSubSubmitPendingLabel:
+      typeof o.artSubSubmitPendingLabel === "string"
+        ? o.artSubSubmitPendingLabel.trim().slice(0, 80) || (defaults.artSubSubmitPendingLabel ?? "Uploading…")
+        : (defaults.artSubSubmitPendingLabel ?? "Uploading…"),
+    artSubCancelButtonLabel:
+      typeof o.artSubCancelButtonLabel === "string"
+        ? o.artSubCancelButtonLabel.trim().slice(0, 80) || (defaults.artSubCancelButtonLabel ?? "Cancel")
+        : (defaults.artSubCancelButtonLabel ?? "Cancel"),
     artGroup: typeof o.artGroup === "string" ? normalizeArtGroupKey(o.artGroup) ?? "" : (defaults.artGroup ?? ""),
     artGalleryEnabled:
       typeof o.artGalleryEnabled === "boolean" ? o.artGalleryEnabled : (defaults.artGalleryEnabled ?? true),

@@ -499,6 +499,16 @@ export function buildThemeCss(theme: ResolvedPublicTheme): string {
   --product-footer-link: ${productFooter.linkColor};
   --product-footer-section-border: ${productFooter.sectionBorderColor};
   --product-footer-section-border-width: ${productFooter.sectionBorderWidthPx}px;
+  --gallery-image-bg: ${productCard.imageArea};
+  --gallery-card-bg: ${productCard.background};
+  --gallery-panel-bg: ${colors.parchment};
+  --gallery-heading: ${colors.palm};
+  --gallery-body: ${colors.ink};
+  --gallery-link: ${colors.lagoonDark};
+  --gallery-row-fill: ${colors.surf};
+  --gallery-price: ${productCard.price};
+  --gallery-border: ${colors.palmMid};
+  --gallery-scrim: ${colors.ink};
   --color-background: var(--sand);
   --color-foreground: var(--ink);
 }

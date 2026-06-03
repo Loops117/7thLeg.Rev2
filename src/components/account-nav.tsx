@@ -24,6 +24,9 @@ export function AccountNav({ unreadMessages, showMyUploads }: { unreadMessages: 
           </span>
         ) : null}
       </Link>
+      <Link href="/account/points" className={linkCls}>
+        Points
+      </Link>
       <Link href="/account/profile" className={linkCls}>
         My info
       </Link>

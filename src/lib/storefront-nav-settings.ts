@@ -20,12 +20,15 @@ export function normalizeStorefrontNavSettings(row: {
   navFeaturedLabel?: string | null;
   navAboutEnabled?: boolean | null;
   navAboutLabel?: string | null;
+  navGalleryEnabled?: boolean | null;
+  navGalleryLabel?: string | null;
 } | null): StorefrontNavSettings {
   const d = STOREFRONT_NAV_LINK_DEFAULTS;
   if (!row) {
     return {
       shop: { ...d.shop },
       featured: { ...d.featured },
+      gallery: { ...d.gallery },
       about: { ...d.about },
     };
   }
@@ -37,6 +40,10 @@ export function normalizeStorefrontNavSettings(row: {
     featured: {
       enabled: row.navFeaturedEnabled ?? d.featured.enabled,
       label: trimStorefrontNavLabel(row.navFeaturedLabel ?? "", d.featured.label),
+    },
+    gallery: {
+      enabled: row.navGalleryEnabled ?? d.gallery.enabled,
+      label: trimStorefrontNavLabel(row.navGalleryLabel ?? "", d.gallery.label),
     },
     about: {
       enabled: row.navAboutEnabled ?? d.about.enabled,
@@ -52,6 +59,8 @@ const navSelect = {
   navFeaturedLabel: true,
   navAboutEnabled: true,
   navAboutLabel: true,
+  navGalleryEnabled: true,
+  navGalleryLabel: true,
 } as const;
 
 export async function getStorefrontNavSettings(): Promise<StorefrontNavSettings> {
@@ -65,6 +74,7 @@ export async function getStorefrontNavSettings(): Promise<StorefrontNavSettings>
     return {
       shop: { ...STOREFRONT_NAV_LINK_DEFAULTS.shop },
       featured: { ...STOREFRONT_NAV_LINK_DEFAULTS.featured },
+      gallery: { ...STOREFRONT_NAV_LINK_DEFAULTS.gallery },
       about: { ...STOREFRONT_NAV_LINK_DEFAULTS.about },
     };
   }
@@ -79,6 +89,8 @@ export function storefrontNavPrismaData(nav: StorefrontNavSettings) {
       nav.featured.label,
       STOREFRONT_NAV_LINK_DEFAULTS.featured.label,
     ),
+    navGalleryEnabled: nav.gallery.enabled,
+    navGalleryLabel: trimStorefrontNavLabel(nav.gallery.label, STOREFRONT_NAV_LINK_DEFAULTS.gallery.label),
     navAboutEnabled: nav.about.enabled,
     navAboutLabel: trimStorefrontNavLabel(nav.about.label, STOREFRONT_NAV_LINK_DEFAULTS.about.label),
   };

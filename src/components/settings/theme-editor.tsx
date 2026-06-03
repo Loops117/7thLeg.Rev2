@@ -147,6 +147,160 @@ const buttonColorKeys: { key: keyof ThemeColors; label: string }[] = [
   { key: "btnImportantBg", label: "Important button — background" },
 ];
 
+type GalleryThemeField =
+  | {
+      source: "colors";
+      key: keyof ThemeColors;
+      label: string;
+      hint: string;
+      sharedWith: string;
+      fallback: string;
+    }
+  | {
+      source: "productCard";
+      key: keyof ThemeProductCard;
+      label: string;
+      hint: string;
+      sharedWith: string;
+      fallback: string;
+    };
+
+const galleryThemeFields: GalleryThemeField[] = [
+  {
+    source: "productCard",
+    key: "imageArea",
+    label: "Thumbnail & lightbox image background",
+    hint: "Gray/teal area behind photos in the grid and popup.",
+    sharedWith: "Shop & product cards → Image area background",
+    fallback: BUILTIN_PRODUCT_CARD.imageArea,
+  },
+  {
+    source: "productCard",
+    key: "background",
+    label: "Thumbnail card background",
+    hint: "Surface around each gallery tile.",
+    sharedWith: "Shop & product cards → Card background",
+    fallback: BUILTIN_PRODUCT_CARD.background,
+  },
+  {
+    source: "colors",
+    key: "parchment",
+    label: "Lightbox panel background",
+    hint: "Popup header, footer, and pin tooltip.",
+    sharedWith: "Brand & surfaces → Panel / modal surface",
+    fallback: BUILTIN_COLORS.parchment,
+  },
+  {
+    source: "colors",
+    key: "sand",
+    label: "Gallery page background",
+    hint: "Main column behind the grid.",
+    sharedWith: "Page layout → Page background",
+    fallback: BUILTIN_COLORS.sand,
+  },
+  {
+    source: "colors",
+    key: "palm",
+    label: "Headings & strong accents",
+    hint: "Page title, lightbox title, tagged variation names, pin badge.",
+    sharedWith: "Brand & surfaces → Primary brand",
+    fallback: BUILTIN_COLORS.palm,
+  },
+  {
+    source: "colors",
+    key: "palmMid",
+    label: "Borders & dividers",
+    hint: "Card edges, lightbox dividers, image frame.",
+    sharedWith: "Brand & surfaces → Secondary brand",
+    fallback: BUILTIN_COLORS.palmMid,
+  },
+  {
+    source: "colors",
+    key: "ink",
+    label: "Body text & lightbox scrim",
+    hint: "Artist names, captions, checkbox label; dimmed scrim behind popup.",
+    sharedWith: "Brand & surfaces → Body text",
+    fallback: BUILTIN_COLORS.ink,
+  },
+  {
+    source: "colors",
+    key: "lagoonDark",
+    label: "Links",
+    hint: "Home link, tooltip call-to-action.",
+    sharedWith: "Brand & surfaces → Links",
+    fallback: BUILTIN_COLORS.lagoonDark,
+  },
+  {
+    source: "productCard",
+    key: "price",
+    label: "Price text",
+    hint: "Tagged product prices in the lightbox.",
+    sharedWith: "Shop & product cards → Price",
+    fallback: BUILTIN_PRODUCT_CARD.price,
+  },
+  {
+    source: "colors",
+    key: "surf",
+    label: "Tagged product row fill",
+    hint: "Background on shoppable items under the image.",
+    sharedWith: "Brand & surfaces → Soft highlight fill",
+    fallback: BUILTIN_COLORS.surf,
+  },
+  {
+    source: "colors",
+    key: "btnSecondaryFg",
+    label: "Close button — text & border",
+    hint: "Lightbox Close control.",
+    sharedWith: "Buttons → Secondary button — text & border",
+    fallback: BUILTIN_COLORS.btnSecondaryFg,
+  },
+  {
+    source: "colors",
+    key: "btnSecondaryBg",
+    label: "Close button — background",
+    hint: "Lightbox Close control.",
+    sharedWith: "Buttons → Secondary button — background",
+    fallback: BUILTIN_COLORS.btnSecondaryBg,
+  },
+];
+
+function GalleryThemeColorGrid({
+  colors,
+  setColors,
+  productCard,
+  setProductCard,
+}: {
+  colors: ThemeColors;
+  setColors: Dispatch<React.SetStateAction<ThemeColors>>;
+  productCard: ThemeProductCard;
+  setProductCard: Dispatch<React.SetStateAction<ThemeProductCard>>;
+}) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {galleryThemeFields.map((field) => {
+        const value = field.source === "colors" ? colors[field.key] : productCard[field.key];
+        const onChange = (hex: string) => {
+          if (field.source === "colors") {
+            setColors((c) => ({ ...c, [field.key]: hex }));
+          } else {
+            setProductCard((c) => ({ ...c, [field.key]: hex }));
+          }
+        };
+        return (
+          <ThemeColorField
+            key={`${field.source}-${field.key}`}
+            label={field.label}
+            hint={`${field.hint} Same value as ${field.sharedWith}.`}
+            value={value}
+            fallback={field.fallback}
+            onChange={onChange}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 function ColorPickerGrid({
   keys,
   colors,
@@ -776,6 +930,23 @@ export function ThemeEditor({
           </select>
         </label>
         <ProductCardColorGrid productCard={productCard} setProductCard={setProductCard} />
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Gallery" summary="Public gallery grid, lightbox, tagged products">
+        <p className="text-xs text-ink/65">
+          Controls the customer{" "}
+          <Link href="/gallery" className="font-medium text-lagoon-dark underline">
+            Gallery
+          </Link>
+          . Each control uses the <strong>same saved value</strong> as the matching field in Page layout, Shop &amp;
+          product cards, Brand &amp; surfaces, or Buttons — changing either place updates both.
+        </p>
+        <GalleryThemeColorGrid
+          colors={colors}
+          setColors={setColors}
+          productCard={productCard}
+          setProductCard={setProductCard}
+        />
       </CollapsibleSection>
 
       <CollapsibleSection

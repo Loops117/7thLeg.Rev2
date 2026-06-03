@@ -2,7 +2,7 @@ import { ProductsSettingsTabs } from "@/components/settings/products-settings-ta
 
 export default function ProductsLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-[min(100%,90rem)]">
       <ProductsSettingsTabs />
       {children}
     </div>

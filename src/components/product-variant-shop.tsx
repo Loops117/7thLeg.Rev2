@@ -58,6 +58,7 @@ export function ProductVariantShop({
   wishlistCallbackUrl,
   productSlug,
   initialInWishlist,
+  initialSelectedVariantId = null,
 }: {
   productId: string;
   productName: string;
@@ -83,10 +84,14 @@ export function ProductVariantShop({
   productSlug: string;
   /** Whether this customer already has this product on their wishlist (one row per product). */
   initialInWishlist: boolean;
+  /** From `?variant=` (e.g. gallery product pins). */
+  initialSelectedVariantId?: string | null;
 }) {
   const purchasable = variants.filter(variantIsPurchasable);
   const [selectedVariantId, setSelectedVariantId] = useState(() => {
     if (variants.length === 0) return "";
+    const fromUrl = initialSelectedVariantId?.trim();
+    if (fromUrl && variants.some((v) => v.id === fromUrl)) return fromUrl;
     if (purchasable.length === 1) return purchasable[0].id;
     return purchasable[0]?.id ?? "";
   });
@@ -94,14 +99,19 @@ export function ProductVariantShop({
   const purchasableKey = purchasable.map((v) => v.id).join(",");
   useEffect(() => {
     if (variants.length === 0) return;
+    const fromUrl = initialSelectedVariantId?.trim();
+    if (fromUrl && variants.some((v) => v.id === fromUrl)) {
+      setSelectedVariantId(fromUrl);
+      return;
+    }
     if (purchasable.length === 0) {
       setSelectedVariantId("");
       return;
     }
     setSelectedVariantId((cur) =>
-      cur && purchasable.some((v) => v.id === cur) ? cur : purchasable[0].id,
+      cur && variants.some((v) => v.id === cur) ? cur : purchasable[0].id,
     );
-  }, [variants.length, purchasableKey]);
+  }, [variants.length, purchasableKey, initialSelectedVariantId]);
 
   const hasVariants = variants.length > 0;
   const gallery = productPageGalleryAll(images);

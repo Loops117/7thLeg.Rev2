@@ -68,6 +68,11 @@ export default async function AccountProfilePage() {
         <div>
           <dt className="text-xs font-bold uppercase tracking-wide text-palm-mid">Loyalty points</dt>
           <dd className="mt-1 text-2xl font-black text-palm">{customer.pointsBalance}</dd>
+          <dd className="mt-2">
+            <Link href="/account/points" className="text-sm font-bold text-lagoon-dark underline">
+              View point history
+            </Link>
+          </dd>
         </div>
       </dl>
 

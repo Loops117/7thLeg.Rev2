@@ -11,18 +11,21 @@ import { parseProductPriceTiersJson } from "@/lib/product-price-tiers-storefront
 import { normalizeProductDescriptionHtml } from "@/lib/product-description-html";
 import { formatTypeBreadcrumb, loadProductTypeIndex } from "@/lib/product-type-tree";
 import { parseVariantPriceDisplay } from "@/lib/product-variant-price-display";
+import { CustomerSuppliedProductImages } from "@/components/product/customer-supplied-product-images";
+import { listCustomerSuppliedImagesForProduct } from "@/lib/image-submission-hotspots";
 import { productFooterCssVariables } from "@/lib/theme-config";
 import { loadResolvedPublicThemeFromDb } from "@/lib/theme-config-server";
 
 type Props = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ event?: string }>;
+  searchParams: Promise<{ event?: string; variant?: string }>;
 };
 
 export default async function ProductPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const { event: eventParam } = await searchParams;
+  const { event: eventParam, variant: variantParam } = await searchParams;
   const eventId = eventParam?.trim() || null;
+  const initialVariantId = variantParam?.trim() || null;
   const [product, sitePub, publicTheme] = await Promise.all([
     prisma.product.findUnique({
       where: { slug },
@@ -44,7 +47,10 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const productDiagonalBrandName = sitePub.productDiagonalBrandOverlay ? sitePub.companyName : null;
 
   const typeIds = product.types.map((t) => t.typeId);
-  const footerBlocks = await getFootersForProduct(product.id, typeIds);
+  const [footerBlocks, customerSuppliedImages] = await Promise.all([
+    getFootersForProduct(product.id, typeIds),
+    listCustomerSuppliedImagesForProduct(product.id),
+  ]);
   const typeIndex = await loadProductTypeIndex();
 
   const overlay =
@@ -128,7 +134,10 @@ export default async function ProductPage({ params, searchParams }: Props) {
         wishlistCallbackUrl={`/product/${product.slug}${eventId ? `?event=${encodeURIComponent(eventId)}` : ""}`}
         productSlug={product.slug}
         initialInWishlist={initialInWishlist}
+        initialSelectedVariantId={initialVariantId}
       />
+
+      <CustomerSuppliedProductImages images={customerSuppliedImages} />
 
       {footerBlocks.length > 0 ? (
         <section

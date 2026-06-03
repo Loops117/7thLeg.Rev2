@@ -14,6 +14,7 @@ const MAIN_LINKS: { href: string; label: string; badge?: "messages" }[] = [
 
 const PRODUCT_LINKS: { href: string; label: string }[] = [
   { href: "/settings/products", label: "Catalog" },
+  { href: "/settings/products/stocking", label: "Product stocking" },
   { href: "/settings/products/types", label: "Product types" },
   { href: "/settings/products/footers", label: "Product footers" },
 ];
@@ -24,7 +25,7 @@ const INSIGHTS_LINKS: { href: string; label: string }[] = [
 ];
 
 const FUN_STUFF_LINKS: { href: string; label: string }[] = [
-  { href: "/settings/customer-art", label: "Customer Art" },
+  { href: "/settings/image-submission", label: "Image Submission" },
 ];
 
 const SETTINGS_LINKS: { href: string; label: string }[] = [
@@ -53,7 +54,7 @@ export function pathIsSettingsArea(pathname: string): boolean {
 
 function linkActive(pathname: string, href: string): boolean {
   if (pathname === href) return true;
-  if (href === "/settings/products" && pathname.startsWith("/settings/products")) return true;
+  if (href === "/settings/products" && pathname === "/settings/products") return true;
   if (href === "/settings/reports" && pathname.startsWith("/settings/reports")) return true;
   return pathname.startsWith(`${href}/`);
 }

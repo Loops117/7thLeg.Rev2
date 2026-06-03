@@ -67,6 +67,8 @@ export async function HomePaneBlock({
     navShopLabel: "Shop",
     navFeaturedEnabled: true,
     navFeaturedLabel: "Featured",
+    navGalleryEnabled: true,
+    navGalleryLabel: "Gallery",
     navAboutEnabled: true,
     navAboutLabel: "About",
   };
@@ -294,6 +296,10 @@ export async function HomePaneBlock({
           <ArtSubPane
             artGroup={normalizeArtGroupKey(cfg.artGroup ?? "") ?? ""}
             subHeading={cfg.artSubHeading ?? ""}
+            chooseButtonLabel={cfg.artSubChooseButtonLabel ?? "Choose artwork"}
+            submitButtonLabel={cfg.artSubSubmitButtonLabel ?? "Submit artwork"}
+            submitPendingLabel={cfg.artSubSubmitPendingLabel ?? "Uploading…"}
+            cancelButtonLabel={cfg.artSubCancelButtonLabel ?? "Cancel"}
             isLoggedIn={!!customerEmail}
             galleryEnabled={cfg.artGalleryEnabled !== false}
             galleryItems={artGalleryItems ?? []}

@@ -20,9 +20,11 @@ function revalidateStorefrontNav() {
   revalidatePath("/");
   revalidatePath("/store");
   revalidatePath("/featured");
+  revalidatePath("/gallery");
   revalidatePath("/about");
   revalidatePath("/settings/store");
   revalidatePath("/settings/featured");
+  revalidatePath("/settings/image-submission");
   revalidatePath("/settings/about");
 }
 

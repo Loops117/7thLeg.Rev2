@@ -50,6 +50,8 @@ const fallback: SiteConfigPublic = {
   navShopLabel: "Shop",
   navFeaturedEnabled: true,
   navFeaturedLabel: "Featured",
+  navGalleryEnabled: true,
+  navGalleryLabel: "Gallery",
   navAboutEnabled: true,
   navAboutLabel: "About",
 };
@@ -78,6 +80,8 @@ export const getSiteConfig = cache(async function getSiteConfig(): Promise<SiteC
       navShopLabel: nav.shop.label,
       navFeaturedEnabled: nav.featured.enabled,
       navFeaturedLabel: nav.featured.label,
+      navGalleryEnabled: nav.gallery.enabled,
+      navGalleryLabel: nav.gallery.label,
       navAboutEnabled: nav.about.enabled,
       navAboutLabel: nav.about.label,
     };

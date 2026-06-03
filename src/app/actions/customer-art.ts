@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { applyCustomerPointsDelta } from "@/lib/loyalty-points";
 import { putUploadObject } from "@/lib/app-uploads";
 import { getUploadImageSettingsFromDb, normalizeWatermarkBuffer } from "@/lib/image-upload-normalize";
 import { normalizeArtGroupKey } from "@/lib/pane-config";
@@ -107,7 +108,9 @@ export async function listMyCustomerArtUploads(): Promise<CustomerMyArtUploadRow
   }));
 }
 
-export type SetCustomerArtApprovedResult = { ok: true } | { ok: false; error: string };
+export type SetCustomerArtApprovedResult =
+  | { ok: true; pointsAwarded?: number }
+  | { ok: false; error: string };
 
 export async function setCustomerArtApproved(
   submissionId: string,
@@ -117,7 +120,12 @@ export async function setCustomerArtApproved(
     await requireAdmin();
     const row = await prisma.customerArtSubmission.findUnique({
       where: { id: submissionId },
-      select: { customerRemovedAt: true },
+      select: {
+        customerRemovedAt: true,
+        approved: true,
+        customerId: true,
+        approvalPointsAwardedAt: true,
+      },
     });
     if (!row) return { ok: false, error: "Submission not found." };
     if (approved && row.customerRemovedAt) {
@@ -126,15 +134,50 @@ export async function setCustomerArtApproved(
         error: "Customer removed this upload. It cannot be approved for the gallery.",
       };
     }
-    await prisma.customerArtSubmission.update({
-      where: { id: submissionId },
-      data: { approved },
+
+    const wasApproved = row.approved;
+    let pointsAwarded: number | undefined;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.customerArtSubmission.update({
+        where: { id: submissionId },
+        data: { approved },
+      });
+
+      if (approved && !wasApproved && !row.approvalPointsAwardedAt) {
+        const site = await tx.siteConfig.findUnique({
+          where: { id: 1 },
+          select: { imageSubmissionApprovalPoints: true },
+        });
+        const pts = Math.max(0, Math.floor(site?.imageSubmissionApprovalPoints ?? 0));
+        if (pts > 0) {
+          await applyCustomerPointsDelta(
+            {
+              customerId: row.customerId,
+              delta: pts,
+              reason: "Image approved for gallery",
+              artSubmissionId: submissionId,
+            },
+            tx,
+          );
+          await tx.customerArtSubmission.update({
+            where: { id: submissionId },
+            data: { approvalPointsAwardedAt: new Date() },
+          });
+          pointsAwarded = pts;
+        }
+      }
     });
+
+    revalidatePath("/account/points");
+    revalidatePath("/account/profile");
+    revalidatePath("/settings/image-submission");
     revalidatePath("/settings/customer-art");
+    revalidatePath("/gallery");
     revalidatePath("/");
     revalidatePath("/featured");
     revalidatePath("/about");
-    return { ok: true };
+    return { ok: true, pointsAwarded };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Could not update." };
   }
@@ -163,6 +206,8 @@ export async function hideCustomerArtUpload(submissionId: string): Promise<HideC
     revalidatePath("/");
     revalidatePath("/featured");
     revalidatePath("/about");
+    revalidatePath("/gallery");
+    revalidatePath("/settings/image-submission");
     revalidatePath("/settings/customer-art");
     return { ok: true };
   } catch (e) {
@@ -176,7 +221,9 @@ export async function deleteCustomerArtSubmission(submissionId: string): Promise
   try {
     await requireAdmin();
     await prisma.customerArtSubmission.delete({ where: { id: submissionId } });
+    revalidatePath("/settings/image-submission");
     revalidatePath("/settings/customer-art");
+    revalidatePath("/gallery");
     revalidatePath("/");
     revalidatePath("/featured");
     revalidatePath("/about");
@@ -227,7 +274,9 @@ export async function submitCustomerArt(formData: FormData): Promise<SubmitCusto
     });
 
     revalidatePath("/");
+    revalidatePath("/gallery");
     revalidatePath("/account/uploads");
+    revalidatePath("/settings/image-submission");
     revalidatePath("/settings/customer-art");
     return { ok: true };
   } catch (e) {

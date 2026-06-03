@@ -81,7 +81,12 @@ export function ArtGalleryStrip({
   return (
     <>
       <div className="mb-6">
-        <p className="mb-2 text-center text-xs font-bold uppercase tracking-wide text-palm-mid">Community gallery</p>
+        <p className="mb-2 text-center text-xs font-bold uppercase tracking-wide text-palm-mid">
+          Community gallery ·{" "}
+          <a href="/gallery" className="text-lagoon-dark underline hover:text-palm">
+            View all
+          </a>
+        </p>
         <HorizontalScrollRegion ref={scrollRef} scrollClassName="-mx-1">
           <div
             ref={innerRowRef}

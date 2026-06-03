@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { deleteCustomerArtSubmission, setCustomerArtApproved } from "@/app/actions/customer-art";
+import { ImageSubmissionHotspotEditor } from "@/components/settings/image-submission-hotspot-editor";
 import { btnImportantMd, btnMainMd, btnSecondaryMd } from "@/lib/btn-theme-classes";
 import {
   filterCustomerArtRows,
@@ -10,6 +11,7 @@ import {
   type CustomerArtStatusFilter,
   type CustomerArtSubmissionRow,
 } from "@/lib/customer-art";
+import type { ImageSubmissionPinAppearance } from "@/lib/image-submission-pin-appearance-shared";
 
 function formatDate(iso: string) {
   try {
@@ -53,12 +55,14 @@ function ApprovedIcon({ approved, customerRemoved }: { approved: boolean; custom
   );
 }
 
-export function CustomerArtAdmin({
+export function ImageSubmissionAdmin({
   initialRows,
   artGroups,
+  pinAppearance,
 }: {
   initialRows: CustomerArtSubmissionRow[];
   artGroups: string[];
+  pinAppearance: ImageSubmissionPinAppearance;
 }) {
   const [rows, setRows] = useState(initialRows);
   const [q, setQ] = useState("");
@@ -234,13 +238,13 @@ export function CustomerArtAdmin({
           <div
             role="dialog"
             aria-modal="true"
-            aria-labelledby="customer-art-viewer-title"
+            aria-labelledby="image-submission-viewer-title"
             className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border-2 border-palm bg-white shadow-2xl dark:border-zinc-600 dark:bg-zinc-900"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-wrap items-start justify-between gap-2 border-b border-palm/15 px-4 py-3 dark:border-zinc-700">
               <div>
-                <h2 id="customer-art-viewer-title" className="text-sm font-black text-palm dark:text-emerald-300">
+                <h2 id="image-submission-viewer-title" className="text-sm font-black text-palm dark:text-emerald-300">
                   {viewer.customerName}
                 </h2>
                 <p className="text-xs text-ink/65 dark:text-zinc-400">
@@ -260,9 +264,20 @@ export function CustomerArtAdmin({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={viewer.imageUrl}
-                alt={`Artwork by ${viewer.customerName}`}
+                alt={`Submission by ${viewer.customerName}`}
                 className="mx-auto max-h-[60vh] w-auto max-w-full rounded border border-palm/20 object-contain dark:border-zinc-700"
               />
+              {viewer.approved && !viewer.customerRemovedAt ? (
+                <ImageSubmissionHotspotEditor
+                  submissionId={viewer.id}
+                  imageUrl={viewer.imageUrl}
+                  pinAppearance={pinAppearance}
+                />
+              ) : (
+                <p className="mt-4 text-center text-xs text-ink/55 dark:text-zinc-400">
+                  Approve this image to map products on it.
+                </p>
+              )}
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-palm/15 px-4 py-3 dark:border-zinc-700">
               <div className="flex items-center gap-2">
@@ -305,7 +320,7 @@ export function CustomerArtAdmin({
                     onClick={() => toggleApproved(viewer.id, true)}
                     className={btnMainMd}
                   >
-                    Approve artwork
+                    Approve for gallery
                   </button>
                 )}
                 <button

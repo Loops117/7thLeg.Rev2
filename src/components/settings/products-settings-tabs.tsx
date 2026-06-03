@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const tabs = [
   { href: "/settings/products", label: "Catalog" },
+  { href: "/settings/products/stocking", label: "Product stocking" },
   { href: "/settings/products/types", label: "Product types" },
   { href: "/settings/products/footers", label: "Product footers" },
 ];
@@ -19,7 +20,8 @@ export function ProductsSettingsTabs() {
             ? pathname === "/settings/products" ||
               (pathname.startsWith("/settings/products/") &&
                 !pathname.startsWith("/settings/products/types") &&
-                !pathname.startsWith("/settings/products/footers"))
+                !pathname.startsWith("/settings/products/footers") &&
+                !pathname.startsWith("/settings/products/stocking"))
             : pathname === t.href || pathname.startsWith(`${t.href}/`);
         return (
           <Link

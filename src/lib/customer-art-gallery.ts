@@ -84,6 +84,11 @@ export async function listKnownArtGroupNames(extraFromPanes: string[] = []): Pro
   return [...set].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
 }
 
+/** All approved customer submissions for the public gallery page. */
+export async function listAllApprovedArtForPublicGallery(limit = 200): Promise<ApprovedArtGalleryItem[]> {
+  return listApprovedArtForGallery({ enabled: true, mode: "all" }, limit);
+}
+
 /** All known art group names for admin (DB + every ART_SUB pane on the site). */
 export async function listKnownArtGroupNamesForAdmin(): Promise<string[]> {
   const artSubPanes = await prisma.pane.findMany({

@@ -85,6 +85,14 @@ model SiteConfig {
 
   loyaltyEnabled  Boolean @default(false)
   pointsPerDollar Int     @default(10) // whole points earned per $1.00 (applied to eligible subtotal)
+  /// Whole points awarded once when an image submission is first approved for the gallery.
+  imageSubmissionApprovalPoints Int @default(0) @map("image_submission_approval_points")
+  /// Gallery / submission map pin marker (global for all submissions).
+  imageSubmissionPinSizePx Int @default(20) @map("image_submission_pin_size_px")
+  imageSubmissionPinFillColor String @default("#2d6a4f") @map("image_submission_pin_fill_color")
+  imageSubmissionPinBorderWidthPx Int @default(2) @map("image_submission_pin_border_width_px")
+  imageSubmissionPinBorderColor String @default("#000000") @map("image_submission_pin_border_color")
+  imageSubmissionPinCustomImageUrl String @default("") @map("image_submission_pin_custom_image_url")
   /// Whole cents each point is worth when applied at checkout (e.g. 10 = $0.10 per point).
   loyaltyRedemptionCentsPerPoint Int @default(10) @map("loyalty_redemption_cents_per_point")
 
@@ -142,6 +150,9 @@ model SiteConfig {
   navFeaturedLabel String @default("Featured") @map("nav_featured_label")
   navAboutEnabled Boolean @default(true) @map("nav_about_enabled")
   navAboutLabel String @default("About") @map("nav_about_label")
+  /// Main header link to `/gallery` (customer image submissions).
+  navGalleryEnabled Boolean @default(true) @map("nav_gallery_enabled")
+  navGalleryLabel String @default("Gallery") @map("nav_gallery_label")
   /// Public site footer content & layout (`lib/site-footer-settings.ts`).
   siteFooterConfig Json? @map("site_footer_config")
   /// JSON: per-tool guide HTML + tour popup copy for /labels editor (see label-editor-help.ts).
@@ -334,13 +345,40 @@ model CustomerArtSubmission {
   approved   Boolean  @default(false)
   /// Set when the customer removes the upload from their portal; keeps record for coupons/admin.
   customerRemovedAt DateTime? @map("customer_removed_at")
+  /// Set when approval bonus points have been credited (prevents double award).
+  approvalPointsAwardedAt DateTime? @map("approval_points_awarded_at")
   createdAt  DateTime @default(now()) @map("created_at")
+
+  hotspots            ImageSubmissionHotspot[]
+  pointsLedgerEntries PointsLedger[]
 
   @@index([artGroup, createdAt(sort: Desc)])
   @@index([customerId, createdAt(sort: Desc)])
   @@index([approved])
   @@index([customerRemovedAt])
   @@map("customer_art_submissions")
+}
+
+/// Admin-drawn region on an approved image linking to a product (optional variant).
+model ImageSubmissionHotspot {
+  id           String   @id @default(cuid())
+  submissionId String   @map("submission_id")
+  submission   CustomerArtSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  productId    String   @map("product_id")
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId    String?  @map("variant_id")
+  variant      ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  xPercent     Float    @map("x_percent")
+  yPercent     Float    @map("y_percent")
+  widthPercent Float    @map("width_percent")
+  heightPercent Float   @map("height_percent")
+  sortOrder    Int      @default(0) @map("sort_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([submissionId, sortOrder])
+  @@index([productId])
+  @@map("image_submission_hotspots")
 }
 
 /// Canonical species/design suggestion (deduped by normalized key).
@@ -468,6 +506,7 @@ model Product {
   eventProductLinks EventOnProduct[]
   couponPickRows EventCouponProductPick[]
   wishlistItems CustomerWishlistItem[]
+  imageSubmissionHotspots ImageSubmissionHotspot[]
 
   @@map("products")
 }
@@ -499,6 +538,7 @@ model ProductVariant {
   cartItems CartItem[]
   lineItems OrderLineItem[]
   wishlistItems CustomerWishlistItem[]
+  imageSubmissionHotspots ImageSubmissionHotspot[]
 
   @@map("product_variants")
 }
@@ -1057,9 +1097,12 @@ model PointsLedger {
   reason     String
   orderId    String?
   order      Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  artSubmissionId String? @map("art_submission_id")
+  artSubmission   CustomerArtSubmission? @relation(fields: [artSubmissionId], references: [id], onDelete: SetNull)
   createdAt  DateTime @default(now())
 
   @@index([customerId, createdAt])
+  @@index([artSubmissionId])
   @@map("points_ledger")
 }
 

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { applyCustomerPointsDelta } from "@/lib/loyalty-points";
 import { prisma } from "@/lib/prisma";
 
 async function requireAdmin() {
@@ -16,6 +17,7 @@ export type PointsLedgerRow = {
   delta: number;
   reason: string;
   orderId: string | null;
+  artSubmissionId: string | null;
   createdAt: string;
 };
 
@@ -33,13 +35,21 @@ export async function listPointsLedgerForCustomer(
     where: { customerId },
     orderBy: { createdAt: "desc" },
     take: n,
-    select: { id: true, delta: true, reason: true, orderId: true, createdAt: true },
+    select: {
+      id: true,
+      delta: true,
+      reason: true,
+      orderId: true,
+      artSubmissionId: true,
+      createdAt: true,
+    },
   });
   return rows.map((r) => ({
     id: r.id,
     delta: r.delta,
     reason: r.reason,
     orderId: r.orderId,
+    artSubmissionId: r.artSubmissionId,
     createdAt: r.createdAt.toISOString(),
   }));
 }
@@ -66,25 +76,14 @@ export async function adjustCustomerLoyaltyPoints(
   const r = (reason ?? "").trim().slice(0, 500) || "Manual adjustment (admin)";
 
   try {
-    const { newBalance } = await prisma.$transaction(async (tx) => {
-      const cur = await tx.customer.findUnique({ where: { id: customerId }, select: { id: true, pointsBalance: true } });
-      if (!cur) throw new Error("NOT_FOUND");
-      const next = Math.max(0, cur.pointsBalance + d);
-      await tx.customer.update({
-        where: { id: customerId },
-        data: { pointsBalance: next },
-      });
-      await tx.pointsLedger.create({
-        data: {
-          customerId,
-          delta: d,
-          reason: r,
-        },
-      });
-      return { newBalance: next };
+    const { newBalance } = await applyCustomerPointsDelta({
+      customerId,
+      delta: d,
+      reason: r,
     });
     revalidatePath("/settings/loyalty", "page");
     revalidatePath("/settings/customers", "page");
+    revalidatePath("/account/points");
     return { ok: true, newBalance };
   } catch (e) {
     if (e instanceof Error && e.message === "NOT_FOUND") {

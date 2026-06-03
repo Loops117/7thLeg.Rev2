@@ -78,18 +78,16 @@ export async function fulfillPaidOrder(orderId: string, ctx: FulfillmentContext)
       const requested = Math.max(0, Math.floor(order.loyaltyPointsRedeemed));
       const use = Math.min(requested, Math.max(0, cust?.pointsBalance ?? 0));
       if (use > 0) {
-        await tx.customer.update({
-          where: { id: order.customerId },
-          data: { pointsBalance: { decrement: use } },
-        });
-        await tx.pointsLedger.create({
-          data: {
+        const { applyCustomerPointsDelta } = await import("@/lib/loyalty-points");
+        await applyCustomerPointsDelta(
+          {
             customerId: order.customerId,
             delta: -use,
             reason: `Points redeemed (${order.id.slice(0, 8)})`,
             orderId: order.id,
           },
-        });
+          tx,
+        );
       }
     }
 
@@ -103,18 +101,16 @@ export async function fulfillPaidOrder(orderId: string, ctx: FulfillmentContext)
         earned += Math.floor(dollars * site.pointsPerDollar * mult);
       }
       if (earned > 0) {
-        await tx.customer.update({
-          where: { id: order.customerId },
-          data: { pointsBalance: { increment: earned } },
-        });
-        await tx.pointsLedger.create({
-          data: {
+        const { applyCustomerPointsDelta } = await import("@/lib/loyalty-points");
+        await applyCustomerPointsDelta(
+          {
             customerId: order.customerId,
             delta: earned,
             reason: "Purchase rewards",
             orderId: order.id,
           },
-        });
+          tx,
+        );
       }
     }
 
@@ -136,6 +132,7 @@ export async function fulfillPaidOrder(orderId: string, ctx: FulfillmentContext)
 
   if (fulfilled) {
     revalidatePath("/account");
+    revalidatePath("/account/points");
     revalidatePath("/cart");
     revalidatePath("/store");
     revalidatePath("/settings/sales");

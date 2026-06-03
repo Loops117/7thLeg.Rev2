@@ -1,4 +1,4 @@
-export type StorefrontNavLinkId = "shop" | "featured" | "about";
+export type StorefrontNavLinkId = "shop" | "featured" | "gallery" | "about";
 
 export type StorefrontNavLinkState = {
   enabled: boolean;
@@ -10,6 +10,7 @@ export type StorefrontNavSettings = Record<StorefrontNavLinkId, StorefrontNavLin
 export const STOREFRONT_NAV_LINK_DEFAULTS: StorefrontNavSettings = {
   shop: { enabled: true, label: "Shop" },
   featured: { enabled: true, label: "Featured" },
+  gallery: { enabled: true, label: "Gallery" },
   about: { enabled: true, label: "About" },
 };
 

@@ -7,6 +7,7 @@ import {
   updateStorefrontNavLinkEnabled,
   updateStorefrontNavLinkLabel,
 } from "@/app/actions/storefront-nav-settings";
+import { SettingsCollapsibleSection } from "@/components/settings/settings-collapsible-section";
 import { btnSecondaryMd } from "@/lib/btn-theme-classes";
 import {
   STOREFRONT_NAV_LINK_DEFAULTS,
@@ -25,6 +26,11 @@ const LINK_META: Record<StorefrontNavLinkId, { title: string; publicPath: string
     publicPath: "/featured",
     defaultLabel: STOREFRONT_NAV_LINK_DEFAULTS.featured.label,
   },
+  gallery: {
+    title: "Gallery",
+    publicPath: "/gallery",
+    defaultLabel: STOREFRONT_NAV_LINK_DEFAULTS.gallery.label,
+  },
   about: {
     title: "About",
     publicPath: "/about",
@@ -35,9 +41,12 @@ const LINK_META: Record<StorefrontNavLinkId, { title: string; publicPath: string
 export function StorefrontNavHeaderPanel({
   linkId,
   initial,
+  collapsible = false,
 }: {
   linkId: StorefrontNavLinkId;
   initial: StorefrontNavLinkState;
+  /** When true, section starts collapsed; header shows visibility status on the right. */
+  collapsible?: boolean;
 }) {
   const meta = LINK_META[linkId];
   const storeHref = meta.publicPath;
@@ -82,10 +91,17 @@ export function StorefrontNavHeaderPanel({
     });
   }
 
-  return (
-    <section className="mb-8 rounded border-2 border-palm bg-surf/40 p-4 sm:p-5">
-      <h2 className="text-lg font-black text-palm">Header menu — {meta.title}</h2>
-      <p className="mt-1 max-w-2xl text-sm text-ink/80">
+  const visibilityStatus = (
+    <span
+      className={`text-sm font-bold ${state.enabled ? "text-palm" : "text-ink/55"}`}
+    >
+      {state.enabled ? "Shown" : "Hidden"}
+    </span>
+  );
+
+  const body = (
+    <>
+      <p className="max-w-2xl text-sm text-ink/80">
         Show or hide this section in the top navigation and choose the link text. Does not change Cart, Admin, or other
         menu items.
       </p>
@@ -153,6 +169,23 @@ export function StorefrontNavHeaderPanel({
       </div>
 
       {msg ? <p className="mt-4 text-sm font-medium text-lagoon-dark">{msg}</p> : null}
+    </>
+  );
+
+  if (collapsible) {
+    return (
+      <div className="mb-8">
+        <SettingsCollapsibleSection title={`Header menu — ${meta.title}`} trailing={visibilityStatus}>
+          {body}
+        </SettingsCollapsibleSection>
+      </div>
+    );
+  }
+
+  return (
+    <section className="mb-8 rounded border-2 border-palm bg-surf/40 p-4 sm:p-5">
+      <h2 className="text-lg font-black text-palm">Header menu — {meta.title}</h2>
+      {body}
     </section>
   );
 }

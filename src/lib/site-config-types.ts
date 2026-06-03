@@ -129,6 +129,8 @@ export type SiteConfigPublic = {
   navShopLabel: string;
   navFeaturedEnabled: boolean;
   navFeaturedLabel: string;
+  navGalleryEnabled: boolean;
+  navGalleryLabel: string;
   navAboutEnabled: boolean;
   navAboutLabel: string;
 };

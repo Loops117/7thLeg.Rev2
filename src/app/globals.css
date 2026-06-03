@@ -56,6 +56,16 @@
   --product-footer-link: #1d7a6e;
   --product-footer-section-border: #1b4332;
   --product-footer-section-border-width: 4px;
+  --gallery-image-bg: var(--product-card-image-bg);
+  --gallery-card-bg: var(--product-card-bg);
+  --gallery-panel-bg: var(--parchment);
+  --gallery-heading: var(--palm);
+  --gallery-body: var(--ink);
+  --gallery-link: var(--lagoon-dark);
+  --gallery-row-fill: var(--surf);
+  --gallery-price: var(--product-card-price);
+  --gallery-border: var(--palm-mid);
+  --gallery-scrim: var(--ink);
 }
 
 @theme inline {
@@ -148,6 +158,62 @@ body {
   box-shadow:
     0 0 0 3px var(--product-card-hover-glow),
     0 10px 28px color-mix(in srgb, var(--product-card-border) 18%, transparent);
+}
+
+/** Public /gallery grid, lightbox, and tagged products (Settings → Theme → Gallery). */
+.gallery-thumb-image-bg {
+  background-color: color-mix(in srgb, var(--gallery-image-bg) 100%, transparent);
+}
+
+.gallery-thumb-card {
+  background-color: color-mix(in srgb, var(--gallery-card-bg) 90%, transparent);
+  border-color: color-mix(in srgb, var(--gallery-border) 20%, transparent);
+}
+
+.gallery-thumb-caption-border {
+  border-color: color-mix(in srgb, var(--gallery-border) 10%, transparent);
+}
+
+.gallery-viewer-scrim {
+  background-color: color-mix(in srgb, var(--gallery-scrim) 55%, transparent);
+}
+
+.gallery-viewer-panel {
+  background-color: color-mix(in srgb, var(--gallery-panel-bg) 100%, transparent);
+  border-color: color-mix(in srgb, var(--gallery-heading) 100%, transparent);
+}
+
+.gallery-viewer-panel-border {
+  border-color: color-mix(in srgb, var(--gallery-heading) 15%, transparent);
+}
+
+.gallery-viewer-image-bg {
+  background-color: color-mix(in srgb, var(--gallery-image-bg) 100%, transparent);
+}
+
+.gallery-viewer-image-frame {
+  border-color: color-mix(in srgb, var(--gallery-border) 20%, transparent);
+}
+
+.gallery-tagged-row {
+  background-color: color-mix(in srgb, var(--gallery-row-fill) 30%, transparent);
+  border-color: color-mix(in srgb, var(--gallery-border) 15%, transparent);
+}
+
+.gallery-tagged-row:hover {
+  background-color: color-mix(in srgb, var(--gallery-row-fill) 60%, transparent);
+  border-color: color-mix(in srgb, var(--gallery-heading) 100%, transparent);
+}
+
+.gallery-pin-tooltip {
+  background-color: color-mix(in srgb, var(--gallery-panel-bg) 100%, transparent);
+  border-color: color-mix(in srgb, var(--gallery-border) 30%, transparent);
+  color: var(--gallery-body);
+}
+
+.gallery-empty-state {
+  background-color: color-mix(in srgb, var(--gallery-card-bg) 60%, transparent);
+  border-color: color-mix(in srgb, var(--gallery-heading) 30%, transparent);
 }
 
 .site-header-chrome {

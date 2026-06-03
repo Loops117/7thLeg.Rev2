@@ -800,6 +800,49 @@ function PaneCard({
                 placeholder="Short line under the pane title on the storefront"
               />
             </label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block text-sm font-bold text-ink">
+                Choose file button
+                <input
+                  type="text"
+                  value={form.artSubChooseButtonLabel ?? ""}
+                  onChange={(e) => setForm((f) => ({ ...f, artSubChooseButtonLabel: e.target.value }))}
+                  className="mt-1 w-full border-2 border-palm-mid px-2 py-2 text-sm"
+                  placeholder="Choose artwork"
+                />
+              </label>
+              <label className="block text-sm font-bold text-ink">
+                Submit button
+                <input
+                  type="text"
+                  value={form.artSubSubmitButtonLabel ?? ""}
+                  onChange={(e) => setForm((f) => ({ ...f, artSubSubmitButtonLabel: e.target.value }))}
+                  className="mt-1 w-full border-2 border-palm-mid px-2 py-2 text-sm"
+                  placeholder="Submit artwork"
+                />
+              </label>
+              <label className="block text-sm font-bold text-ink">
+                Submit button (while uploading)
+                <input
+                  type="text"
+                  value={form.artSubSubmitPendingLabel ?? ""}
+                  onChange={(e) => setForm((f) => ({ ...f, artSubSubmitPendingLabel: e.target.value }))}
+                  className="mt-1 w-full border-2 border-palm-mid px-2 py-2 text-sm"
+                  placeholder="Uploading…"
+                />
+              </label>
+              <label className="block text-sm font-bold text-ink">
+                Cancel button
+                <input
+                  type="text"
+                  value={form.artSubCancelButtonLabel ?? ""}
+                  onChange={(e) => setForm((f) => ({ ...f, artSubCancelButtonLabel: e.target.value }))}
+                  className="mt-1 w-full border-2 border-palm-mid px-2 py-2 text-sm"
+                  placeholder="Cancel"
+                />
+              </label>
+            </div>
+
             <label className="block text-sm font-bold text-ink">
               Art group <span className="font-normal text-coral">*</span>
               <input
@@ -807,13 +850,13 @@ function PaneCard({
                 value={form.artGroup ?? ""}
                 onChange={(e) => setForm((f) => ({ ...f, artGroup: e.target.value }))}
                 className="mt-1 w-full border-2 border-palm-mid px-2 py-2 text-sm"
-                placeholder="e.g. Cursor — must match for admin Customer Art"
+                placeholder="e.g. product-photos — must match in Image Submission admin"
               />
             </label>
             <p className="text-xs text-ink/60">
               Uploads from this pane are tagged with this group. Review them under{" "}
-              <a href="/settings/customer-art" className="font-medium text-lagoon-dark underline">
-                Customer Art
+              <a href="/settings/image-submission" className="font-medium text-lagoon-dark underline">
+                Image Submission
               </a>
               .
             </p>
@@ -854,7 +897,7 @@ function PaneCard({
                       <p className="text-xs font-bold text-ink">Include these art groups</p>
                       {knownArtGroups.length === 0 ? (
                         <p className="text-xs text-ink/60">
-                          No art groups yet. Add submissions in Customer Art or set an art group on another Art Sub pane.
+                          No art groups yet. Add submissions in Image Submission or set an art group on another Art Sub pane.
                         </p>
                       ) : (
                         <ul className="max-h-40 space-y-1 overflow-y-auto rounded border border-palm/20 bg-white p-2">

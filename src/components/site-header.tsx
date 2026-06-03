@@ -10,6 +10,8 @@ function mainNavLinks(config: {
   navShopLabel: string;
   navFeaturedEnabled: boolean;
   navFeaturedLabel: string;
+  navGalleryEnabled: boolean;
+  navGalleryLabel: string;
   navAboutEnabled: boolean;
   navAboutLabel: string;
 }): SiteHeaderNavItem[] {
@@ -19,6 +21,9 @@ function mainNavLinks(config: {
   }
   if (config.navFeaturedEnabled) {
     links.push({ href: "/featured", label: config.navFeaturedLabel });
+  }
+  if (config.navGalleryEnabled) {
+    links.push({ href: "/gallery", label: config.navGalleryLabel });
   }
   if (config.labelBuilderEnabled && config.labelBuilderNavEnabled) {
     links.push({ href: "/labels", label: "Labels" });

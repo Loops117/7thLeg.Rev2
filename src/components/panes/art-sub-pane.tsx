@@ -11,6 +11,10 @@ import type { ApprovedArtGalleryItem } from "@/lib/customer-art-gallery";
 export function ArtSubPane({
   artGroup,
   subHeading,
+  chooseButtonLabel,
+  submitButtonLabel,
+  submitPendingLabel,
+  cancelButtonLabel,
   isLoggedIn,
   galleryItems,
   galleryAutoScroll,
@@ -22,6 +26,10 @@ export function ArtSubPane({
 }: {
   artGroup: string;
   subHeading: string;
+  chooseButtonLabel: string;
+  submitButtonLabel: string;
+  submitPendingLabel: string;
+  cancelButtonLabel: string;
   isLoggedIn: boolean;
   galleryItems: ApprovedArtGalleryItem[];
   galleryEnabled: boolean;
@@ -141,7 +149,7 @@ export function ArtSubPane({
             {!selectedFile ? (
               <div className="text-center">
                 <button type="button" onClick={openFilePicker} disabled={pending} className={btnMainMd}>
-                  Choose artwork
+                  {chooseButtonLabel}
                 </button>
                 <p className="mt-2 text-xs text-ink/55">PNG, JPEG, WebP, GIF, or AVIF — max 8MB.</p>
               </div>
@@ -152,10 +160,10 @@ export function ArtSubPane({
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <button type="submit" disabled={pending} className={`flex-1 ${btnMainMd}`}>
-                    {pending ? "Uploading…" : "Submit artwork"}
+                    {pending ? submitPendingLabel : submitButtonLabel}
                   </button>
                   <button type="button" disabled={pending} onClick={clearSelection} className={btnSecondaryMd}>
-                    Cancel
+                    {cancelButtonLabel}
                   </button>
                 </div>
               </>
