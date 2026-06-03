@@ -38,11 +38,11 @@ export function ImageSubmissionGalleryViewer({
   onClose: () => void;
   titleId?: string;
 }) {
-  const [hidePins, setHidePins] = useState(true);
+  const [hidePins, setHidePins] = useState(false);
   const taggedProducts = useMemo(() => dedupeTaggedPins(pins), [pins]);
 
   useEffect(() => {
-    setHidePins(true);
+    setHidePins(false);
   }, [item.id]);
 
   useEffect(() => {
