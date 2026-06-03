@@ -25,18 +25,26 @@ function dedupeTaggedPins(pins: StorefrontImagePin[]): StorefrontImagePin[] {
   return out;
 }
 
+function pinMatchesActiveProduct(pin: StorefrontImagePin, activeProductSlug: string | null | undefined): boolean {
+  if (!activeProductSlug?.trim()) return false;
+  return pin.productSlug === activeProductSlug.trim();
+}
+
 export function ImageSubmissionGalleryViewer({
   item,
   pins,
   pinAppearance,
   onClose,
   titleId = "image-submission-gallery-viewer-title",
+  activeProductSlug = null,
 }: {
   item: ApprovedArtGalleryItem;
   pins: StorefrontImagePin[];
   pinAppearance: ImageSubmissionPinAppearance;
   onClose: () => void;
   titleId?: string;
+  /** When set (e.g. product page), tagged rows for this product show Active + highlight. */
+  activeProductSlug?: string | null;
 }) {
   const [hidePins, setHidePins] = useState(false);
   const taggedProducts = useMemo(() => dedupeTaggedPins(pins), [pins]);
@@ -110,22 +118,35 @@ export function ImageSubmissionGalleryViewer({
           <div className="gallery-viewer-panel-border border-t px-4 py-3">
             <h3 className="text-xs font-black uppercase tracking-wide text-palm">Tagged products</h3>
             <ul className="mt-2 space-y-2">
-              {taggedProducts.map((pin) => (
-                <li key={`${pin.productSlug}:${pin.variantId ?? ""}`}>
-                  <Link
-                    href={productUrlForPin(pin.productSlug, pin.variantId)}
-                    className="gallery-tagged-row flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 rounded border px-3 py-2 text-sm transition"
-                  >
-                    <span className="min-w-0">
-                      <span className="block font-black text-palm">{pinVariationDisplayName(pin)}</span>
-                      <span className="block text-xs font-medium text-ink/70">{pin.productName}</span>
-                    </span>
-                    <span className="shrink-0 font-bold tabular-nums text-[color:var(--gallery-price)]">
-                      {formatPriceUsd(pin.priceCents)}
-                    </span>
-                  </Link>
-                </li>
-              ))}
+              {taggedProducts.map((pin) => {
+                const isActive = pinMatchesActiveProduct(pin, activeProductSlug);
+                return (
+                  <li key={`${pin.productSlug}:${pin.variantId ?? ""}`}>
+                    <Link
+                      href={productUrlForPin(pin.productSlug, pin.variantId)}
+                      aria-current={isActive ? "page" : undefined}
+                      className={`gallery-tagged-row flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded border px-3 py-2 text-sm transition ${
+                        isActive ? "gallery-tagged-row-active" : ""
+                      }`}
+                    >
+                      <span className="min-w-0">
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span className="font-black text-palm">{pinVariationDisplayName(pin)}</span>
+                          {isActive ? (
+                            <span className="gallery-tagged-active-badge rounded px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide">
+                              Active
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="block text-xs font-medium text-ink/70">{pin.productName}</span>
+                      </span>
+                      <span className="shrink-0 font-bold tabular-nums text-[color:var(--gallery-price)]">
+                        {formatPriceUsd(pin.priceCents)}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ) : null}

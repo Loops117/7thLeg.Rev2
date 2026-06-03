@@ -1,7 +1,37 @@
-import Link from "next/link";
-import type { CustomerSuppliedImageRow } from "@/lib/image-submission-hotspots";
+"use client";
 
-export function CustomerSuppliedProductImages({ images }: { images: CustomerSuppliedImageRow[] }) {
+import { useMemo, useState } from "react";
+import { GalleryArtThumb } from "@/components/gallery/gallery-art-thumb";
+import { ImageSubmissionGalleryViewer } from "@/components/gallery/image-submission-gallery-viewer";
+import type { ApprovedArtGalleryItem } from "@/lib/customer-art-gallery";
+import type { CustomerSuppliedImageRow } from "@/lib/image-submission-hotspots";
+import type { ImageSubmissionPinAppearance } from "@/lib/image-submission-pin-appearance-shared";
+import type { StorefrontImagePin } from "@/lib/image-submission-pins-storefront";
+
+function toGalleryItem(img: CustomerSuppliedImageRow): ApprovedArtGalleryItem {
+  return {
+    id: img.submissionId,
+    imageUrl: img.imageUrl,
+    artGroup: "",
+    submitterName: img.artistName,
+  };
+}
+
+export function CustomerSuppliedProductImages({
+  images,
+  pinsBySubmissionId,
+  pinAppearance,
+  productSlug,
+}: {
+  images: CustomerSuppliedImageRow[];
+  pinsBySubmissionId: Record<string, StorefrontImagePin[]>;
+  pinAppearance: ImageSubmissionPinAppearance;
+  productSlug: string;
+}) {
+  const [viewerItem, setViewerItem] = useState<ApprovedArtGalleryItem | null>(null);
+  const galleryItems = useMemo(() => images.map(toGalleryItem), [images]);
+  const viewerPins = viewerItem ? (pinsBySubmissionId[viewerItem.id] ?? []) : [];
+
   if (images.length === 0) return null;
 
   return (
@@ -10,27 +40,32 @@ export function CustomerSuppliedProductImages({ images }: { images: CustomerSupp
         Customer supplied product images
       </h2>
       <p className="mt-1 text-sm text-ink/75">Photos from our community that feature this product.</p>
-      <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-        {images.map((img) => (
-          <li key={img.submissionId}>
-            <Link
-              href="/gallery"
-              className="block overflow-hidden rounded-lg border-2 border-palm/20 bg-zinc-100 shadow-sm transition hover:border-palm"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={img.imageUrl}
-                alt={`Photo by ${img.artistName}`}
-                className="aspect-[4/5] w-full object-contain p-1"
-                loading="lazy"
+      <ul className="mt-4 flex flex-wrap gap-2 sm:gap-3">
+        {galleryItems.map((item) => {
+          const thumbPins = pinsBySubmissionId[item.id] ?? [];
+          return (
+            <li key={item.id}>
+              <GalleryArtThumb
+                item={item}
+                pinCount={thumbPins.length}
+                onOpen={() => setViewerItem(item)}
+                size="small"
               />
-              <p className="truncate border-t border-palm/10 bg-white/90 px-2 py-1.5 text-center text-[10px] font-bold text-ink">
-                {img.artistName}
-              </p>
-            </Link>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
+
+      {viewerItem ? (
+        <ImageSubmissionGalleryViewer
+          item={viewerItem}
+          pins={viewerPins}
+          pinAppearance={pinAppearance}
+          activeProductSlug={productSlug}
+          onClose={() => setViewerItem(null)}
+          titleId="product-supplied-gallery-viewer-title"
+        />
+      ) : null}
     </section>
   );
 }

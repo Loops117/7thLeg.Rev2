@@ -12,7 +12,11 @@ import { normalizeProductDescriptionHtml } from "@/lib/product-description-html"
 import { formatTypeBreadcrumb, loadProductTypeIndex } from "@/lib/product-type-tree";
 import { parseVariantPriceDisplay } from "@/lib/product-variant-price-display";
 import { CustomerSuppliedProductImages } from "@/components/product/customer-supplied-product-images";
-import { listCustomerSuppliedImagesForProduct } from "@/lib/image-submission-hotspots";
+import {
+  listCustomerSuppliedImagesForProduct,
+  listHotspotsBySubmissionIds,
+} from "@/lib/image-submission-hotspots";
+import { getImageSubmissionPinAppearance } from "@/lib/image-submission-pin-appearance";
 import { productFooterCssVariables } from "@/lib/theme-config";
 import { loadResolvedPublicThemeFromDb } from "@/lib/theme-config-server";
 
@@ -47,10 +51,14 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const productDiagonalBrandName = sitePub.productDiagonalBrandOverlay ? sitePub.companyName : null;
 
   const typeIds = product.types.map((t) => t.typeId);
-  const [footerBlocks, customerSuppliedImages] = await Promise.all([
+  const [footerBlocks, customerSuppliedImages, pinAppearance] = await Promise.all([
     getFootersForProduct(product.id, typeIds),
     listCustomerSuppliedImagesForProduct(product.id),
+    getImageSubmissionPinAppearance(),
   ]);
+  const customerSuppliedPinsBySubmissionId = await listHotspotsBySubmissionIds(
+    customerSuppliedImages.map((img) => img.submissionId),
+  );
   const typeIndex = await loadProductTypeIndex();
 
   const overlay =
@@ -137,7 +145,12 @@ export default async function ProductPage({ params, searchParams }: Props) {
         initialSelectedVariantId={initialVariantId}
       />
 
-      <CustomerSuppliedProductImages images={customerSuppliedImages} />
+      <CustomerSuppliedProductImages
+        images={customerSuppliedImages}
+        pinsBySubmissionId={customerSuppliedPinsBySubmissionId}
+        pinAppearance={pinAppearance}
+        productSlug={product.slug}
+      />
 
       {footerBlocks.length > 0 ? (
         <section

@@ -7,17 +7,26 @@ export function GalleryArtThumb({
   pinCount,
   onOpen,
   compact = false,
+  size = "default",
 }: {
   item: ApprovedArtGalleryItem;
   pinCount: number;
   onOpen: () => void;
+  /** @deprecated Prefer `size="compact"`. */
   compact?: boolean;
+  size?: "default" | "compact" | "small";
 }) {
+  const resolvedSize = compact ? "compact" : size;
+  const widthClass =
+    resolvedSize === "small"
+      ? "w-20 shrink-0 sm:w-24"
+      : resolvedSize === "compact"
+        ? "w-36 shrink-0 sm:w-44"
+        : "";
+
   return (
     <figure
-      className={`gallery-thumb-card overflow-hidden rounded-lg border-2 shadow-sm ${
-        compact ? "w-36 shrink-0 sm:w-44" : ""
-      }`}
+      className={`gallery-thumb-card overflow-hidden rounded-lg border-2 shadow-sm ${widthClass}`}
     >
       <button
         type="button"
