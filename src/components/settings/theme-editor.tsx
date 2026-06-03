@@ -153,7 +153,8 @@ type GalleryThemeField =
       key: keyof ThemeColors;
       label: string;
       hint: string;
-      sharedWith: string;
+      sharedWith?: string;
+      galleryOnly?: boolean;
       fallback: string;
     }
   | {
@@ -162,10 +163,27 @@ type GalleryThemeField =
       label: string;
       hint: string;
       sharedWith: string;
+      galleryOnly?: boolean;
       fallback: string;
     };
 
 const galleryThemeFields: GalleryThemeField[] = [
+  {
+    source: "colors",
+    key: "galleryPinBadgeBg",
+    label: "Pin count badge — background",
+    hint: "Small label on photo thumbnails (e.g. “4 pins”).",
+    galleryOnly: true,
+    fallback: BUILTIN_COLORS.galleryPinBadgeBg,
+  },
+  {
+    source: "colors",
+    key: "galleryPinBadgeFg",
+    label: "Pin count badge — text",
+    hint: "Text on the pin count badge.",
+    galleryOnly: true,
+    fallback: BUILTIN_COLORS.galleryPinBadgeFg,
+  },
   {
     source: "productCard",
     key: "imageArea",
@@ -202,7 +220,7 @@ const galleryThemeFields: GalleryThemeField[] = [
     source: "colors",
     key: "palm",
     label: "Headings & strong accents",
-    hint: "Page title, lightbox title, tagged variation names, pin badge.",
+    hint: "Page title, lightbox title, tagged variation names.",
     sharedWith: "Brand & surfaces → Primary brand",
     fallback: BUILTIN_COLORS.palm,
   },
@@ -218,7 +236,7 @@ const galleryThemeFields: GalleryThemeField[] = [
     source: "colors",
     key: "ink",
     label: "Body text & lightbox scrim",
-    hint: "Artist names, captions, checkbox label; dimmed scrim behind popup.",
+    hint: "Search field, checkbox label, lightbox copy; dimmed scrim behind popup.",
     sharedWith: "Brand & surfaces → Body text",
     fallback: BUILTIN_COLORS.ink,
   },
@@ -290,7 +308,13 @@ function GalleryThemeColorGrid({
           <ThemeColorField
             key={`${field.source}-${field.key}`}
             label={field.label}
-            hint={`${field.hint} Same value as ${field.sharedWith}.`}
+            hint={
+              "galleryOnly" in field && field.galleryOnly
+                ? field.hint
+                : "sharedWith" in field && field.sharedWith
+                  ? `${field.hint} Same value as ${field.sharedWith}.`
+                  : field.hint
+            }
             value={value}
             fallback={field.fallback}
             onChange={onChange}
@@ -937,9 +961,9 @@ export function ThemeEditor({
           Controls the customer{" "}
           <Link href="/gallery" className="font-medium text-lagoon-dark underline">
             Gallery
-          </Link>
-          . Each control uses the <strong>same saved value</strong> as the matching field in Page layout, Shop &amp;
-          product cards, Brand &amp; surfaces, or Buttons — changing either place updates both.
+          </Link>{" "}
+          and the community preview strip on Art Sub panes. Pin count badge colors are gallery-only; other fields may
+          share values with Page layout, Shop &amp; product cards, Brand &amp; surfaces, or Buttons.
         </p>
         <GalleryThemeColorGrid
           colors={colors}

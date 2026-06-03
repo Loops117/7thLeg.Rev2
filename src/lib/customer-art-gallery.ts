@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { customerArtDisplayName } from "@/lib/customer-art";
+import { formatCustomerFullName } from "@/lib/customer-display-name";
 import type { HomePaneConfig } from "@/lib/pane-config";
 import { normalizeArtGroupKey, parseHomePaneConfig } from "@/lib/pane-config";
 
@@ -9,8 +9,19 @@ export type ApprovedArtGalleryItem = {
   id: string;
   imageUrl: string;
   artGroup: string;
-  artistName: string;
+  /** First + last name when set; otherwise display name or fallback label (never email). */
+  submitterName: string;
 };
+
+/** Storefront gallery / lightbox submitter line (first + last preferred). */
+export function gallerySubmitterName(c: {
+  firstName: string | null;
+  lastName: string | null;
+  displayName: string | null;
+}): string {
+  const full = formatCustomerFullName(c);
+  return full || "Community member";
+}
 
 export function resolveArtGalleryFilter(
   cfg: HomePaneConfig,
@@ -61,7 +72,7 @@ export async function listApprovedArtForGallery(
     id: r.id,
     imageUrl: r.imageUrl,
     artGroup: r.artGroup,
-    artistName: customerArtDisplayName(r.customer),
+    submitterName: gallerySubmitterName(r.customer),
   }));
 }
 

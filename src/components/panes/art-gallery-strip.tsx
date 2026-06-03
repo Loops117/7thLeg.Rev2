@@ -1,25 +1,28 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { GalleryArtThumb } from "@/components/gallery/gallery-art-thumb";
+import { ImageSubmissionGalleryViewer } from "@/components/gallery/image-submission-gallery-viewer";
 import { HorizontalScrollRegion } from "@/components/ui/horizontal-scroll-region";
-import { btnSecondaryMd } from "@/lib/btn-theme-classes";
 import { carouselAutoScrollIntervalMs } from "@/lib/pane-config";
 import type { ApprovedArtGalleryItem } from "@/lib/customer-art-gallery";
+import type { ImageSubmissionPinAppearance } from "@/lib/image-submission-pin-appearance-shared";
+import type { StorefrontImagePin } from "@/lib/image-submission-pins-storefront";
 
 export function ArtGalleryStrip({
   items,
   autoScroll,
   direction,
   speed1to10,
-  showArtistName,
-  showArtGroup,
+  pinsBySubmissionId = {},
+  pinAppearance,
 }: {
   items: ApprovedArtGalleryItem[];
   autoScroll: boolean;
   direction: "left" | "right";
   speed1to10: number;
-  showArtistName: boolean;
-  showArtGroup: boolean;
+  pinsBySubmissionId?: Record<string, StorefrontImagePin[]>;
+  pinAppearance: ImageSubmissionPinAppearance;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const innerRowRef = useRef<HTMLDivElement>(null);
@@ -27,8 +30,8 @@ export function ArtGalleryStrip({
   const [viewerItem, setViewerItem] = useState<ApprovedArtGalleryItem | null>(null);
 
   const itemKey = items.map((i) => i.id).join(",");
-  const showCaption = showArtistName || showArtGroup;
   const scrollPaused = viewerItem != null;
+  const viewerPins = viewerItem ? (pinsBySubmissionId[viewerItem.id] ?? []) : [];
 
   useEffect(() => {
     if (!autoScroll || scrollPaused || items.length < 2) return;
@@ -67,15 +70,6 @@ export function ArtGalleryStrip({
     return () => ro.disconnect();
   }, [itemKey]);
 
-  useEffect(() => {
-    if (!viewerItem) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setViewerItem(null);
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [viewerItem]);
-
   if (items.length === 0) return null;
 
   return (
@@ -92,79 +86,30 @@ export function ArtGalleryStrip({
             ref={innerRowRef}
             className={`flex items-stretch gap-3 pb-2 pt-1 ${centerWhenFits ? "justify-center" : "justify-start"}`}
           >
-            {items.map((item) => (
-              <figure
-                key={item.id}
-                className="flex w-36 shrink-0 flex-col overflow-hidden rounded-lg border-2 border-palm/20 bg-white/80 shadow-sm sm:w-44"
-              >
-                <button
-                  type="button"
-                  onClick={() => setViewerItem(item)}
-                  className="group relative aspect-[4/5] w-full cursor-zoom-in bg-zinc-100 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lagoon-dark"
-                  aria-label={`View artwork by ${item.artistName}`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={item.imageUrl}
-                    alt=""
-                    className="h-full w-full object-contain p-1 transition group-hover:opacity-90"
-                    loading="lazy"
-                  />
-                </button>
-                {showCaption ? (
-                  <figcaption className="border-t border-palm/10 px-2 py-1.5 text-center">
-                    {showArtistName ? (
-                      <p className="truncate text-[11px] font-bold text-ink">{item.artistName}</p>
-                    ) : null}
-                    {showArtGroup ? (
-                      <p className={`truncate text-[10px] text-ink/50 ${showArtistName ? "" : "text-[11px] font-bold text-ink"}`}>
-                        {item.artGroup}
-                      </p>
-                    ) : null}
-                  </figcaption>
-                ) : null}
-              </figure>
-            ))}
+            {items.map((item) => {
+              const pinCount = (pinsBySubmissionId[item.id] ?? []).length;
+              return (
+                <GalleryArtThumb
+                  key={item.id}
+                  item={item}
+                  pinCount={pinCount}
+                  onOpen={() => setViewerItem(item)}
+                  compact
+                />
+              );
+            })}
           </div>
         </HorizontalScrollRegion>
       </div>
 
       {viewerItem ? (
-        <div
-          className="fixed inset-0 z-[110] flex items-end justify-center bg-ink/55 p-2 sm:items-center sm:p-6"
-          role="presentation"
-          onClick={() => setViewerItem(null)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="art-gallery-viewer-title"
-            className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border-2 border-palm bg-white shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex flex-wrap items-start justify-between gap-2 border-b border-palm/15 px-4 py-3">
-              <div>
-                <h2 id="art-gallery-viewer-title" className="text-sm font-black text-palm">
-                  {viewerItem.artistName}
-                </h2>
-                {showArtGroup ? (
-                  <p className="text-xs text-ink/65">{viewerItem.artGroup}</p>
-                ) : null}
-              </div>
-              <button type="button" onClick={() => setViewerItem(null)} className={btnSecondaryMd}>
-                Close
-              </button>
-            </div>
-            <div className="min-h-0 flex-1 overflow-auto bg-zinc-100 p-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={viewerItem.imageUrl}
-                alt={`Artwork by ${viewerItem.artistName}`}
-                className="mx-auto max-h-[70vh] w-auto max-w-full rounded border border-palm/20 object-contain"
-              />
-            </div>
-          </div>
-        </div>
+        <ImageSubmissionGalleryViewer
+          item={viewerItem}
+          pins={viewerPins}
+          pinAppearance={pinAppearance}
+          onClose={() => setViewerItem(null)}
+          titleId="art-pane-gallery-viewer-title"
+        />
       ) : null}
     </>
   );

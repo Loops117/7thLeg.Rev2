@@ -7,6 +7,8 @@ import {
   resolveArtGalleryFilter,
   type ApprovedArtGalleryItem,
 } from "@/lib/customer-art-gallery";
+import { listHotspotsBySubmissionIds } from "@/lib/image-submission-hotspots";
+import { getImageSubmissionPinAppearance } from "@/lib/image-submission-pin-appearance";
 import { getCarouselProducts, getStorefrontEventListing } from "@/lib/products-storefront";
 import { normalizeArtGroupKey, parseHomePaneConfig } from "@/lib/pane-config";
 import type { SpeciesSuggestionApprovedRow } from "@/lib/species-suggestions";
@@ -66,6 +68,12 @@ export async function HomePaneStack({
       }),
   );
 
+  const allArtSubmissionIds = [...new Set([...artGalleryByPaneId.values()].flatMap((rows) => rows.map((r) => r.id)))];
+  const [artGalleryPinsBySubmissionId, artGalleryPinAppearance] = await Promise.all([
+    listHotspotsBySubmissionIds(allArtSubmissionIds),
+    getImageSubmissionPinAppearance(),
+  ]);
+
   const approvedSuggestionsByPaneId = new Map<string, SpeciesSuggestionApprovedRow[]>();
   await Promise.all(
     panes
@@ -103,6 +111,8 @@ export async function HomePaneStack({
           carouselProducts={carouselByPaneId.get(pane.id) ?? null}
           eventBlock={pane.type === "GIVEAWAY" ? (eventBlockByPaneId.get(pane.id) ?? undefined) : undefined}
           artGalleryItems={pane.type === "ART_SUB" ? (artGalleryByPaneId.get(pane.id) ?? []) : undefined}
+          artGalleryPinsBySubmissionId={pane.type === "ART_SUB" ? artGalleryPinsBySubmissionId : undefined}
+          artGalleryPinAppearance={pane.type === "ART_SUB" ? artGalleryPinAppearance : undefined}
           approvedSuggestions={
             pane.type === "SUGGESTION_BOX" ? (approvedSuggestionsByPaneId.get(pane.id) ?? []) : undefined
           }

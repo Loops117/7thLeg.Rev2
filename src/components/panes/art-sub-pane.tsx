@@ -7,6 +7,8 @@ import { submitCustomerArt } from "@/app/actions/customer-art";
 import { ArtGalleryStrip } from "@/components/panes/art-gallery-strip";
 import { btnMainMd, btnSecondaryMd } from "@/lib/btn-theme-classes";
 import type { ApprovedArtGalleryItem } from "@/lib/customer-art-gallery";
+import type { ImageSubmissionPinAppearance } from "@/lib/image-submission-pin-appearance-shared";
+import type { StorefrontImagePin } from "@/lib/image-submission-pins-storefront";
 
 export function ArtSubPane({
   artGroup,
@@ -21,8 +23,8 @@ export function ArtSubPane({
   galleryDirection,
   gallerySpeed,
   galleryEnabled,
-  galleryShowArtistName,
-  galleryShowArtGroup,
+  pinsBySubmissionId,
+  pinAppearance,
 }: {
   artGroup: string;
   subHeading: string;
@@ -36,8 +38,8 @@ export function ArtSubPane({
   galleryAutoScroll: boolean;
   galleryDirection: "left" | "right";
   gallerySpeed: number;
-  galleryShowArtistName: boolean;
-  galleryShowArtGroup: boolean;
+  pinsBySubmissionId: Record<string, StorefrontImagePin[]>;
+  pinAppearance: ImageSubmissionPinAppearance;
 }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -107,8 +109,8 @@ export function ArtSubPane({
           autoScroll={galleryAutoScroll}
           direction={galleryDirection}
           speed1to10={gallerySpeed}
-          showArtistName={galleryShowArtistName}
-          showArtGroup={galleryShowArtGroup}
+          pinsBySubmissionId={pinsBySubmissionId}
+          pinAppearance={pinAppearance}
         />
       ) : null}
 

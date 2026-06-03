@@ -27,6 +27,9 @@ export type ThemeColors = {
   /** Clear, delete, remove. */
   btnImportantFg: string;
   btnImportantBg: string;
+  /** “N pins” badge on gallery thumbnails (home strip + /gallery). Gallery theme only. */
+  galleryPinBadgeBg: string;
+  galleryPinBadgeFg: string;
 };
 
 export type ThemeText = {
@@ -150,6 +153,8 @@ export const BUILTIN_COLORS: ThemeColors = {
   btnSecondaryBg: "#ffffff",
   btnImportantFg: "#000000",
   btnImportantBg: "#e76f51",
+  galleryPinBadgeBg: "#1b4332",
+  galleryPinBadgeFg: "#faf6ef",
 };
 
 export const BUILTIN_TEXT: ThemeText = {
@@ -260,6 +265,14 @@ export function mergeThemeBlob(raw: unknown): ResolvedPublicTheme {
     btnSecondaryBg: normalizeHex(c.btnSecondaryBg, BUILTIN_COLORS.btnSecondaryBg),
     btnImportantFg: normalizeHex(c.btnImportantFg, BUILTIN_COLORS.btnImportantFg),
     btnImportantBg: normalizeHex(c.btnImportantBg, BUILTIN_COLORS.btnImportantBg),
+    galleryPinBadgeBg: normalizeHex(
+      c.galleryPinBadgeBg,
+      normalizeHex(c.palm, BUILTIN_COLORS.galleryPinBadgeBg),
+    ),
+    galleryPinBadgeFg: normalizeHex(
+      c.galleryPinBadgeFg,
+      normalizeHex(c.btnMainFg, BUILTIN_COLORS.galleryPinBadgeFg),
+    ),
   };
   const t = o.text ?? {};
   const baseFontSizePx =
@@ -509,6 +522,8 @@ export function buildThemeCss(theme: ResolvedPublicTheme): string {
   --gallery-price: ${productCard.price};
   --gallery-border: ${colors.palmMid};
   --gallery-scrim: ${colors.ink};
+  --gallery-pin-badge-bg: ${colors.galleryPinBadgeBg};
+  --gallery-pin-badge-fg: ${colors.galleryPinBadgeFg};
   --color-background: var(--sand);
   --color-foreground: var(--ink);
 }

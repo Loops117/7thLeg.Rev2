@@ -13,6 +13,11 @@ import { ArtSubPane } from "@/components/panes/art-sub-pane";
 import { SuggestionBoxPane } from "@/components/panes/suggestion-box-pane";
 import { OrderShippingMapPaneSection } from "@/components/panes/order-shipping-map-pane";
 import type { ApprovedArtGalleryItem } from "@/lib/customer-art-gallery";
+import {
+  IMAGE_SUBMISSION_PIN_APPEARANCE_DEFAULTS,
+  type ImageSubmissionPinAppearance,
+} from "@/lib/image-submission-pin-appearance-shared";
+import type { StorefrontImagePin } from "@/lib/image-submission-pins-storefront";
 import type { SpeciesSuggestionApprovedRow } from "@/lib/species-suggestions";
 import { normalizeArtGroupKey, parseHomePaneConfig, paneSectionSurfaceStyle } from "@/lib/pane-config";
 import type { StorefrontProductCard } from "@/lib/products-storefront";
@@ -35,6 +40,8 @@ export async function HomePaneBlock({
   carouselProducts,
   eventBlock,
   artGalleryItems,
+  artGalleryPinsBySubmissionId,
+  artGalleryPinAppearance,
   approvedSuggestions,
 }: {
   pane: PaneRow;
@@ -42,6 +49,8 @@ export async function HomePaneBlock({
   /** When pane references an event: loaded payload, or null if event id invalid. */
   eventBlock?: EventBlockPayload | null;
   artGalleryItems?: ApprovedArtGalleryItem[];
+  artGalleryPinsBySubmissionId?: Record<string, StorefrontImagePin[]>;
+  artGalleryPinAppearance?: ImageSubmissionPinAppearance;
   approvedSuggestions?: SpeciesSuggestionApprovedRow[];
 }) {
   const cfg = parseHomePaneConfig(pane.config, pane.type);
@@ -306,8 +315,8 @@ export async function HomePaneBlock({
             galleryAutoScroll={cfg.artGalleryAutoScroll !== false}
             galleryDirection={cfg.artGalleryScrollDirection === "right" ? "right" : "left"}
             gallerySpeed={cfg.artGalleryScrollSpeed ?? 5}
-            galleryShowArtistName={cfg.artGalleryShowArtistName !== false}
-            galleryShowArtGroup={cfg.artGalleryShowArtGroup !== false}
+            pinsBySubmissionId={artGalleryPinsBySubmissionId ?? {}}
+            pinAppearance={artGalleryPinAppearance ?? IMAGE_SUBMISSION_PIN_APPEARANCE_DEFAULTS}
           />
         ) : null}
 

@@ -28,7 +28,6 @@ export default async function GalleryPage() {
       <div className="mt-8">
         <PublicImageGallery
           items={items}
-          pageTitle={pageTitle}
           pinsBySubmissionId={pinsBySubmissionId}
           pinAppearance={pinAppearance}
         />

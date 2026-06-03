@@ -66,6 +66,8 @@
   --gallery-price: var(--product-card-price);
   --gallery-border: var(--palm-mid);
   --gallery-scrim: var(--ink);
+  --gallery-pin-badge-bg: #1b4332;
+  --gallery-pin-badge-fg: #faf6ef;
 }
 
 @theme inline {
@@ -168,6 +170,11 @@ body {
 .gallery-thumb-card {
   background-color: color-mix(in srgb, var(--gallery-card-bg) 90%, transparent);
   border-color: color-mix(in srgb, var(--gallery-border) 20%, transparent);
+}
+
+.gallery-pin-count-badge {
+  background-color: color-mix(in srgb, var(--gallery-pin-badge-bg) 90%, transparent);
+  color: var(--gallery-pin-badge-fg);
 }
 
 .gallery-thumb-caption-border {
