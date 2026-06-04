@@ -442,9 +442,10 @@ model ProductType {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  products       ProductOnType[]
-  defaultFooters ProductTypeDefaultFooter[]
-  eventTypeLinks EventOnProductType[]
+  products                 ProductOnType[]
+  defaultFooters           ProductTypeDefaultFooter[]
+  defaultRecommendations   ProductTypeDefaultRecommendation[]
+  eventTypeLinks           EventOnProductType[]
 
   @@index([sortOrder])
   @@index([parentId])
@@ -472,6 +473,21 @@ model ProductTypeDefaultFooter {
 
   @@id([typeId, footerId])
   @@map("product_type_default_footers")
+}
+
+/// Default related / you-may-also-want picks for every product with this type (and child types inherit via type tree).
+model ProductTypeDefaultRecommendation {
+  typeId           String                  @map("type_id")
+  relatedProductId String                  @map("related_product_id")
+  kind             ProductRecommendationKind
+  sortOrder        Int                     @default(0) @map("sort_order")
+
+  type           ProductType @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  relatedProduct Product     @relation("ProductTypeDefaultRecommendationsTo", fields: [relatedProductId], references: [id], onDelete: Cascade)
+
+  @@id([typeId, relatedProductId, kind])
+  @@index([typeId, kind, sortOrder])
+  @@map("product_type_default_recommendations")
 }
 
 model Product {
@@ -509,8 +525,9 @@ model Product {
   couponPickRows EventCouponProductPick[]
   wishlistItems CustomerWishlistItem[]
   imageSubmissionHotspots ImageSubmissionHotspot[]
-  recommendationsFrom ProductRecommendation[] @relation("ProductRecommendationsFrom")
-  recommendationsTo   ProductRecommendation[] @relation("ProductRecommendationsTo")
+  recommendationsFrom              ProductRecommendation[]              @relation("ProductRecommendationsFrom")
+  recommendationsTo                ProductRecommendation[]              @relation("ProductRecommendationsTo")
+  typeDefaultRecommendationsLinked ProductTypeDefaultRecommendation[] @relation("ProductTypeDefaultRecommendationsTo")
   kitHost             ProductKit?             @relation("ProductKitHost")
   kitItems            ProductKitItem[]
 

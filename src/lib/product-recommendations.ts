@@ -2,17 +2,21 @@ import { prisma } from "@/lib/prisma";
 
 const RECOMMENDATION_KIND_RELATED = "RELATED" as const;
 const RECOMMENDATION_KIND_YOU_MAY_ALSO_WANT = "YOU_MAY_ALSO_WANT" as const;
-import { MAX_PRODUCT_RECOMMENDATIONS_PER_SECTION } from "@/lib/product-recommendations-shared";
+import {
+  MAX_PRODUCT_RECOMMENDATIONS_PER_SECTION,
+  type ProductRecommendationLists,
+} from "@/lib/product-recommendations-shared";
+import {
+  getTypeDefaultRecommendationIdsForProductTypes,
+  mergeRecommendationLists,
+} from "@/lib/product-type-recommendation-defaults";
+
+export type { ProductRecommendationLists } from "@/lib/product-recommendations-shared";
 import {
   getEventPriceOverlayForProduct,
   storefrontProductSelect,
   type StorefrontProductCard,
 } from "@/lib/products-storefront";
-
-export type ProductRecommendationLists = {
-  relatedProductIds: string[];
-  youMayAlsoWantProductIds: string[];
-};
 
 export async function getProductRecommendationIds(productId: string): Promise<ProductRecommendationLists> {
   const rows = await prisma.productRecommendation.findMany({
@@ -123,11 +127,27 @@ async function loadStorefrontCardsInOrder(
   return out;
 }
 
+export async function getEffectiveProductRecommendationIds(
+  productId: string,
+): Promise<ProductRecommendationLists> {
+  const [productLists, typeRows] = await Promise.all([
+    getProductRecommendationIds(productId),
+    prisma.productOnType.findMany({
+      where: { productId },
+      select: { typeId: true },
+    }),
+  ]);
+  const typeDefaults = await getTypeDefaultRecommendationIdsForProductTypes(
+    typeRows.map((t) => t.typeId),
+  );
+  return mergeRecommendationLists(typeDefaults, productLists, productId);
+}
+
 export async function getProductRecommendationsForStorefront(
   productId: string,
   eventId: string | null = null,
 ): Promise<{ related: StorefrontProductCard[]; youMayAlsoWant: StorefrontProductCard[] }> {
-  const lists = await getProductRecommendationIds(productId);
+  const lists = await getEffectiveProductRecommendationIds(productId);
   const [related, youMayAlsoWant] = await Promise.all([
     loadStorefrontCardsInOrder(lists.relatedProductIds, eventId),
     loadStorefrontCardsInOrder(lists.youMayAlsoWantProductIds, eventId),

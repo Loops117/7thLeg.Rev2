@@ -22,6 +22,10 @@ export type ProductCatalogEditPayload = {
   recommendations: {
     related: { id: string; name: string; slug: string }[];
     youMayAlsoWant: { id: string; name: string; slug: string }[];
+    fromTypes: {
+      related: { id: string; name: string; slug: string }[];
+      youMayAlsoWant: { id: string; name: string; slug: string }[];
+    };
   };
   kit: ProductCatalogKitAdmin;
 };

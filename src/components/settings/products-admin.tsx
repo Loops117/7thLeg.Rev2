@@ -255,6 +255,7 @@ export function ProductsAdminPanel({
               productId={editorInitial.id}
               initialRelated={editorRecommendations.related}
               initialYouMayAlsoWant={editorRecommendations.youMayAlsoWant}
+              inheritedFromTypes={editorRecommendations.fromTypes}
             />
           ) : null}
           {editorInitial?.id && editorKit ? (

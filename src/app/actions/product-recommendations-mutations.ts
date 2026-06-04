@@ -15,14 +15,15 @@ export type RecommendationPickerHit = { id: string; name: string; slug: string }
 
 export async function searchProductsForRecommendationPicker(
   query: string,
-  excludeProductId: string,
+  excludeProductId?: string | null,
 ): Promise<RecommendationPickerHit[] | { error: string }> {
   try {
     await requireAdmin();
     const q = query.trim();
+    const exclude = excludeProductId?.trim();
     const rows = await prisma.product.findMany({
       where: {
-        id: { not: excludeProductId },
+        ...(exclude ? { id: { not: exclude } } : {}),
         ...(q
           ? {
               OR: [
