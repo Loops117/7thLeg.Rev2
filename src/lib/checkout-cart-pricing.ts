@@ -6,6 +6,7 @@ import { unitCentsForVariantQuantity } from "@/lib/product-price-tiers";
 import { productAppearsInStock, variantIsPurchasable } from "@/lib/product-stock";
 import { productInEventLinkedCatalog } from "@/lib/event-catalog-scope";
 import { computeKitDiscountForCartItems } from "@/lib/product-kits";
+import { storefrontDisplayImageUrl } from "@/lib/product-images-public";
 import { loadProductTypeIndex } from "@/lib/product-type-tree";
 
 export const CART_PRICING_SCOPE_NONE = "__none__" as const;
@@ -99,7 +100,15 @@ export async function priceCartMerchandiseForCustomer(customerId: string): Promi
               active: true,
               quantity: true,
               unlimitedQuantity: true,
-              images: { orderBy: { sortOrder: "asc" }, take: 1, select: { url: true } },
+              images: {
+                orderBy: { sortOrder: "asc" },
+                select: {
+                  url: true,
+                  watermarkedUrl: true,
+                  useWatermarkedPublic: true,
+                  variantId: true,
+                },
+              },
               variants: true,
               types: { select: { typeId: true } },
             },
@@ -272,7 +281,7 @@ export async function priceCartMerchandiseForCustomer(customerId: string): Promi
       cartItemId: line.id,
       productId: p.id,
       slug: p.slug,
-      imageUrl: p.images[0]?.url ?? null,
+      imageUrl: storefrontDisplayImageUrl(p.images, variantId),
       variantId,
       productNameSnap: p.name,
       variantLabelSnap,

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, type CSSProperties } from "react";
 import { loadStoreProductPage } from "@/app/actions/store-products";
 import type { StorefrontProductCard, StorefrontTypeFilterNav } from "@/lib/products-storefront";
 import { StoreProductCard } from "@/components/store/store-product-card";
@@ -32,6 +32,7 @@ export function StoreAllProductsSection({
   productDiagonalBrandName = null,
   productDiagonalNameGapPx = 8,
   watermarkOpacityPercent = 38,
+  catalogCardWidthPx = 176,
 }: {
   baseProducts: StorefrontProductCard[];
   totalCount: number;
@@ -46,6 +47,8 @@ export function StoreAllProductsSection({
   productDiagonalBrandName?: string | null;
   productDiagonalNameGapPx?: number;
   watermarkOpacityPercent?: number;
+  /** Fixed width for catalog grid cards (from Settings → Store → Product cards). */
+  catalogCardWidthPx?: number;
 }) {
   const [query, setQuery] = useState(() => (initialQuery ?? "").trim());
   const [debouncedQ, setDebouncedQ] = useState(() => (initialQuery ?? "").trim());
@@ -261,12 +264,16 @@ export function StoreAllProductsSection({
       ) : null}
 
       {rows.length > 0 ? (
-        <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul
+          className="store-catalog-grid mt-6 flex w-full flex-wrap justify-center gap-4"
+          style={{ "--store-catalog-card-width": `${catalogCardWidthPx}px` } as CSSProperties}
+        >
           {rows.map((p) => (
-            <li key={p.id} className="flex">
+            <li key={p.id} className="store-catalog-grid__item flex shrink-0">
               <StoreProductCard
                 product={p}
                 hover={hover}
+                catalogGrid
                 eventId={eventId}
                 showQuickAdd
                 productDiagonalBrandName={productDiagonalBrandName}

@@ -141,6 +141,8 @@ model SiteConfig {
   storeBannerHtml            String  @default("") @db.Text
   storeFeaturedStripEnabled  Boolean @default(false)
   storeFeaturedStripConfig   Json?
+  /// Store catalog grid card width (px); see `lib/store-settings.ts`.
+  storeProductCardConfig     Json? @map("store_product_card_config")
   /// When true, `/labels` is available (direct URL works for anyone who has it).
   labelBuilderEnabled Boolean @default(false) @map("label_builder_enabled")
   /// When true and label builder is enabled, main nav shows Labels after Featured.

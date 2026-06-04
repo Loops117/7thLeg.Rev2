@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { EventKind } from "@/generated/prisma/client";
 import { auth as readAuthSession } from "@/auth";
 import { EventGiveawayEntryForm } from "@/components/event-giveaway-entry-form";
-import { pickPrimaryProductImage } from "@/lib/product-images-public";
+import { storefrontDisplayImageUrl } from "@/lib/product-images-public";
 import { productCardAppearsInStock } from "@/lib/product-stock";
 import { formatPriceUsd } from "@/lib/product-slug";
 import { getStorefrontEventListing } from "@/lib/products-storefront";
@@ -87,7 +87,7 @@ export default async function PublicEventPage({ params }: Props) {
           <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((p) => {
               const { price, sale } = cardPrice(p);
-              const img = pickPrimaryProductImage(p.images);
+              const img = storefrontDisplayImageUrl(p.images);
               const qs =
                 event.kind === EventKind.TIMED ? `?${new URLSearchParams({ event: event.id }).toString()}` : "";
               return (
@@ -97,14 +97,8 @@ export default async function PublicEventPage({ params }: Props) {
                     className="store-product-card block overflow-hidden rounded"
                   >
                     <div className="store-product-card__image-area aspect-[4/3]">
-                      {img ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={img} alt={p.name} className="h-full w-full object-contain" />
-                      ) : (
-                        <div className="flex h-full items-center justify-center px-2 text-center text-xs text-ink/45">
-                          No image
-                        </div>
-                      )}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={img} alt={p.name} className="h-full w-full object-contain" />
                     </div>
                     <div className="p-3">
                       <p className="store-product-card__title line-clamp-2 text-sm font-bold">{p.name}</p>

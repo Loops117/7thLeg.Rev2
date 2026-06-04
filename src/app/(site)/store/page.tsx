@@ -110,6 +110,7 @@ export default async function StorePage({
             productDiagonalBrandName={productDiagonalBrandName}
             productDiagonalNameGapPx={sitePub.productDiagonalNameGapPx}
             watermarkOpacityPercent={sitePub.watermarkOpacityPercent}
+            catalogCardWidthPx={s.storeProductCardConfig.cardWidthPx}
           />
         </section>
 
@@ -175,6 +176,7 @@ export default async function StorePage({
           productDiagonalBrandName={productDiagonalBrandName}
           productDiagonalNameGapPx={sitePub.productDiagonalNameGapPx}
           watermarkOpacityPercent={sitePub.watermarkOpacityPercent}
+          catalogCardWidthPx={s.storeProductCardConfig.cardWidthPx}
         />
       </section>
 

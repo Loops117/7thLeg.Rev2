@@ -5,7 +5,7 @@ import { useRef } from "react";
 import { ProductQuickAddButton } from "@/components/product-quick-add-button";
 import { ProductDiagonalBrandOverlay } from "@/components/store/product-diagonal-brand-overlay";
 import { ProductVariantBadge, storefrontVariantCount } from "@/components/store/product-variant-badge";
-import { pickPrimaryProductImage } from "@/lib/product-images-public";
+import { storefrontDisplayImageUrl } from "@/lib/product-images-public";
 import { productCardAppearsInStock } from "@/lib/product-stock";
 import { parseVariantPriceDisplay } from "@/lib/product-variant-price-display";
 import { productListPriceCents } from "@/lib/product-list-price-cents";
@@ -17,6 +17,7 @@ export function StoreProductCard({
   hover: _hover,
   compact,
   mini,
+  catalogGrid,
   eventId,
   showQuickAdd = false,
   productDiagonalBrandName,
@@ -29,6 +30,8 @@ export function StoreProductCard({
   compact?: boolean;
   /** Tighter card for product-page recommendation strips. */
   mini?: boolean;
+  /** Main /store grid: square image (cover) and uniform card height. */
+  catalogGrid?: boolean;
   eventId?: string | null;
   /** Quick add is for the store catalog grid only, not product detail or featured strips. */
   showQuickAdd?: boolean;
@@ -36,7 +39,7 @@ export function StoreProductCard({
   productDiagonalNameGapPx?: number;
   watermarkOpacityPercent?: number;
 }) {
-  const img = pickPrimaryProductImage(p.images);
+  const img = storefrontDisplayImageUrl(p.images);
   const qs = eventId?.trim() ? `?event=${encodeURIComponent(eventId.trim())}` : "";
   const inStock = productCardAppearsInStock(p);
   const listPriceCents = productListPriceCents(p.basePriceCents, p.variants);
@@ -44,26 +47,29 @@ export function StoreProductCard({
   const cardRef = useRef<HTMLDivElement>(null);
   const variantCount = storefrontVariantCount(p.variants);
   const isMini = mini && compact;
+  const isCatalogGrid = catalogGrid && !compact && !mini;
 
   return (
     <div
       ref={cardRef}
-      className={`store-product-card relative flex flex-col rounded ${isMini ? "" : "h-full"}`}
+      className={`store-product-card relative flex w-full flex-col rounded ${isMini ? "" : "h-full"}`}
     >
       <Link href={`/product/${p.slug}${qs}`} className={`flex flex-col ${isMini ? "" : "min-h-0 flex-1"}`}>
         <div
           className={`store-product-card__image-area relative shrink-0 overflow-hidden ${
-            isMini ? "aspect-square max-h-[4.5rem]" : compact ? "aspect-square" : "aspect-[4/3]"
+            isMini
+              ? "aspect-square max-h-[4.5rem]"
+              : isCatalogGrid || compact
+                ? "aspect-square"
+                : "aspect-[4/3]"
           }`}
         >
-          {img ? (
-            // eslint-disable-next-line @next/next/no-img-element -- admin-supplied arbitrary URLs
-            <img src={img} alt={p.name} className="h-full w-full object-contain" />
-          ) : (
-            <div className="flex h-full items-center justify-center px-2 text-center text-xs font-medium text-ink/45">
-              No image
-            </div>
-          )}
+          {/* eslint-disable-next-line @next/next/no-img-element -- admin-supplied arbitrary URLs */}
+          <img
+            src={img}
+            alt={p.name}
+            className={`h-full w-full ${isCatalogGrid ? "object-cover object-center" : "object-contain"}`}
+          />
           {!isMini ? <ProductVariantBadge count={variantCount} /> : null}
           {productDiagonalBrandName?.trim() ? (
             <ProductDiagonalBrandOverlay

@@ -1,4 +1,4 @@
-import { pickStorefrontImageForVariant } from "@/lib/product-images-public";
+import { storefrontDisplayImageUrl } from "@/lib/product-images-public";
 import { MIN_PRODUCT_KIT_ITEMS, orderKitItemsWithHostFirst } from "@/lib/product-kits-shared";
 import { unitCentsForVariantQuantity } from "@/lib/product-price-tiers";
 import { productAppearsInStock, variantIsPurchasable } from "@/lib/product-stock";
@@ -17,7 +17,7 @@ export type StorefrontKitLine = {
   variantId: string | null;
   variantLabel: string | null;
   unitPriceCents: number;
-  imageUrl: string | null;
+  imageUrl: string;
   inStock: boolean;
 };
 
@@ -204,7 +204,7 @@ export async function getProductKitForStorefront(
       variantId: row.variantId,
       variantLabel: priced.variantLabel ?? row.variant?.label ?? null,
       unitPriceCents: priced.unitPriceCents,
-      imageUrl: pickStorefrontImageForVariant(p.images, row.variantId) ?? null,
+      imageUrl: storefrontDisplayImageUrl(p.images, row.variantId),
       inStock: priced.inStock,
     });
   }

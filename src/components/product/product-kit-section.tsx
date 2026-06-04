@@ -20,14 +20,8 @@ function KitItemCard({ item }: { item: StorefrontKitLine }) {
     >
       <Link href={`/product/${item.productSlug}`} className="flex h-full min-w-0 flex-1 items-stretch">
         <div className={`store-product-card__image-area relative overflow-hidden ${KIT_CARD_IMAGE_CLASS}`}>
-          {item.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={item.imageUrl} alt="" className="h-full w-full object-contain" />
-          ) : (
-            <div className="store-product-card__description flex h-full items-center justify-center px-0.5 text-center text-[9px] font-medium leading-none">
-              No image
-            </div>
-          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={item.imageUrl} alt="" className="h-full w-full object-contain" />
         </div>
         <div className="flex h-full min-w-0 flex-1 flex-col justify-center gap-px overflow-hidden px-2 leading-none">
           {item.variantLabel ? (

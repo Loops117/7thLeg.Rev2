@@ -123,6 +123,12 @@ body {
   border: 2px solid color-mix(in srgb, var(--product-card-border) 30%, transparent);
 }
 
+/** /store catalog grid — fixed card width from Settings → Store → Product cards */
+.store-catalog-grid__item {
+  width: var(--store-catalog-card-width, 11rem);
+  max-width: 100%;
+}
+
 .store-product-card__image-area {
   background-color: color-mix(in srgb, var(--product-card-image-bg) 50%, transparent);
 }

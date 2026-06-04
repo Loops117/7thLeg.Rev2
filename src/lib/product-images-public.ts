@@ -1,3 +1,16 @@
+/** Shown when a product has no uploaded images (Supabase public asset). */
+export const PRODUCT_IMAGE_PLACEHOLDER_URL =
+  "https://qtfzfijqelkkmyxwvazx.supabase.co/storage/v1/object/public/Image%20Upload/ImageComingSoon.png";
+
+export function hasProductImages(images: StorefrontImageRow[]): boolean {
+  return images.length > 0;
+}
+
+export function withProductImagePlaceholder(url: string | null | undefined): string {
+  const trimmed = url?.trim();
+  return trimmed ? trimmed : PRODUCT_IMAGE_PLACEHOLDER_URL;
+}
+
 /** Card / listing: choose public URL (watermarked when configured). */
 export type StorefrontImageRow = {
   url: string;
@@ -29,6 +42,18 @@ export function pickStorefrontImageForVariant(
     if (forVariant) return storefrontImageUrl(forVariant);
   }
   return pickPrimaryProductImage(images);
+}
+
+/** Storefront listing / cart / kit: real image when present, else placeholder. */
+export function storefrontDisplayImageUrl(
+  images: StorefrontImageRow[],
+  variantId?: string | null,
+): string {
+  const picked =
+    variantId != null
+      ? pickStorefrontImageForVariant(images, variantId)
+      : pickPrimaryProductImage(images);
+  return withProductImagePlaceholder(picked);
 }
 
 export type ProductGalleryImageRow = StorefrontImageRow & {

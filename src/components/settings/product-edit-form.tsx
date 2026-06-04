@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { createProduct, updateProduct } from "@/app/actions/products-admin";
-import { RichTextEditor } from "@/components/rich-text-editor";
+import { RichTextOrHtmlEditor } from "@/components/rich-text-or-html-editor";
 import type {
   ProductEditInitial,
   ProductFooterOption,
@@ -253,7 +253,8 @@ export function ProductEditForm({
           className="mt-1 w-full border-2 border-palm-mid px-2 py-2 text-sm"
         />
       </label>
-      <RichTextEditor
+      <RichTextOrHtmlEditor
+        key={initial?.id ?? "new-product"}
         label="Full description"
         value={description}
         onChange={setDescription}

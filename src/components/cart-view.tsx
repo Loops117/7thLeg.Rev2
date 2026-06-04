@@ -21,6 +21,7 @@ import { shippingCentsAfterEventDiscount } from "@/lib/checkout-shipping-display
 import type { CartPaymentAvailability } from "@/lib/cart-payment-availability";
 import { taxCentsFromSubtotal } from "@/lib/checkout-tax";
 import { loyaltyDollarValueCents, planLoyaltyRedemptionForCheckout } from "@/lib/loyalty-redemption-preview";
+import { withProductImagePlaceholder } from "@/lib/product-images-public";
 import { formatPriceUsd } from "@/lib/product-slug";
 import type { StorefrontShippingOption } from "@/lib/shipping-options-public";
 import { LabelCartPreviewDialog } from "@/components/labels/label-cart-preview-dialog";
@@ -201,16 +202,15 @@ export function CartView({
         {lines.map((line) => (
           <li key={line.id} className="flex flex-wrap gap-4 py-6">
             <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded border border-palm/25 bg-white">
-              {line.imageUrl ? (
-                line.imageUrl.startsWith("/") ? (
-                  <Image src={line.imageUrl} alt="" fill className="object-contain" sizes="96px" />
+              {(() => {
+                const img = withProductImagePlaceholder(line.imageUrl);
+                return img.startsWith("/") ? (
+                  <Image src={img} alt="" fill className="object-contain" sizes="96px" />
                 ) : (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={line.imageUrl} alt="" className="h-full w-full object-contain" />
-                )
-              ) : (
-                <div className="flex h-full items-center justify-center text-xs text-ink/40">No image</div>
-              )}
+                  <img src={img} alt="" className="h-full w-full object-contain" />
+                );
+              })()}
             </div>
             <div className="min-w-0 flex-1">
               <Link href={`/product/${line.slug}`} className="font-bold text-palm hover:underline">

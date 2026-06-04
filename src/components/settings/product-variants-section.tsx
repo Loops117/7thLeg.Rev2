@@ -21,7 +21,7 @@ import type { ProductImageAdminRow } from "@/app/actions/product-images-admin";
 import { ProductEditorSection } from "@/components/settings/product-editor-section";
 import { ProductPriceTiersEditor } from "@/components/settings/product-price-tiers-editor";
 import { ProductVariantImagePicker } from "@/components/settings/product-variant-image-picker";
-import { RichTextEditor } from "@/components/rich-text-editor";
+import { RichTextOrHtmlEditor } from "@/components/rich-text-or-html-editor";
 import type { ProductPriceTier } from "@/lib/product-price-tiers";
 import { formatPriceUsd } from "@/lib/product-slug";
 
@@ -259,16 +259,15 @@ function VariantEditorRow({
     </tr>
     <tr className="border-b border-palm/15 bg-surf/25">
       <td colSpan={9} className="px-3 py-3">
-        <RichTextEditor
+        <RichTextOrHtmlEditor
+          key={v.id}
           label={`Variation description (${label || v.label})`}
           value={description}
           onChange={setDescription}
           placeholder="Optional. Shown on the product page when this variation is selected — above the main product description."
           minHeightClassName="min-h-[8rem]"
+          hint="Leave empty to use only the main product description. Save the row above to publish changes."
         />
-        <p className="mt-1 text-xs text-ink/55">
-          Leave empty to use only the main product description. Save the row above to publish changes.
-        </p>
       </td>
     </tr>
     <tr className="border-b border-palm/15 bg-surf/25">

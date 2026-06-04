@@ -6,9 +6,10 @@ import { prisma } from "@/lib/prisma";
 import {
   defaultStoreSettingsState,
   parseFeaturedStripConfig,
+  parseStoreProductCardConfig,
   type StoreFeaturedStripConfig,
   type StoreSettingsState,
-} from "@/lib/store-settings";
+} from "@/lib/store-settings-shared";
 
 async function requireAdmin() {
   const session = await auth();
@@ -26,6 +27,9 @@ export async function updateStoreSettings(state: StoreSettingsState) {
   await requireAdmin();
   const base = defaultStoreSettingsState();
   const strip = normalizeStrip(state.storeFeaturedStripConfig ?? base.storeFeaturedStripConfig);
+  const productCards = parseStoreProductCardConfig(
+    state.storeProductCardConfig ?? base.storeProductCardConfig,
+  );
   const mode = state.cardHoverMode === "glow" ? "glow" : "zoom";
 
   const data = {
@@ -33,6 +37,7 @@ export async function updateStoreSettings(state: StoreSettingsState) {
     storeBannerHtml: typeof state.storeBannerHtml === "string" ? state.storeBannerHtml : "",
     storeFeaturedStripEnabled: !!state.storeFeaturedStripEnabled,
     storeFeaturedStripConfig: strip as object,
+    storeProductCardConfig: productCards as object,
     storeFooterEnabled: !!state.storeFooterEnabled,
     storeFooterHtml: typeof state.storeFooterHtml === "string" ? state.storeFooterHtml : "",
     cardHoverMode: mode,

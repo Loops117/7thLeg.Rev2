@@ -5,6 +5,7 @@ import { AddToCartButton } from "@/components/add-to-cart-button";
 import { AddToWishlistButton } from "@/components/add-to-wishlist-button";
 import { ProductDiagonalBrandOverlay } from "@/components/store/product-diagonal-brand-overlay";
 import {
+  PRODUCT_IMAGE_PLACEHOLDER_URL,
   productPageGalleryAll,
   productPagePreferredImageIndex,
   storefrontImageUrl,
@@ -135,7 +136,7 @@ export function ProductVariantShop({
   }, [selectedVariantId]);
 
   const hero = gallery[imageIndex] ?? gallery[0];
-  const heroUrl = hero ? storefrontImageUrl(hero) : "";
+  const heroUrl = hero ? storefrontImageUrl(hero) : PRODUCT_IMAGE_PLACEHOLDER_URL;
 
   const selectedVar = variants.find((v) => v.id === selectedVariantId);
   const variantDescriptionHtml =
@@ -174,26 +175,22 @@ export function ProductVariantShop({
     <div className="mt-6 grid gap-8 lg:grid-cols-2">
       <div className="space-y-4">
         <div className="overflow-hidden rounded border-2 border-palm/25 bg-surf/40">
-          {hero ? (
-            <div className="relative block aspect-square w-full overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={heroUrl}
-                alt={productName}
-                className="aspect-square w-full object-contain"
-                draggable={false}
+          <div className="relative block aspect-square w-full overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={heroUrl}
+              alt={productName}
+              className="aspect-square w-full object-contain"
+              draggable={false}
+            />
+            {hero && productDiagonalBrandName?.trim() ? (
+              <ProductDiagonalBrandOverlay
+                brandName={productDiagonalBrandName}
+                spacingPx={productDiagonalNameGapPx}
+                opacityPercent={watermarkOpacityPercent}
               />
-              {productDiagonalBrandName?.trim() ? (
-                <ProductDiagonalBrandOverlay
-                  brandName={productDiagonalBrandName}
-                  spacingPx={productDiagonalNameGapPx}
-                  opacityPercent={watermarkOpacityPercent}
-                />
-              ) : null}
-            </div>
-          ) : (
-            <div className="flex aspect-square items-center justify-center text-ink/50">No image</div>
-          )}
+            ) : null}
+          </div>
         </div>
         {gallery.length > 1 ? (
           <div className="flex flex-wrap gap-2">
