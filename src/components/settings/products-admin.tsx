@@ -1,5 +1,6 @@
 "use client";
 
+import { adminDetailsPaneClass } from "@/lib/admin-surface-classes";
 import { adminTableRowClass } from "@/lib/admin-table-classes";
 import { btnChip, btnChipActive } from "@/lib/btn-theme-classes";
 import { ProductTypeIndex, type ProductTypeFlat } from "@/lib/product-type-index";
@@ -7,15 +8,14 @@ import { ProductTypeIndex, type ProductTypeFlat } from "@/lib/product-type-index
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import {
-  deleteProduct,
-  quickRestockProduct,
-  setProductActive,
-  type ProductCatalogEditPayload,
-} from "@/app/actions/products-admin";
+import { deleteProduct, quickRestockProduct, setProductActive } from "@/app/actions/products-admin";
+import type { ProductCatalogEditPayload } from "@/lib/product-catalog-edit-types";
 import { ProductCatalogActionsMenu } from "@/components/settings/product-catalog-actions-menu";
 import { ProductEditForm } from "@/components/settings/product-edit-form";
 import { ProductEditMedia } from "@/components/settings/product-edit-media";
+import { ProductRecommendationsEditor } from "@/components/settings/product-recommendations-editor";
+import { ProductKitEditor } from "@/components/settings/product-kit-editor";
+import type { ProductPickerOption } from "@/lib/product-picker-option";
 import { formatPriceUsd } from "@/lib/product-slug";
 import type {
   ProductEditInitial,
@@ -56,6 +56,12 @@ export function ProductsAdminPanel({
   const [editorMedia, setEditorMedia] = useState<ProductCatalogEditPayload["media"] | undefined>(() =>
     editPayload?.media,
   );
+  const [editorRecommendations, setEditorRecommendations] = useState<
+    ProductCatalogEditPayload["recommendations"] | undefined
+  >(() => editPayload?.recommendations);
+  const [editorKit, setEditorKit] = useState<ProductCatalogEditPayload["kit"] | undefined>(
+    () => editPayload?.kit,
+  );
   const loadedFromUrlRef = useRef<string | null>(editPayload ? editPayload.initial.id : null);
 
   const [search, setSearch] = useState("");
@@ -79,6 +85,8 @@ export function ProductsAdminPanel({
       loadedFromUrlRef.current = editPayload.initial.id;
       setEditorInitial(editPayload.initial);
       setEditorMedia(editPayload.media);
+      setEditorRecommendations(editPayload.recommendations);
+      setEditorKit(editPayload.kit);
       setPaneEditorOpen(true);
       return;
     }
@@ -86,6 +94,8 @@ export function ProductsAdminPanel({
       loadedFromUrlRef.current = null;
       setEditorInitial(null);
       setEditorMedia(undefined);
+      setEditorRecommendations(undefined);
+      setEditorKit(undefined);
       setPaneEditorOpen(false);
     }
   }, [editPayload, editIdFromUrl]);
@@ -112,6 +122,8 @@ export function ProductsAdminPanel({
     loadedFromUrlRef.current = null;
     setEditorInitial(null);
     setEditorMedia(undefined);
+    setEditorRecommendations(undefined);
+    setEditorKit(undefined);
     setPaneEditorOpen(false);
     router.replace("/settings/products");
     router.refresh();
@@ -203,16 +215,16 @@ export function ProductsAdminPanel({
       <details
         open={paneEditorOpen}
         onToggle={(e) => setPaneEditorOpen((e.target as HTMLDetailsElement).open)}
-        className="rounded border-2 border-palm bg-white shadow-sm [&_summary]:cursor-pointer [&_summary]:list-none [&_summary::-webkit-details-marker]:hidden"
+        className={adminDetailsPaneClass}
       >
-        <summary className="border-b-2 border-palm/20 px-4 py-3 text-lg font-black text-palm sm:px-6">
+        <summary className="border-b-2 border-palm/20 px-4 py-3 text-lg font-black text-palm dark:text-emerald-300 sm:px-6 dark:border-zinc-700">
           Add or edit product
           <span className="mt-1 block text-xs font-normal text-ink/65">
             Collapsed by default. Expand to create a product or edit one from the catalog. Variations and images appear
             after the product exists.
           </span>
         </summary>
-        <div className="space-y-6 p-4 sm:p-6">
+        <div className="space-y-4 p-4 sm:p-6">
           <ProductEditForm
             key={editorInitial?.id ?? "new"}
             initial={editorInitial}
@@ -224,29 +236,58 @@ export function ProductsAdminPanel({
             onClear={handleClear}
             onCancel={handleCancel}
           />
+          {editorInitial?.id && editorRecommendations ? (
+            <ProductRecommendationsEditor
+              key={`rec-${editorInitial.id}`}
+              productId={editorInitial.id}
+              initialRelated={editorRecommendations.related}
+              initialYouMayAlsoWant={editorRecommendations.youMayAlsoWant}
+            />
+          ) : null}
+          {editorInitial?.id && editorKit ? (
+            <ProductKitEditor
+                key={`kit-${editorInitial.id}`}
+                hostProductId={editorInitial.id}
+                hostProduct={{
+                  id: editorInitial.id,
+                  name: editorInitial.name,
+                  slug: editorInitial.slug,
+                  variants: (editorMedia?.variants ?? []).map(
+                    (v): ProductPickerOption["variants"][number] => ({
+                      id: v.id,
+                      label: v.label,
+                      active: v.active,
+                    }),
+                  ),
+                }}
+                initial={{
+                  enabled: editorKit.enabled,
+                  label: editorKit.label,
+                  discountCents: editorKit.discountCents,
+                  items: editorKit.items,
+                }}
+            />
+          ) : null}
           {editorInitial?.id ? (
-            <div className="border-t-2 border-dashed border-palm/25 pt-6">
-              <p className="mb-4 text-sm font-bold text-palm">Pricing, stock, &amp; images</p>
-              <ProductEditMedia
-                key={editorInitial.id}
-                productId={editorInitial.id}
-                basePriceCents={editorInitial.basePriceCents}
-                variantPriceDisplay={editorInitial.variantPriceDisplay}
-                initialMedia={editorMedia}
-                onVariantPriceDisplaySaved={(mode) =>
-                  setEditorInitial((prev) => (prev ? { ...prev, variantPriceDisplay: mode } : prev))
-                }
-              />
-            </div>
+            <ProductEditMedia
+              key={editorInitial.id}
+              productId={editorInitial.id}
+              basePriceCents={editorInitial.basePriceCents}
+              variantPriceDisplay={editorInitial.variantPriceDisplay}
+              initialMedia={editorMedia}
+              onVariantPriceDisplaySaved={(mode) =>
+                setEditorInitial((prev) => (prev ? { ...prev, variantPriceDisplay: mode } : prev))
+              }
+            />
           ) : null}
         </div>
       </details>
 
       <details
         open
-        className="rounded border-2 border-palm bg-white shadow-sm [&_summary]:cursor-pointer [&_summary]:list-none [&_summary::-webkit-details-marker]:hidden"
+        className={adminDetailsPaneClass}
       >
-        <summary className="border-b-2 border-palm/20 px-4 py-3 text-lg font-black text-palm sm:px-6">
+        <summary className="border-b-2 border-palm/20 px-4 py-3 text-lg font-black text-palm dark:text-emerald-300 sm:px-6 dark:border-zinc-700">
           Catalog
           <span className="mt-1 block text-xs font-normal text-ink/65">
             {rows.length} product{rows.length === 1 ? "" : "s"} — search and filter the table.

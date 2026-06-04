@@ -19,6 +19,7 @@ const pinSelect = {
   imageSubmissionPinBorderWidthPx: true,
   imageSubmissionPinBorderColor: true,
   imageSubmissionPinCustomImageUrl: true,
+  imageSubmissionPinHighlightColor: true,
 } as const;
 
 export const getImageSubmissionPinAppearance = cache(async function getImageSubmissionPinAppearance(): Promise<ImageSubmissionPinAppearance> {

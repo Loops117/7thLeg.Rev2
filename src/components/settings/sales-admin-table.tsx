@@ -48,6 +48,7 @@ type SalesOrderRow = {
     id: string;
     productNameSnap: string;
     variantLabelSnap: string | null;
+    variantSkuSnap: string | null;
     quantity: number;
   }>;
   likelyMissingLabelArchive: boolean;
@@ -333,7 +334,7 @@ export function SalesAdminTable({ orders, emptyMessage }: Props) {
         </div>
       ) : null}
 
-      <div className="admin-table-shell overflow-x-auto rounded border border-palm/25 bg-white shadow-sm">
+      <div className="admin-table-shell overflow-x-auto rounded border border-palm/25 bg-white shadow-sm dark:border-zinc-600 dark:bg-zinc-900/40">
         <table className="admin-striped w-full min-w-[960px] border-collapse text-left text-sm">
           <thead>
             <tr className="border-b-2 border-palm/30">
@@ -508,6 +509,9 @@ export function SalesAdminTable({ orders, emptyMessage }: Props) {
                                   <span>
                                     {li.productNameSnap}
                                     {li.variantLabelSnap ? <span className="text-ink/60 dark:text-zinc-500"> ({li.variantLabelSnap})</span> : null}
+                                    {li.variantSkuSnap ? (
+                                      <span className="font-mono text-ink/55 dark:text-zinc-500"> · {li.variantSkuSnap}</span>
+                                    ) : null}
                                   </span>
                                 </li>
                               ))}

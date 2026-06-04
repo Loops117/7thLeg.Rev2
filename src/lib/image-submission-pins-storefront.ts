@@ -21,6 +21,14 @@ export function pinHoverLabel(pin: { productName: string; variantLabel: string |
   return pinVariationDisplayName(pin);
 }
 
+/** Matches tagged-product rows and cross-highlighting in the gallery viewer. */
+export function storefrontPinHighlightKey(pin: {
+  productSlug: string;
+  variantId: string | null;
+}): string {
+  return `${pin.productSlug}:${pin.variantId ?? ""}`;
+}
+
 export function productUrlForPin(slug: string, variantId: string | null, eventId?: string | null): string {
   const params = new URLSearchParams();
   if (eventId?.trim()) params.set("event", eventId.trim());

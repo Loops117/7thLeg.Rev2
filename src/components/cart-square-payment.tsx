@@ -32,18 +32,47 @@ function squareScriptSrc(sandbox: boolean): string {
     : "https://web.squarecdn.com/v1/square.js";
 }
 
-function loadSquareWebSdk(sandbox: boolean): Promise<void> {
+function waitForSquareGlobal(timeoutMs = 12000): Promise<void> {
   return new Promise((resolve, reject) => {
-    const id = `square-web-payments-sdk-${sandbox ? "sandbox" : "live"}`;
-    if (document.getElementById(id)) {
+    const started = Date.now();
+    const tick = () => {
+      if (window.Square?.payments) {
+        resolve();
+        return;
+      }
+      if (Date.now() - started > timeoutMs) {
+        reject(new Error("Square payment SDK loaded but did not initialize."));
+        return;
+      }
+      window.setTimeout(tick, 50);
+    };
+    tick();
+  });
+}
+
+function loadSquareWebSdk(sandbox: boolean): Promise<void> {
+  const id = `square-web-payments-sdk-${sandbox ? "sandbox" : "live"}`;
+  const otherId = sandbox ? "square-web-payments-sdk-live" : "square-web-payments-sdk-sandbox";
+
+  return new Promise((resolve, reject) => {
+    document.getElementById(otherId)?.remove();
+
+    const existing = document.getElementById(id) as HTMLScriptElement | null;
+    if (existing && window.Square?.payments) {
       resolve();
       return;
     }
+    existing?.remove();
+
     const s = document.createElement("script");
     s.id = id;
     s.src = squareScriptSrc(sandbox);
     s.async = true;
-    s.onload = () => resolve();
+    s.onload = () => {
+      waitForSquareGlobal()
+        .then(resolve)
+        .catch(reject);
+    };
     s.onerror = () => reject(new Error("Could not load Square payment SDK."));
     document.body.appendChild(s);
   });

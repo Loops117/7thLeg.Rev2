@@ -19,6 +19,18 @@ export function pickPrimaryProductImage(images: StorefrontImageRow[]): string | 
   return first ? storefrontImageUrl(first) : undefined;
 }
 
+/** Prefer the image assigned to `variantId`, then general / primary listing image. */
+export function pickStorefrontImageForVariant(
+  images: StorefrontImageRow[],
+  variantId: string | null,
+): string | undefined {
+  if (variantId) {
+    const forVariant = images.find((i) => i.variantId === variantId);
+    if (forVariant) return storefrontImageUrl(forVariant);
+  }
+  return pickPrimaryProductImage(images);
+}
+
 export type ProductGalleryImageRow = StorefrontImageRow & {
   id: string;
   sortOrder: number;

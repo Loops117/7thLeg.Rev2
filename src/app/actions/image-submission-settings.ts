@@ -29,6 +29,7 @@ const pinSelect = {
   imageSubmissionPinBorderWidthPx: true,
   imageSubmissionPinBorderColor: true,
   imageSubmissionPinCustomImageUrl: true,
+  imageSubmissionPinHighlightColor: true,
 } as const;
 
 export type ImageSubmissionSettingsState = {
@@ -39,6 +40,7 @@ export type ImageSubmissionSettingsState = {
 function revalidateImageSubmissionPaths() {
   revalidatePath("/settings/image-submission");
   revalidatePath("/gallery");
+  revalidatePath("/");
 }
 
 function pinAppearancePrismaDefaults() {
@@ -49,6 +51,7 @@ function pinAppearancePrismaDefaults() {
     imageSubmissionPinBorderWidthPx: d.borderWidthPx,
     imageSubmissionPinBorderColor: d.borderColor,
     imageSubmissionPinCustomImageUrl: d.customImageUrl,
+    imageSubmissionPinHighlightColor: d.highlightColor,
   };
 }
 
@@ -104,6 +107,7 @@ export async function updateImageSubmissionPinAppearance(
       imageSubmissionPinBorderWidthPx: appearance.borderWidthPx,
       imageSubmissionPinBorderColor: appearance.borderColor,
       imageSubmissionPinCustomImageUrl: appearance.customImageUrl,
+      imageSubmissionPinHighlightColor: appearance.highlightColor,
     });
     const existing = await prisma.siteConfig.findUnique({ where: { id: 1 }, select: { id: true } });
     if (existing) {
@@ -115,6 +119,7 @@ export async function updateImageSubmissionPinAppearance(
           imageSubmissionPinBorderWidthPx: normalized.borderWidthPx,
           imageSubmissionPinBorderColor: normalized.borderColor,
           imageSubmissionPinCustomImageUrl: normalized.customImageUrl,
+          imageSubmissionPinHighlightColor: normalized.highlightColor,
         },
       });
     } else {
@@ -128,6 +133,7 @@ export async function updateImageSubmissionPinAppearance(
           imageSubmissionPinBorderWidthPx: normalized.borderWidthPx,
           imageSubmissionPinBorderColor: normalized.borderColor,
           imageSubmissionPinCustomImageUrl: normalized.customImageUrl,
+          imageSubmissionPinHighlightColor: normalized.highlightColor,
         },
       });
     }
@@ -179,6 +185,7 @@ export async function uploadImageSubmissionPinCustomImage(
         imageSubmissionPinBorderWidthPx: current.borderWidthPx,
         imageSubmissionPinBorderColor: current.borderColor,
         imageSubmissionPinCustomImageUrl: url,
+        imageSubmissionPinHighlightColor: current.highlightColor,
       },
       update: { imageSubmissionPinCustomImageUrl: url },
     });

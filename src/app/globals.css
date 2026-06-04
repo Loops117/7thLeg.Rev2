@@ -144,6 +144,11 @@ body {
   color: var(--product-card-sale);
 }
 
+/** Kit combo row: + and = between cards — matches product card border tone. */
+.kit-combo-operator {
+  color: color-mix(in srgb, var(--product-card-border) 35%, transparent);
+}
+
 [data-store-card-hover="zoom"] .store-product-card {
   transition: transform 150ms ease;
 }
@@ -220,6 +225,21 @@ body {
 
 .gallery-tagged-row-active:hover {
   background-color: color-mix(in srgb, var(--gallery-row-fill) 85%, transparent);
+}
+
+.gallery-tagged-row-highlighted {
+  border-color: color-mix(in srgb, var(--gallery-pin-highlight, #f4a261) 100%, transparent);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--gallery-pin-highlight, #f4a261) 45%, transparent),
+    0 0 10px color-mix(in srgb, var(--gallery-pin-highlight, #f4a261) 35%, transparent);
+}
+
+.gallery-tagged-row-highlighted:hover {
+  border-color: color-mix(in srgb, var(--gallery-pin-highlight, #f4a261) 100%, transparent);
+}
+
+.gallery-pin-marker--highlighted {
+  z-index: 25;
 }
 
 .gallery-tagged-active-badge {
@@ -622,4 +642,59 @@ body {
 #settings-admin-shell.dark .admin-settings-body table tbody > tr:nth-child(odd) > td,
 #settings-admin-shell.dark .admin-settings-body table tbody > tr:nth-child(even) > td {
   color: #e4e4e7;
+}
+
+/* Last — list tiles, picker dropdowns, sand/surf panels (Tailwind utilities load before this file) */
+#settings-admin-shell.dark .admin-settings-body .bg-sand\/30,
+#settings-admin-shell.dark .admin-settings-body .bg-sand\/50,
+#settings-admin-shell.dark .admin-settings-body .bg-surf\/40,
+#settings-admin-shell.dark .admin-settings-body .bg-surf\/60 {
+  background-color: #18181b !important;
+  border-color: #52525b !important;
+}
+
+#settings-admin-shell.dark .admin-settings-body :is(
+  .bg-white\/80,
+  .bg-white\/90,
+  .bg-white\/95,
+  .bg-white\/70,
+  .bg-white\/60,
+  ul.bg-white
+) {
+  background-color: #27272a !important;
+  border-color: #52525b !important;
+  color: #e4e4e7;
+}
+
+#settings-admin-shell.dark .admin-settings-body :is(div, section, fieldset, ul, ol, li, details, article, label, p).bg-white {
+  background-color: #18181b !important;
+  border-color: #52525b !important;
+  color: #e4e4e7;
+}
+
+#settings-admin-shell.dark .admin-settings-body .border-palm\/15,
+#settings-admin-shell.dark .admin-settings-body .border-palm\/20,
+#settings-admin-shell.dark .admin-settings-body .border-palm\/25,
+#settings-admin-shell.dark .admin-settings-body .border-palm\/30 {
+  border-color: #52525b !important;
+}
+
+#settings-admin-shell.dark .admin-settings-body ul.bg-white button,
+#settings-admin-shell.dark .admin-settings-body ul.bg-white\/80 button {
+  color: #e4e4e7;
+}
+
+#settings-admin-shell.dark .admin-settings-body .hover\:bg-surf\/80:hover,
+#settings-admin-shell.dark .admin-settings-body ul.bg-white button:hover,
+#settings-admin-shell.dark .admin-settings-body ul.bg-white\/80 button:hover {
+  background-color: #3f3f46 !important;
+}
+
+#settings-admin-shell.dark .admin-settings-body .bg-black\/5 {
+  background-color: #27272a !important;
+  color: #e4e4e7;
+}
+
+#settings-admin-shell.dark .admin-settings-body .text-palm-mid {
+  color: #a1a1aa !important;
 }

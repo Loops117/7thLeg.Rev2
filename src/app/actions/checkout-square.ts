@@ -7,16 +7,7 @@ import { createFreshPendingCheckoutOrder } from "@/lib/checkout-create-pending-o
 import { fulfillPaidOrder } from "@/lib/fulfill-paid-order";
 import { prisma } from "@/lib/prisma";
 import { getSquareClient, getSquarePublicApplicationId, isSquareSandbox } from "@/lib/square-server";
-import { SquareError } from "square";
-
-type SquarePaymentCreateBody = {
-  errors?: Array<{ detail?: string; code?: string; category?: string }>;
-  payment?: {
-    id?: string;
-    status?: string;
-    amountMoney?: { amount?: bigint; currency?: string };
-  };
-};
+import { SquareError, type Square } from "square";
 
 export type PrepareSquareCheckoutResult =
   | { ok: true; orderId: string; applicationId: string; locationId: string; sandbox: boolean; totalCents: number }
@@ -132,7 +123,7 @@ export async function completeSquarePaymentAction(
 
   try {
     const client = getSquareClient();
-    const envelope = await client.payments.create({
+    const body: Square.CreatePaymentResponse = await client.payments.create({
       sourceId,
       idempotencyKey: order.id,
       amountMoney: {
@@ -144,14 +135,6 @@ export async function completeSquarePaymentAction(
       referenceId: order.id.slice(0, 40),
       note: `Web order ${order.id.slice(0, 10)}`,
     });
-
-    const body: SquarePaymentCreateBody =
-      envelope &&
-      typeof envelope === "object" &&
-      "data" in envelope &&
-      (envelope as { data: SquarePaymentCreateBody }).data
-        ? (envelope as { data: SquarePaymentCreateBody }).data
-        : (envelope as unknown as SquarePaymentCreateBody);
 
     const errs = body.errors ?? [];
     if (errs.length) {

@@ -39,6 +39,7 @@ export async function createFreshPendingCheckoutOrder(
     variantId: l.variantId,
     productNameSnap: l.productNameSnap,
     variantLabelSnap: l.variantLabelSnap,
+    variantSkuSnap: l.variantSkuSnap,
     quantity: l.quantity,
     unitPriceCents: l.unitPriceCents,
     lineTotalCents: l.lineTotalCents,
@@ -82,7 +83,10 @@ export async function createFreshPendingCheckoutOrder(
     }
   }
 
-  let subtotalCents = finalLineCreates.reduce((s, l) => s + l.lineTotalCents, 0) + totals.labelPayableCents;
+  let subtotalCents =
+    finalLineCreates.reduce((s, l) => s + l.lineTotalCents, 0) +
+    totals.labelPayableCents -
+    Math.max(0, totals.kitDiscountCents);
   if (subtotalCents < 0) return { ok: false, error: "Invalid cart total." };
 
   let shippingCents = 0;
@@ -134,6 +138,7 @@ export async function createFreshPendingCheckoutOrder(
           totalCents,
           checkoutCouponCodeSnap: totals.checkoutCouponCodeSnap,
           checkoutCouponDiscountCents: totals.checkoutCouponDiscountCents,
+          kitDiscountCents: totals.kitDiscountCents,
           loyaltyPointsRedeemed,
           loyaltyRedemptionDiscountCents,
           loyaltyRedemptionCentsPerPointSnap,

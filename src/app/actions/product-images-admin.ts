@@ -13,6 +13,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import type { ProductVariantAdminRow } from "@/app/actions/product-variants-admin";
 import { parseProductPriceTiersJson } from "@/lib/product-price-tiers";
+import { normalizeVariantSku } from "@/lib/variant-sku";
 import { getUploadImageSettingsFromDb, normalizeImageBufferForUpload } from "@/lib/image-upload-normalize";
 import { getProductWatermarkCompositeSettings, getWatermarkPngForComposite } from "@/lib/watermark-resolve";
 import { compositeWatermarkJpegFromBuffers, readImageBufferFromPublicUrl } from "@/lib/watermark-image";
@@ -83,6 +84,8 @@ export async function getProductMediaAdmin(productId: string): Promise<ProductMe
       select: {
         id: true,
         label: true,
+        sku: true,
+        description: true,
         sortOrder: true,
         stock: true,
         unlimitedStock: true,
@@ -101,6 +104,8 @@ export async function getProductMediaAdmin(productId: string): Promise<ProductMe
     variants: variants.map((r) => ({
       id: r.id,
       label: r.label,
+      sku: normalizeVariantSku(r.sku),
+      description: r.description ?? "",
       sortOrder: r.sortOrder,
       stock: r.stock,
       unlimitedStock: r.unlimitedStock,

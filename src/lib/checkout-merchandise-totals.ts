@@ -14,6 +14,7 @@ export type CheckoutMerchandiseTotals = {
   checkoutCouponCodeSnap: string;
   /** Product + label savings from the applied checkout coupon. */
   checkoutCouponDiscountCents: number;
+  kitDiscountCents: number;
 };
 
 export async function computeCheckoutMerchandiseTotals(
@@ -65,6 +66,7 @@ export async function computeCheckoutMerchandiseTotals(
       checkoutCouponCodeSnap: priced?.ok ? priced.checkoutCouponCodeSnap.trim() : "",
       checkoutCouponDiscountCents:
         (priced?.ok ? priced.couponDiscountCents : 0) + labelPricing.couponDiscountCents,
+      kitDiscountCents: priced?.ok ? priced.kitDiscountCents : 0,
     },
   };
 }

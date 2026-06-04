@@ -1,5 +1,6 @@
 "use client";
 
+import { adminPanelClass } from "@/lib/admin-surface-classes";
 import { btnSecondaryMd } from "@/lib/btn-theme-classes";
 
 import { useState, useTransition } from "react";
@@ -24,8 +25,8 @@ export function PaymentsGatewayEditor({ initial }: { initial: PaymentGatewaysSta
   }
 
   return (
-    <div className="rounded border border-palm/25 bg-white/90 p-6 shadow-sm">
-      <h2 className="text-lg font-black text-palm">Checkout gateways</h2>
+    <div className={`p-6 ${adminPanelClass}`}>
+      <h2 className="text-lg font-black text-palm dark:text-emerald-300">Checkout gateways</h2>
       <p className="mt-2 max-w-xl text-sm text-ink/75">
         Turn each processor on only when credentials are deployed. Customers only see gateways that are both{" "}
         <strong className="text-ink">enabled here</strong> and have the required{" "}

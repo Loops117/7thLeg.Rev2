@@ -1,5 +1,6 @@
 "use client";
 
+import { adminFieldsetClass } from "@/lib/admin-surface-classes";
 import { adminTableRowClass } from "@/lib/admin-table-classes";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -101,7 +102,7 @@ export function LoyaltyPageContent({
 
   return (
     <div className="space-y-8">
-      <fieldset className="rounded border-2 border-palm/25 bg-white p-4">
+      <fieldset className={`${adminFieldsetClass} border-2 p-4`}>
         <legend className="text-sm font-bold text-palm">Program</legend>
         <p className="mb-3 text-xs text-ink/65">These values are stored in the site config and used at checkout when points accrual is wired in.</p>
         <label className="flex items-center gap-2 text-sm font-bold text-ink">

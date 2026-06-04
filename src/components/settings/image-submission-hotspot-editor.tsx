@@ -6,8 +6,8 @@ import {
   saveImageSubmissionHotspots,
   searchProductsForHotspotPicker,
   type PinDraftInput,
-  type ProductPickerOption,
 } from "@/app/actions/image-submission-hotspots";
+import type { ProductPickerOption } from "@/lib/product-picker-option";
 import { btnMainMd, btnSecondaryMd } from "@/lib/btn-theme-classes";
 import { clientPointToImagePercent, pinCenterToContainerStyle } from "@/lib/image-hotspot-layout";
 import { SubmissionPinMarker } from "@/components/gallery/submission-pin-marker";

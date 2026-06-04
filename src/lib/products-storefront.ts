@@ -12,7 +12,7 @@ export {
 export const STORE_PAGE_SIZE = 24;
 
 /** Listing / carousel card shape (shared). */
-const storefrontProductSelect = {
+export const storefrontProductSelect = {
   id: true,
   name: true,
   slug: true,

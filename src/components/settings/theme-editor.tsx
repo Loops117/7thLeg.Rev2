@@ -1345,7 +1345,7 @@ export function ThemeEditor({
           100 = very common). <strong>Always on top</strong> makes that sticker float above the other tiles until it fades.
         </p>
 
-        <div className="rounded border border-palm/20 bg-white/80 p-3">
+        <div className="rounded border border-palm/20 bg-white/80 p-3 dark:border-zinc-600 dark:bg-zinc-900/50">
           <p className="text-sm font-bold text-palm">Upload decorative images</p>
           <p className="mt-1 text-xs text-ink/65">
             Files are stored on the server or Vercel Blob (set{" "}
@@ -1365,7 +1365,7 @@ export function ThemeEditor({
           </div>
         </div>
 
-        <div className="rounded border border-palm/20 bg-white/80 p-3">
+        <div className="rounded border border-palm/20 bg-white/80 p-3 dark:border-zinc-600 dark:bg-zinc-900/50">
           <p className="text-sm font-bold text-palm">Uploaded images in pool</p>
           <p className="text-xs text-ink/65">Remove deletes the file from storage. View opens the full image in a new tab.</p>
           {decorRows.length === 0 ? (
@@ -1451,7 +1451,7 @@ export function ThemeEditor({
           )}
         </div>
 
-        <div className="rounded border border-palm/20 bg-white/80 p-3">
+        <div className="rounded border border-palm/20 bg-white/80 p-3 dark:border-zinc-600 dark:bg-zinc-900/50">
           <p className="text-sm font-bold text-palm">Also use product photos (pool)</p>
           <p className="mt-1 text-xs text-ink/65">
             Pick catalog items whose primary image becomes a tile after your uploaded images. Search narrows the list;

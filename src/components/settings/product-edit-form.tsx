@@ -1,5 +1,6 @@
 "use client";
 
+import { adminFieldsetClass } from "@/lib/admin-surface-classes";
 import { btnSecondaryMd } from "@/lib/btn-theme-classes";
 
 import Link from "next/link";
@@ -374,8 +375,8 @@ export function ProductEditForm({
           </div>
         </fieldset>
       ) : null}
-      <fieldset className="rounded border border-palm/25 bg-sand/30 px-3 py-3">
-        <legend className="px-1 text-sm font-bold text-ink">Shipping exclusions (admin only)</legend>
+      <fieldset className={adminFieldsetClass}>
+        <legend className="px-1 text-sm font-bold text-ink dark:text-zinc-100">Shipping exclusions (admin only)</legend>
         <p className="mb-3 text-xs text-ink/60">
           Applies to all variations of this product. Set shipping units per variation in the pricing table below.
         </p>

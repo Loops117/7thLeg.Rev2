@@ -1,10 +1,11 @@
 import Link from "next/link";
 
-type Props = { searchParams: Promise<{ session_id?: string; order?: string }> };
+type Props = { searchParams: Promise<{ session_id?: string; order?: string; square?: string }> };
 
 export default async function CartSuccessPage({ searchParams }: Props) {
-  const { session_id: sessionId, order: orderId } = await searchParams;
-  const freeCheckout = Boolean(orderId?.trim() && !sessionId?.trim());
+  const { session_id: sessionId, order: orderId, square: squareFlag } = await searchParams;
+  const freeCheckout = Boolean(orderId?.trim() && !sessionId?.trim() && squareFlag !== "1");
+  const squareCheckout = squareFlag === "1";
 
   return (
     <div className="p-6 sm:p-10">
@@ -14,7 +15,9 @@ export default async function CartSuccessPage({ searchParams }: Props) {
       <p className="mt-6 max-w-xl text-ink/85">
         {freeCheckout
           ? "Your order is complete — no payment was required. It should appear on your account right away."
-          : "Thank you for your payment. Orders usually appear on your account within a minute after the webhook confirms—the page may refresh shortly."}
+          : squareCheckout
+            ? "Thank you — your Square payment went through. Your order should appear on your account right away."
+            : "Thank you for your payment. Orders usually appear on your account within a minute after the webhook confirms—the page may refresh shortly."}
       </p>
       {sessionId ? (
         <p className="mt-4 font-mono text-xs text-ink/50">

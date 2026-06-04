@@ -4,6 +4,8 @@ export type ImageSubmissionPinAppearance = {
   borderWidthPx: number;
   borderColor: string;
   customImageUrl: string;
+  /** Hover ring on pins in gallery viewers (tagged product list + pin marker). */
+  highlightColor: string;
 };
 
 export const IMAGE_SUBMISSION_PIN_APPEARANCE_DEFAULTS: ImageSubmissionPinAppearance = {
@@ -12,6 +14,7 @@ export const IMAGE_SUBMISSION_PIN_APPEARANCE_DEFAULTS: ImageSubmissionPinAppeara
   borderWidthPx: 2,
   borderColor: "#000000",
   customImageUrl: "",
+  highlightColor: "#f4a261",
 };
 
 function normalizeHexColor(raw: string | null | undefined, fallback: string): string {
@@ -32,6 +35,7 @@ export function normalizeImageSubmissionPinAppearance(row: {
   imageSubmissionPinBorderWidthPx?: number | null;
   imageSubmissionPinBorderColor?: string | null;
   imageSubmissionPinCustomImageUrl?: string | null;
+  imageSubmissionPinHighlightColor?: string | null;
 } | null): ImageSubmissionPinAppearance {
   const d = IMAGE_SUBMISSION_PIN_APPEARANCE_DEFAULTS;
   if (!row) return { ...d };
@@ -43,6 +47,7 @@ export function normalizeImageSubmissionPinAppearance(row: {
     borderWidthPx: Math.min(8, Math.max(0, Math.round(row.imageSubmissionPinBorderWidthPx ?? d.borderWidthPx))),
     borderColor: normalizeHexColor(row.imageSubmissionPinBorderColor, d.borderColor),
     customImageUrl: custom,
+    highlightColor: normalizeHexColor(row.imageSubmissionPinHighlightColor, d.highlightColor),
   };
 }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { adminDetailsPaneClass } from "@/lib/admin-surface-classes";
 import { adminTableRowClass } from "@/lib/admin-table-classes";
 import { btnImportantMd, btnSecondaryMd } from "@/lib/btn-theme-classes";
 import { useRouter } from "next/navigation";
@@ -303,7 +304,7 @@ export function EventsAdminPanel({
           if (e.currentTarget !== e.target) return;
           setPaneEditorOpen((e.currentTarget as HTMLDetailsElement).open);
         }}
-        className="rounded border-2 border-palm bg-white shadow-sm [&_summary]:cursor-pointer [&_summary]:list-none [&_summary::-webkit-details-marker]:hidden"
+        className={adminDetailsPaneClass}
       >
         <summary className="border-b-2 border-palm/20 px-4 py-3 text-lg font-black text-palm sm:px-6">
           Add or edit event
@@ -813,7 +814,7 @@ export function EventsAdminPanel({
 
       <details
         open
-        className="rounded border-2 border-palm bg-white shadow-sm [&_summary]:cursor-pointer [&_summary]:list-none [&_summary::-webkit-details-marker]:hidden"
+        className={adminDetailsPaneClass}
       >
         <summary className="border-b-2 border-palm/20 px-4 py-3 text-lg font-black text-palm sm:px-6">
           Event catalog ({rows.length})
@@ -966,7 +967,7 @@ export function EventsAdminPanel({
                                     Refresh list
                                   </button>
                                 </div>
-                                <div className="mt-2 max-h-48 overflow-y-auto rounded border border-palm/20 bg-white/80">
+                                <div className="mt-2 max-h-48 overflow-y-auto rounded border border-palm/20 bg-white/80 dark:border-zinc-600 dark:bg-zinc-900/50">
                                   <table className="w-full text-left text-xs">
                                     <thead className="sticky top-0 bg-surf/80 font-bold text-palm">
                                       <tr>
@@ -1058,7 +1059,7 @@ export function EventsAdminPanel({
                                     </button>
                                   </div>
                                   {drawMsg ? <p className="mt-2 text-xs text-ink/80">{drawMsg}</p> : null}
-                                  <div className="mt-3 overflow-x-auto rounded border border-coral/20 bg-white/90">
+                                  <div className="mt-3 overflow-x-auto rounded border border-coral/20 bg-white/90 dark:border-zinc-600 dark:bg-zinc-900/50">
                                     <table className="w-full min-w-[28rem] text-left text-xs">
                                       <thead className="bg-surf/80 font-bold text-coral">
                                         <tr>

@@ -8,6 +8,7 @@ import {
   normalizePinPosition,
   type ImageSubmissionHotspotRow,
 } from "@/lib/image-submission-hotspots";
+import type { ProductPickerOption } from "@/lib/product-picker-option";
 
 async function requireAdmin() {
   const session = await auth();
@@ -21,13 +22,6 @@ export type PinDraftInput = {
   variantId: string | null;
   xPercent: number;
   yPercent: number;
-};
-
-export type ProductPickerOption = {
-  id: string;
-  name: string;
-  slug: string;
-  variants: { id: string; label: string; active: boolean }[];
 };
 
 export async function listImageSubmissionHotspotsForAdmin(

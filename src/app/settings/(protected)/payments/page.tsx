@@ -1,8 +1,11 @@
 import { PaymentsGatewayEditor } from "@/components/settings/payments-gateway-editor";
+import { PaymentsSetupStatus } from "@/components/settings/payments-setup-status";
 import { getPaymentGatewaysForAdmin } from "@/lib/site-config";
+import { getSquareSetupStatus } from "@/lib/square-setup-status";
 
 export default async function SettingsPaymentsPage() {
   const gateways = await getPaymentGatewaysForAdmin();
+  const square = getSquareSetupStatus();
 
   return (
     <div className="max-w-5xl">
@@ -13,6 +16,11 @@ export default async function SettingsPaymentsPage() {
       </p>
       <div className="mt-10">
         <PaymentsGatewayEditor initial={gateways} />
+        <PaymentsSetupStatus
+          square={square}
+          squareToggleEnabled={gateways.squareEnabled}
+          stripeSecretConfigured={!!process.env.STRIPE_SECRET_KEY?.trim()}
+        />
       </div>
     </div>
   );

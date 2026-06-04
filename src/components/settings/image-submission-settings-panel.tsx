@@ -125,16 +125,27 @@ export function ImageSubmissionSettingsPanel({
         </p>
 
         <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:items-start">
-          <div className="flex shrink-0 flex-col items-center gap-2 rounded border border-palm/25 bg-zinc-100 px-8 py-10">
+          <div
+            className="flex shrink-0 flex-col items-center gap-2 rounded border border-palm/25 bg-zinc-100 px-8 py-10"
+            style={{ ["--gallery-pin-highlight" as string]: pin.highlightColor }}
+          >
             <span className="text-xs font-bold uppercase tracking-wide text-ink/55">Preview</span>
-            <div className="relative h-24 w-24">
+            <div className="relative flex h-24 w-32 items-center justify-center gap-4">
               <SubmissionPinMarker
                 appearance={pin}
-                position={{ left: "50%", top: "50%" }}
+                position={{ left: "35%", top: "50%" }}
                 interactive={false}
-                label="Preview"
+                label="Default"
+              />
+              <SubmissionPinMarker
+                appearance={pin}
+                position={{ left: "65%", top: "50%" }}
+                interactive={false}
+                highlighted
+                label="Hover highlight"
               />
             </div>
+            <span className="text-[10px] font-medium text-ink/55">Default · Highlighted</span>
           </div>
 
           <div className="min-w-0 flex-1 space-y-4">
@@ -200,9 +211,30 @@ export function ImageSubmissionSettingsPanel({
                   />
                 </div>
               </label>
+              <label className="block text-sm font-bold text-ink sm:col-span-2">
+                Hover highlight color
+                <p className="mt-0.5 text-xs font-normal text-ink/60">
+                  Ring on the map pin and tagged-product row when shoppers hover either one (gallery viewer on home and
+                  product pages).
+                </p>
+                <div className="mt-1 flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={pin.highlightColor}
+                    onChange={(e) => setPin((p) => ({ ...p, highlightColor: e.target.value }))}
+                    className="h-10 w-14 cursor-pointer border-2 border-palm-mid"
+                  />
+                  <input
+                    type="text"
+                    value={pin.highlightColor}
+                    onChange={(e) => setPin((p) => ({ ...p, highlightColor: e.target.value }))}
+                    className="min-w-0 flex-1 border-2 border-palm-mid px-2 py-2 font-mono text-sm"
+                  />
+                </div>
+              </label>
             </div>
 
-            <div className="rounded border border-palm/20 bg-white/80 p-4">
+            <div className="rounded border border-palm/20 bg-white/80 p-4 dark:border-zinc-600 dark:bg-zinc-900/50">
               <p className="text-sm font-bold text-palm">Custom pin image (optional)</p>
               <p className="mt-1 text-xs text-ink/65">
                 Replaces the colored dot. PNG with transparency works best. Max 512KB.

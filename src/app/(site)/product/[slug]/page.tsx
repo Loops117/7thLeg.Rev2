@@ -17,6 +17,10 @@ import {
   listHotspotsBySubmissionIds,
 } from "@/lib/image-submission-hotspots";
 import { getImageSubmissionPinAppearance } from "@/lib/image-submission-pin-appearance";
+import { ProductKitSection } from "@/components/product/product-kit-section";
+import { ProductRecommendationSections } from "@/components/product/product-recommendation-sections";
+import { getProductKitForStorefront } from "@/lib/product-kits";
+import { getProductRecommendationsForStorefront } from "@/lib/product-recommendations";
 import { productFooterCssVariables } from "@/lib/theme-config";
 import { loadResolvedPublicThemeFromDb } from "@/lib/theme-config-server";
 
@@ -51,10 +55,12 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const productDiagonalBrandName = sitePub.productDiagonalBrandOverlay ? sitePub.companyName : null;
 
   const typeIds = product.types.map((t) => t.typeId);
-  const [footerBlocks, customerSuppliedImages, pinAppearance] = await Promise.all([
+  const [footerBlocks, customerSuppliedImages, pinAppearance, recommendations, kit] = await Promise.all([
     getFootersForProduct(product.id, typeIds),
     listCustomerSuppliedImagesForProduct(product.id),
     getImageSubmissionPinAppearance(),
+    getProductRecommendationsForStorefront(product.id, eventId),
+    getProductKitForStorefront(product.id, eventId),
   ]);
   const customerSuppliedPinsBySubmissionId = await listHotspotsBySubmissionIds(
     customerSuppliedImages.map((img) => img.submissionId),
@@ -127,6 +133,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
         variants={product.variants.map((v) => ({
           id: v.id,
           label: v.label,
+          descriptionHtml: normalizeProductDescriptionHtml(v.description),
           priceDeltaCents: v.priceDeltaCents,
           stock: v.stock,
           unlimitedStock: v.unlimitedStock,
@@ -145,11 +152,22 @@ export default async function ProductPage({ params, searchParams }: Props) {
         initialSelectedVariantId={initialVariantId}
       />
 
+      {kit ? <ProductKitSection kit={kit} timedSaleEventId={eventId} /> : null}
+
       <CustomerSuppliedProductImages
         images={customerSuppliedImages}
         pinsBySubmissionId={customerSuppliedPinsBySubmissionId}
         pinAppearance={pinAppearance}
         productSlug={product.slug}
+      />
+
+      <ProductRecommendationSections
+        related={recommendations.related}
+        youMayAlsoWant={recommendations.youMayAlsoWant}
+        eventId={eventId}
+        productDiagonalBrandName={productDiagonalBrandName}
+        productDiagonalNameGapPx={sitePub.productDiagonalNameGapPx}
+        watermarkOpacityPercent={sitePub.watermarkOpacityPercent}
       />
 
       {footerBlocks.length > 0 ? (

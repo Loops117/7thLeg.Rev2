@@ -16,15 +16,25 @@ setDefaultResultOrder("ipv4first");
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
   pool: Pool | undefined;
-  prismaGeneratedMtimeMs: number | undefined;
+  /** Schema + generated client fingerprint — invalidate dev client when either changes. */
+  prismaFreshnessKey: string | undefined;
 };
 
-function generatedPrismaClientMtimeMs(): number | null {
-  try {
-    return statSync(resolve(process.cwd(), "src/generated/prisma/client.ts")).mtimeMs;
-  } catch {
-    return null;
+function prismaClientFreshnessKey(): string | null {
+  const paths = [
+    "prisma/schema.prisma",
+    "src/generated/prisma/client.ts",
+    "src/generated/prisma/internal/class.ts",
+  ];
+  const parts: number[] = [];
+  for (const rel of paths) {
+    try {
+      parts.push(statSync(resolve(process.cwd(), rel)).mtimeMs);
+    } catch {
+      return null;
+    }
   }
+  return parts.join(":");
 }
 
 /** Prisma needs `pgbouncer=true` on Supavisor transaction pooler URLs; easy to forget in the dashboard copy. */
@@ -71,15 +81,15 @@ function getPrismaClient(): PrismaClient {
     return globalForPrisma.prisma;
   }
 
-  const genMtime = generatedPrismaClientMtimeMs();
-  if (genMtime == null) {
+  const freshnessKey = prismaClientFreshnessKey();
+  if (freshnessKey == null) {
     if (!globalForPrisma.prisma) {
       globalForPrisma.prisma = createPrismaClient();
     }
     return globalForPrisma.prisma;
   }
 
-  if (globalForPrisma.prisma && globalForPrisma.prismaGeneratedMtimeMs === genMtime) {
+  if (globalForPrisma.prisma && globalForPrisma.prismaFreshnessKey === freshnessKey) {
     return globalForPrisma.prisma;
   }
 
@@ -87,7 +97,7 @@ function getPrismaClient(): PrismaClient {
     void globalForPrisma.prisma.$disconnect().catch(() => {});
   }
   globalForPrisma.prisma = createPrismaClient();
-  globalForPrisma.prismaGeneratedMtimeMs = genMtime ?? undefined;
+  globalForPrisma.prismaFreshnessKey = freshnessKey;
   return globalForPrisma.prisma;
 }
 
@@ -95,11 +105,34 @@ function getPrismaClient(): PrismaClient {
  * Lazy proxy so importing `@/lib/prisma` does not run `createPrismaClient()` until the first query.
  * Callers with try/catch (e.g. getSiteConfig) can handle missing DATABASE_URL / bad pooler URL without crashing the RSC tree.
  */
+function getClientDelegate(client: PrismaClient, prop: string | symbol) {
+  return Reflect.get(client as object, prop, client as object);
+}
+
 export const prisma = new Proxy({} as PrismaClient, {
   get(_target, prop) {
-    const client = getPrismaClient();
-    // Prisma model accessors (e.g. `shippingOption`) use getters whose `this` must be the real client.
-    // Reflect.get(_, prop, receiver) would invoke those getters with `this === receiver` (this proxy).
-    return Reflect.get(client as object, prop, client as object);
+    let client = getPrismaClient();
+    let value = getClientDelegate(client, prop);
+
+    // Dev: cached client from before `prisma generate` lacks new model delegates (e.g. productKit).
+    if (
+      process.env.NODE_ENV !== "production" &&
+      typeof prop === "string" &&
+      value === undefined &&
+      prop !== "$connect" &&
+      !prop.startsWith("$") &&
+      prop !== "constructor"
+    ) {
+      globalForPrisma.prismaFreshnessKey = undefined;
+      client = getPrismaClient();
+      value = getClientDelegate(client, prop);
+      if (value === undefined) {
+        throw new Error(
+          `Prisma model "${prop}" is not available. Run "npx prisma generate" and restart the dev server (stop and run "npm run dev" again).`,
+        );
+      }
+    }
+
+    return value;
   },
 });

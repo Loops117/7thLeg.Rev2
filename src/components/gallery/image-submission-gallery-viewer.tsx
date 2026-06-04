@@ -9,6 +9,7 @@ import type { ImageSubmissionPinAppearance } from "@/lib/image-submission-pin-ap
 import {
   pinVariationDisplayName,
   productUrlForPin,
+  storefrontPinHighlightKey,
   type StorefrontImagePin,
 } from "@/lib/image-submission-pins-storefront";
 import { formatPriceUsd } from "@/lib/product-slug";
@@ -17,7 +18,7 @@ function dedupeTaggedPins(pins: StorefrontImagePin[]): StorefrontImagePin[] {
   const seen = new Set<string>();
   const out: StorefrontImagePin[] = [];
   for (const pin of pins) {
-    const key = `${pin.productSlug}:${pin.variantId ?? ""}`;
+    const key = storefrontPinHighlightKey(pin);
     if (seen.has(key)) continue;
     seen.add(key);
     out.push(pin);
@@ -47,10 +48,12 @@ export function ImageSubmissionGalleryViewer({
   activeProductSlug?: string | null;
 }) {
   const [hidePins, setHidePins] = useState(false);
+  const [highlightKey, setHighlightKey] = useState<string | null>(null);
   const taggedProducts = useMemo(() => dedupeTaggedPins(pins), [pins]);
 
   useEffect(() => {
     setHidePins(false);
+    setHighlightKey(null);
   }, [item.id]);
 
   useEffect(() => {
@@ -72,6 +75,7 @@ export function ImageSubmissionGalleryViewer({
         aria-modal="true"
         aria-labelledby={titleId}
         className="gallery-viewer-panel flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border-2 shadow-2xl"
+        style={{ ["--gallery-pin-highlight" as string]: pinAppearance.highlightColor }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="gallery-viewer-panel-border flex flex-wrap items-start justify-between gap-2 border-b px-4 py-3">
@@ -108,6 +112,8 @@ export function ImageSubmissionGalleryViewer({
             pinAppearance={pinAppearance}
             interactive
             showPins={!hidePins}
+            highlightKey={highlightKey}
+            onHighlightKeyChange={setHighlightKey}
             className="mx-auto w-fit max-w-full"
             imgClassName="gallery-viewer-image-frame mx-auto max-h-[70vh] w-auto max-w-full rounded border object-contain"
             maxHeight="70vh"
@@ -119,15 +125,19 @@ export function ImageSubmissionGalleryViewer({
             <h3 className="text-xs font-black uppercase tracking-wide text-palm">Tagged products</h3>
             <ul className="mt-2 space-y-2">
               {taggedProducts.map((pin) => {
+                const rowKey = storefrontPinHighlightKey(pin);
                 const isActive = pinMatchesActiveProduct(pin, activeProductSlug);
+                const isHighlighted = highlightKey === rowKey;
                 return (
-                  <li key={`${pin.productSlug}:${pin.variantId ?? ""}`}>
+                  <li key={rowKey}>
                     <Link
                       href={productUrlForPin(pin.productSlug, pin.variantId)}
                       aria-current={isActive ? "page" : undefined}
+                      onMouseEnter={() => setHighlightKey(rowKey)}
+                      onMouseLeave={() => setHighlightKey(null)}
                       className={`gallery-tagged-row flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded border px-3 py-2 text-sm transition ${
                         isActive ? "gallery-tagged-row-active" : ""
-                      }`}
+                      } ${isHighlighted ? "gallery-tagged-row-highlighted" : ""}`}
                     >
                       <span className="min-w-0">
                         <span className="flex flex-wrap items-center gap-2">

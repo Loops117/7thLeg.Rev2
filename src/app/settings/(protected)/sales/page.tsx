@@ -57,6 +57,7 @@ export default async function SettingsSalesPage({ searchParams }: Props) {
           id: true,
           productNameSnap: true,
           variantLabelSnap: true,
+          variantSkuSnap: true,
           quantity: true,
           lineTotalCents: true,
         },

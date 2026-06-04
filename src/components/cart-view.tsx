@@ -63,6 +63,7 @@ type Props = {
   merchandiseListSubtotalCents: number;
   timedEventSavingsCents: number;
   couponDiscountCents: number;
+  kitDiscountCents?: number;
   appliedCouponCode: string | null;
   checkoutTaxRateBps: number;
   payments: CartPaymentAvailability;
@@ -83,6 +84,7 @@ export function CartView({
   merchandiseListSubtotalCents,
   timedEventSavingsCents,
   couponDiscountCents,
+  kitDiscountCents = 0,
   appliedCouponCode,
   checkoutTaxRateBps,
   payments,
@@ -146,7 +148,7 @@ export function CartView({
   const totalCouponSavingsCents = couponDiscountCents + labelCouponDiscountCents;
   const promoHasSavings = totalCouponSavingsCents > 0;
   const summaryHasDiscountRows =
-    timedEventSavingsCents > 0 || hasActivePromo || loyaltyDiscountCents > 0;
+    timedEventSavingsCents > 0 || hasActivePromo || kitDiscountCents > 0 || loyaltyDiscountCents > 0;
 
   useEffect(() => {
     if (!promoFlash || promoFlash.tone !== "success") return;
@@ -216,6 +218,9 @@ export function CartView({
               </Link>
               {line.variantLabel ? (
                 <p className="text-sm text-ink/70">{line.variantLabel}</p>
+              ) : null}
+              {line.kitBundleLabel ? (
+                <p className="text-xs font-bold text-lagoon-dark">Part of kit: {line.kitBundleLabel}</p>
               ) : null}
               {line.baseUnitPriceCents > line.unitPriceCents ? (
                 <p className="mt-1 text-sm text-ink/50 line-through">
@@ -614,6 +619,9 @@ export function CartView({
                 promoHasSavings ? `−${formatPriceUsd(totalCouponSavingsCents)}` : `−${formatPriceUsd(0)}`,
                 promoHasSavings ? "savings" : "muted",
               )
+            : null}
+          {kitDiscountCents > 0
+            ? summaryRow("Kit bundle savings", `−${formatPriceUsd(kitDiscountCents)}`, "savings")
             : null}
           {loyaltyDiscountCents > 0
             ? summaryRow(

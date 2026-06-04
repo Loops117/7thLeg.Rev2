@@ -54,7 +54,7 @@ export function ProductFootersAdmin({ initialFooters }: { initialFooters: Footer
         {initialFooters.length === 0 ? (
           <p className="text-ink/70">No footers yet. Create one below.</p>
         ) : (
-          <ul className="space-y-2 rounded border-2 border-palm bg-white p-3">
+          <ul className="space-y-2 rounded border-2 border-palm bg-white p-3 dark:border-zinc-600 dark:bg-zinc-900/55">
             {initialFooters.map((f) => (
               <li
                 key={f.id}
@@ -80,7 +80,7 @@ export function ProductFootersAdmin({ initialFooters }: { initialFooters: Footer
         )}
       </section>
 
-      <section className="rounded border-2 border-palm bg-white p-4 shadow-sm sm:p-6">
+      <section className="rounded border-2 border-palm bg-white p-4 shadow-sm dark:border-zinc-600 dark:bg-zinc-900/55 sm:p-6">
         <h2 className="text-lg font-black text-palm">Add footer</h2>
         <form onSubmit={create} className="mt-4 space-y-4">
           <label className="block text-sm font-bold text-ink">

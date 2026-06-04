@@ -16,6 +16,7 @@ import {
   type VariantPriceDisplay,
 } from "@/lib/product-variant-price-display";
 import { hasCustomVariantPickerColors } from "@/lib/variant-picker-style";
+import { normalizeVariantSku } from "@/lib/variant-sku";
 
 const variantOrderBy = [{ sortOrder: "asc" as const }, { label: "asc" as const }];
 
@@ -49,6 +50,8 @@ async function requireAdmin() {
 export type ProductVariantAdminRow = {
   id: string;
   label: string;
+  sku: string | null;
+  description: string;
   sortOrder: number;
   stock: number;
   unlimitedStock: boolean;
@@ -82,6 +85,8 @@ export async function listProductVariantsForAdmin(productId: string): Promise<Pr
     select: {
       id: true,
       label: true,
+      sku: true,
+      description: true,
       sortOrder: true,
       stock: true,
       unlimitedStock: true,
@@ -97,6 +102,8 @@ export async function listProductVariantsForAdmin(productId: string): Promise<Pr
   return rows.map((r) => ({
     id: r.id,
     label: r.label,
+    sku: normalizeVariantSku(r.sku),
+    description: r.description ?? "",
     sortOrder: r.sortOrder,
     stock: r.stock,
     unlimitedStock: r.unlimitedStock,
@@ -233,6 +240,8 @@ export async function saveProductVariantRow(input: {
   productId: string;
   variantId: string;
   label: string;
+  sku?: string | null;
+  description?: string;
   listPriceUsd: string;
   stock: number;
   unlimitedStock: boolean;
@@ -250,6 +259,8 @@ export async function saveProductVariantRow(input: {
   }
   const label = input.label.trim();
   if (!label) throw new Error("Label is required.");
+  const sku = normalizeVariantSku(input.sku);
+  const description = input.description?.trim() ?? "";
 
   const shippingUnits = clampShippingUnits(input.shippingUnits ?? 1);
 
@@ -285,6 +296,8 @@ export async function saveProductVariantRow(input: {
         where: { id: input.variantId },
         data: {
           label,
+          sku,
+          description,
           priceDeltaCents: 0,
           stock,
           unlimitedStock: input.unlimitedStock,
@@ -301,6 +314,8 @@ export async function saveProductVariantRow(input: {
       where: { id: input.variantId },
       data: {
         label,
+        sku,
+        description,
         priceDeltaCents: delta,
         stock,
         unlimitedStock: input.unlimitedStock,

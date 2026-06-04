@@ -114,7 +114,7 @@ export default async function AdminOrderDetailPage({ params }: Props) {
   const pickLines = [
     ...order.lineItems.map((li) => ({
       key: `li:${li.id}`,
-      label: `${li.productNameSnap}${li.variantLabelSnap ? ` (${li.variantLabelSnap})` : ""}`,
+      label: `${li.productNameSnap}${li.variantLabelSnap ? ` (${li.variantLabelSnap})` : ""}${li.variantSkuSnap ? ` · SKU ${li.variantSkuSnap}` : ""}`,
       quantity: li.quantity,
       kind: "product" as const,
     })),
@@ -289,7 +289,7 @@ export default async function AdminOrderDetailPage({ params }: Props) {
 
       <div>
         <h2 className="mb-3 text-lg font-black text-palm dark:text-emerald-200">Line items</h2>
-        <div className="admin-table-shell overflow-x-auto rounded border border-palm/25 bg-white shadow-sm">
+        <div className="admin-table-shell overflow-x-auto rounded border border-palm/25 bg-white shadow-sm dark:border-zinc-600 dark:bg-zinc-900/40">
           <table className="admin-striped w-full min-w-[640px] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b-2 border-palm/30">
@@ -306,6 +306,11 @@ export default async function AdminOrderDetailPage({ params }: Props) {
                     <span className="font-bold text-ink dark:text-zinc-100">{li.productNameSnap}</span>
                     {li.variantLabelSnap ? (
                       <span className="ml-2 text-xs text-ink/70 dark:text-zinc-400">({li.variantLabelSnap})</span>
+                    ) : null}
+                    {li.variantSkuSnap ? (
+                      <span className="mt-0.5 block font-mono text-xs text-ink/65 dark:text-zinc-400">
+                        SKU: {li.variantSkuSnap}
+                      </span>
                     ) : null}
                     {li.product ? (
                       <>

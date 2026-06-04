@@ -1,9 +1,11 @@
 import { EventKind, EventSaleDiscountMode } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { normalizeVariantSku } from "@/lib/variant-sku";
 import { effectiveEventSalePriceCents, isEventActive } from "@/lib/event-pricing";
 import { unitCentsForVariantQuantity } from "@/lib/product-price-tiers";
 import { productAppearsInStock, variantIsPurchasable } from "@/lib/product-stock";
 import { productInEventLinkedCatalog } from "@/lib/event-catalog-scope";
+import { computeKitDiscountForCartItems } from "@/lib/product-kits";
 import { loadProductTypeIndex } from "@/lib/product-type-tree";
 
 export const CART_PRICING_SCOPE_NONE = "__none__" as const;
@@ -37,6 +39,7 @@ export type PricedCheckoutLineSnapshot = {
   variantId: string | null;
   productNameSnap: string;
   variantLabelSnap: string | null;
+  variantSkuSnap: string | null;
   quantity: number;
   unitPriceCents: number;
   lineTotalCents: number;
@@ -47,6 +50,7 @@ export type PricedCartForCustomerRow = PricedCheckoutLineSnapshot & {
   slug: string;
   imageUrl: string | null;
   baseUnitPriceCents: number;
+  productKitInstanceId: string | null;
 };
 
 export async function priceCartMerchandiseForCustomer(customerId: string): Promise<
@@ -63,6 +67,8 @@ export async function priceCartMerchandiseForCustomer(customerId: string): Promi
       /** Final payable merchandise subtotal. */
       merchandiseSubtotalCents: number;
       couponDiscountCents: number;
+      kitDiscountCents: number;
+      kitInstances: { instanceId: string; label: string }[];
       checkoutCouponCodeSnap: string;
       appliedCouponEventId: string | null;
       appliedLoyaltyPoints: number;
@@ -76,7 +82,14 @@ export async function priceCartMerchandiseForCustomer(customerId: string): Promi
       appliedCouponEventId: true,
       appliedLoyaltyPoints: true,
       items: {
-        include: {
+        select: {
+          id: true,
+          productId: true,
+          variantId: true,
+          quantity: true,
+          timedSaleEventId: true,
+          productKitInstanceId: true,
+          productKitId: true,
           product: {
             select: {
               id: true,
@@ -249,6 +262,7 @@ export async function priceCartMerchandiseForCustomer(customerId: string): Promi
     }
 
     const variantLabelSnap = vrec?.label ?? null;
+    const variantSkuSnap = normalizeVariantSku(vrec?.sku ?? line.variant?.sku);
 
     merchandiseListSubtotalCents += baseUnitPriceCents * qty;
     merchandiseBeforeCouponSubtotalCents += unitAfterTimed * qty;
@@ -262,14 +276,28 @@ export async function priceCartMerchandiseForCustomer(customerId: string): Promi
       variantId,
       productNameSnap: p.name,
       variantLabelSnap,
+      variantSkuSnap,
       quantity: qty,
       unitPriceCents: unitFinal,
       lineTotalCents: unitFinal * qty,
       baseUnitPriceCents,
+      productKitInstanceId: line.productKitInstanceId,
     });
   }
 
-  const merchandiseSubtotalCents = pricedLines.reduce((s, l) => s + l.lineTotalCents, 0);
+  const linesSubtotalCents = pricedLines.reduce((s, l) => s + l.lineTotalCents, 0);
+  const kitDiscount = await computeKitDiscountForCartItems(
+    cart.items.map((i) => ({
+      id: i.id,
+      productId: i.productId,
+      variantId: i.variantId,
+      quantity: i.quantity,
+      productKitInstanceId: i.productKitInstanceId,
+      productKitId: i.productKitId,
+    })),
+  );
+  const kitDiscountCents = Math.min(kitDiscount.kitDiscountCents, linesSubtotalCents);
+  const merchandiseSubtotalCents = Math.max(0, linesSubtotalCents - kitDiscountCents);
 
   return {
     ok: true,
@@ -280,6 +308,11 @@ export async function priceCartMerchandiseForCustomer(customerId: string): Promi
     merchandiseBeforeCouponSubtotalCents,
     merchandiseSubtotalCents,
     couponDiscountCents,
+    kitDiscountCents,
+    kitInstances: kitDiscount.instances.map((i) => ({
+      instanceId: i.instanceId,
+      label: i.label,
+    })),
     checkoutCouponCodeSnap,
     appliedCouponEventId,
     appliedLoyaltyPoints: Math.max(0, Math.floor(Number(cart.appliedLoyaltyPoints) || 0)),

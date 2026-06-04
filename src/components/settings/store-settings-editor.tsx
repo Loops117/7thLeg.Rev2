@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type ReactNode } from "react";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { updateStoreSettings } from "@/app/actions/store-settings";
+import { adminDetailsPaneClass } from "@/lib/admin-surface-classes";
 import type { StoreSettingsState } from "@/lib/store-settings";
 
 function Section({
@@ -20,9 +21,9 @@ function Section({
   return (
     <details
       open={defaultOpen}
-      className="rounded border-2 border-palm bg-white shadow-sm [&_summary]:cursor-pointer [&_summary]:list-none [&_summary::-webkit-details-marker]:hidden"
+      className={adminDetailsPaneClass}
     >
-      <summary className="flex flex-wrap items-center justify-between gap-2 border-b border-palm/15 px-4 py-3 font-bold text-palm hover:bg-surf/40">
+      <summary className="flex flex-wrap items-center justify-between gap-2 border-b border-palm/15 px-4 py-3 font-bold text-palm hover:bg-surf/40 dark:border-zinc-700 dark:text-emerald-300 dark:hover:bg-zinc-800/60">
         <span>{title}</span>
         <span className="text-xs font-normal text-ink/60">{summary}</span>
       </summary>

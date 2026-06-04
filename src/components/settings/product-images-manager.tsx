@@ -22,14 +22,26 @@ export function ProductImagesManager({
   productId,
   variantEpoch = 0,
   initialMedia,
+  media: controlledMedia,
+  onMediaRefresh,
+  embedded = false,
 }: {
   productId: string;
   /** Increment when variations change so the variant dropdown refreshes. */
   variantEpoch?: number;
   initialMedia?: ProductMediaAdmin;
+  /** When set, table stays in sync with variation image pickers. */
+  media?: ProductMediaAdmin;
+  onMediaRefresh?: () => Promise<ProductMediaAdmin | void>;
+  /** Omit outer heading when wrapped in ProductEditorSection. */
+  embedded?: boolean;
 }) {
-  const [images, setImages] = useState<ProductImageAdminRow[]>(initialMedia?.images ?? []);
-  const [variants, setVariants] = useState<{ id: string; label: string }[]>(initialMedia?.variants ?? []);
+  const [images, setImages] = useState<ProductImageAdminRow[]>(
+    controlledMedia?.images ?? initialMedia?.images ?? [],
+  );
+  const [variants, setVariants] = useState<{ id: string; label: string }[]>(
+    controlledMedia?.variants ?? initialMedia?.variants ?? [],
+  );
   const [pending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
   const [applyWatermarkOnUpload, setApplyWatermarkOnUpload] = useState(false);
@@ -39,17 +51,30 @@ export function ProductImagesManager({
 
   const refreshMedia = useCallback(async () => {
     try {
+      if (onMediaRefresh) {
+        const m = await onMediaRefresh();
+        if (m && "images" in m) {
+          setImages(m.images);
+          setVariants(m.variants);
+        }
+        return;
+      }
       const m = await getProductMediaAdmin(productId);
       setImages(m.images);
       setVariants(m.variants);
     } catch {
       setErr("Could not load images.");
     }
-  }, [productId]);
+  }, [productId, onMediaRefresh]);
 
   useEffect(() => {
+    if (controlledMedia) {
+      setImages(controlledMedia.images);
+      setVariants(controlledMedia.variants);
+      return;
+    }
     void refreshMedia();
-  }, [productId, variantEpoch, refreshMedia]);
+  }, [productId, variantEpoch, refreshMedia, controlledMedia]);
 
   const sorted = [...images].sort((a, b) => a.sortOrder - b.sortOrder);
   const busy = pending || uploading;
@@ -127,15 +152,26 @@ export function ProductImagesManager({
     });
   }
 
-  return (
-    <section className="mt-8 border-t-2 border-palm/20 pt-8">
-      <h2 className="text-lg font-black text-palm">Product images</h2>
-      <p className="mt-1 text-sm text-ink/70">
-        Upload files stored on this server under <code className="text-xs">/public/uploads/products/</code>.{" "}
-        <strong>All</strong> = default gallery; pick a variation to show an image only for that option.
-      </p>
+  const shellClass = embedded ? "mt-0 border-t-0 pt-0" : "mt-8 border-t-2 border-palm/20 pt-8 dark:border-zinc-700";
 
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+  return (
+    <section className={shellClass}>
+      {!embedded ? (
+        <>
+          <h2 className="text-lg font-black text-palm dark:text-emerald-300">Product images</h2>
+          <p className="mt-1 text-sm text-ink/70 dark:text-zinc-400">
+            Upload files stored on this server under <code className="text-xs">/public/uploads/products/</code>.{" "}
+            <strong>All</strong> = default gallery; pick a variation to show an image only for that option.
+          </p>
+        </>
+      ) : (
+        <p className="text-sm text-ink/70 dark:text-zinc-400">
+          Upload files under <code className="text-xs">/public/uploads/products/</code>.{" "}
+          <strong>All</strong> = default gallery; assign a variation in the table or in each variation section above.
+        </p>
+      )}
+
+      <div className={`flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 ${embedded ? "mt-3" : "mt-4"}`}>
         <input
           ref={fileRef}
           type="file"

@@ -121,6 +121,8 @@ export type CartLineView = {
   /** Catalogue unit price before timed sale / coupon adjustments. */
   baseUnitPriceCents: number;
   variantLabel: string | null;
+  /** When line was added as part of a kit bundle. */
+  kitBundleLabel: string | null;
 };
 
 /** Cart totals + priced lines shared with checkout (timed sale persists on cart items; coupon stored on cart). */
@@ -136,6 +138,7 @@ export async function getCartPricingForCartPage(customerId: string): Promise<
       /** Sum of line qty × unit price before checkout coupon only (includes timed sale if active). */
       merchandiseBeforeCouponSubtotalCents: number;
       couponDiscountCents: number;
+      kitDiscountCents: number;
       appliedCouponCode: string | null;
       /** Whole points the customer chose to redeem (clamped at checkout). */
       appliedLoyaltyPoints: number;
@@ -143,25 +146,34 @@ export async function getCartPricingForCartPage(customerId: string): Promise<
 > {
   const priced = await priceCartMerchandiseForCustomer(customerId);
   if (!priced.ok) return { empty: true };
+
+  const kitLabelByInstance = new Map(priced.kitInstances.map((k) => [k.instanceId, k.label]));
+
   return {
     empty: false,
-    lines: priced.pricedLines.map((r) => ({
-      id: r.cartItemId,
-      quantity: r.quantity,
-      productId: r.productId,
-      variantId: r.variantId,
-      name: r.productNameSnap,
-      slug: r.slug,
-      imageUrl: r.imageUrl,
-      unitPriceCents: r.unitPriceCents,
-      lineTotalCents: r.lineTotalCents,
-      baseUnitPriceCents: r.baseUnitPriceCents,
-      variantLabel: r.variantLabelSnap,
-    })),
+    lines: priced.pricedLines.map((r) => {
+      const inst = r.productKitInstanceId?.trim();
+      const kitBundleLabel = inst ? (kitLabelByInstance.get(inst) ?? "Kit") : null;
+      return {
+        id: r.cartItemId,
+        quantity: r.quantity,
+        productId: r.productId,
+        variantId: r.variantId,
+        name: r.productNameSnap,
+        slug: r.slug,
+        imageUrl: r.imageUrl,
+        unitPriceCents: r.unitPriceCents,
+        lineTotalCents: r.lineTotalCents,
+        baseUnitPriceCents: r.baseUnitPriceCents,
+        variantLabel: r.variantLabelSnap,
+        kitBundleLabel,
+      };
+    }),
     merchandiseSubtotalCents: priced.merchandiseSubtotalCents,
     merchandiseListSubtotalCents: priced.merchandiseListSubtotalCents,
     merchandiseBeforeCouponSubtotalCents: priced.merchandiseBeforeCouponSubtotalCents,
     couponDiscountCents: priced.couponDiscountCents,
+    kitDiscountCents: priced.kitDiscountCents,
     appliedCouponCode: priced.checkoutCouponCodeSnap.trim() || null,
     appliedLoyaltyPoints: priced.appliedLoyaltyPoints,
   };

@@ -9,6 +9,7 @@ import {
   pinHoverLabel,
   pinVariationDisplayName,
   productUrlForPin,
+  storefrontPinHighlightKey,
   type StorefrontImagePin,
 } from "@/lib/image-submission-pins-storefront";
 
@@ -22,6 +23,9 @@ type Props = {
   className?: string;
   imgClassName?: string;
   maxHeight?: string;
+  /** When set, pins matching this product+variant key show the highlight ring. */
+  highlightKey?: string | null;
+  onHighlightKeyChange?: (key: string | null) => void;
 };
 
 function PinWithTooltip({
@@ -29,15 +33,20 @@ function PinWithTooltip({
   appearance,
   position,
   interactive,
+  highlighted,
+  onHighlightKeyChange,
 }: {
   pin: StorefrontImagePin;
   appearance: ImageSubmissionPinAppearance;
   position: { left: string; top: string };
   interactive: boolean;
+  highlighted: boolean;
+  onHighlightKeyChange?: (key: string | null) => void;
 }) {
   const [tip, setTip] = useState<{ x: number; y: number } | null>(null);
   const label = pinHoverLabel(pin);
   const href = productUrlForPin(pin.productSlug, pin.variantId);
+  const pinKey = storefrontPinHighlightKey(pin);
 
   return (
     <>
@@ -45,10 +54,30 @@ function PinWithTooltip({
         appearance={appearance}
         position={position}
         interactive={interactive}
+        highlighted={highlighted}
         href={interactive ? href : undefined}
         label={label}
-        onMouseMove={interactive ? (e) => setTip({ x: e.clientX, y: e.clientY }) : undefined}
-        onMouseLeave={interactive ? () => setTip(null) : undefined}
+        onMouseEnter={
+          interactive && onHighlightKeyChange
+            ? () => onHighlightKeyChange(pinKey)
+            : undefined
+        }
+        onMouseMove={
+          interactive
+            ? (e) => {
+                onHighlightKeyChange?.(pinKey);
+                setTip({ x: e.clientX, y: e.clientY });
+              }
+            : undefined
+        }
+        onMouseLeave={
+          interactive
+            ? () => {
+                onHighlightKeyChange?.(null);
+                setTip(null);
+              }
+            : undefined
+        }
       />
       {tip && interactive ? (
         <div
@@ -78,6 +107,8 @@ export function ImageSubmissionPinsOverlay({
   className = "",
   imgClassName = "mx-auto block w-full object-contain",
   maxHeight,
+  highlightKey = null,
+  onHighlightKeyChange,
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -110,7 +141,11 @@ export function ImageSubmissionPinsOverlay({
     <div
       ref={wrapRef}
       className={`relative ${className}`}
-      style={maxHeight ? { maxHeight } : undefined}
+      style={
+        maxHeight
+          ? ({ maxHeight, ["--gallery-pin-highlight" as string]: pinAppearance.highlightColor } as React.CSSProperties)
+          : ({ ["--gallery-pin-highlight" as string]: pinAppearance.highlightColor } as React.CSSProperties)
+      }
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -133,6 +168,7 @@ export function ImageSubmissionPinsOverlay({
               size.nh,
             );
             if (!pos) return null;
+            const key = storefrontPinHighlightKey(pin);
             return (
               <PinWithTooltip
                 key={pin.id}
@@ -140,6 +176,8 @@ export function ImageSubmissionPinsOverlay({
                 appearance={pinAppearance}
                 position={pos}
                 interactive={interactive}
+                highlighted={highlightKey === key}
+                onHighlightKeyChange={interactive ? onHighlightKeyChange : undefined}
               />
             );
           })

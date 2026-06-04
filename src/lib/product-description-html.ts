@@ -25,3 +25,15 @@ export function normalizeProductDescriptionHtml(raw: string | null | undefined):
     .map((line) => `<p>${line.trim().length ? escapeHtml(line) : "<br />"}</p>`)
     .join("");
 }
+
+/** True when normalized HTML has visible text (not empty editor output). */
+export function richTextHasVisibleContent(raw: string | null | undefined): boolean {
+  const html = normalizeProductDescriptionHtml(raw);
+  if (!html.trim()) return false;
+  const text = html
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .trim();
+  return text.length > 0;
+}

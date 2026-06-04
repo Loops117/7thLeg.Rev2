@@ -20,11 +20,16 @@ import {
   type VariantPriceDisplay,
 } from "@/lib/product-variant-price-display";
 import { formatPriceUsd } from "@/lib/product-slug";
+import {
+  normalizeProductDescriptionHtml,
+  richTextHasVisibleContent,
+} from "@/lib/product-description-html";
 import { variantPickerButtonStyle } from "@/lib/variant-picker-style";
 
 type VariantRow = {
   id: string;
   label: string;
+  descriptionHtml: string;
   priceDeltaCents: number;
   stock: number;
   unlimitedStock: boolean;
@@ -133,6 +138,10 @@ export function ProductVariantShop({
   const heroUrl = hero ? storefrontImageUrl(hero) : "";
 
   const selectedVar = variants.find((v) => v.id === selectedVariantId);
+  const variantDescriptionHtml =
+    selectedVar && richTextHasVisibleContent(selectedVar.descriptionHtml)
+      ? normalizeProductDescriptionHtml(selectedVar.descriptionHtml)
+      : "";
   const listUnitCents = basePriceCents + (selectedVar?.priceDeltaCents ?? 0);
   const priceTiersJson = selectedVar?.priceTiers ?? null;
   const unitPriceCents = unitCentsForVariantQuantity(priceTiersJson, listUnitCents, quantity);
@@ -301,11 +310,24 @@ export function ProductVariantShop({
           storefrontProductPath={`/product/${productSlug}`}
         />
 
-        {descriptionHtml.trim() ? (
-          <div
-            className="store-rich mt-8 border-t border-palm/15 pt-6 text-ink [&_a]:text-lagoon-dark [&_a]:underline"
-            dangerouslySetInnerHTML={{ __html: descriptionHtml }}
-          />
+        {(variantDescriptionHtml || descriptionHtml.trim()) ? (
+          <div className="mt-8 space-y-6 border-t border-palm/15 pt-6">
+            {variantDescriptionHtml ? (
+              <div
+                className="store-rich text-ink [&_a]:text-lagoon-dark [&_a]:underline"
+                dangerouslySetInnerHTML={{ __html: variantDescriptionHtml }}
+              />
+            ) : null}
+            {variantDescriptionHtml && descriptionHtml.trim() ? (
+              <div className="border-t border-palm/15" role="separator" aria-hidden />
+            ) : null}
+            {descriptionHtml.trim() ? (
+              <div
+                className="store-rich text-ink [&_a]:text-lagoon-dark [&_a]:underline"
+                dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+              />
+            ) : null}
+          </div>
         ) : null}
       </div>
     </div>

@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { auth as readAuthSession } from "@/auth";
 import { EventKind } from "@/generated/prisma/client";
@@ -115,6 +116,99 @@ export async function addToCartAction(input: {
 
   await reconcileCartShippingSelection(customerId);
 
+  revalidatePath("/cart");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function addProductKitToCartAction(input: {
+  kitId: string;
+  timedSaleEventId?: string | null;
+}): Promise<CartActionResult> {
+  const customerId = await requireCustomerId();
+  if (!customerId) {
+    return { ok: false, error: "Sign in to add this kit to your cart." };
+  }
+
+  const kit = await prisma.productKit.findUnique({
+    where: { id: input.kitId },
+    include: {
+      items: {
+        orderBy: [{ sortOrder: "asc" }],
+        include: {
+          product: { include: { variants: true } },
+        },
+      },
+    },
+  });
+  if (!kit?.enabled || kit.items.length < 2) {
+    return { ok: false, error: "This kit is not available." };
+  }
+
+  let timedRef = input.timedSaleEventId?.trim() || null;
+  if (timedRef) {
+    const ev = await prisma.event.findUnique({ where: { id: timedRef }, select: { id: true, kind: true } });
+    if (!ev || ev.kind !== EventKind.TIMED) timedRef = null;
+  }
+  const pricingScopeKey = pricingScopeKeyFromTimedSaleEventId(timedRef);
+  const instanceId = randomUUID();
+
+  const cart = await getOrCreateCart(customerId);
+
+  for (const row of kit.items) {
+    const product = row.product;
+    if (!product.active) {
+      return { ok: false, error: `${product.name} is no longer available.` };
+    }
+
+    let variantId: string | null = row.variantId;
+    if (product.variants.length === 0) {
+      variantId = null;
+      if (!productAppearsInStock(product)) {
+        return { ok: false, error: `${product.name} is out of stock.` };
+      }
+    } else {
+      if (!variantId || !product.variants.some((v) => v.id === variantId)) {
+        return { ok: false, error: `Kit configuration is invalid for ${product.name}.` };
+      }
+      const v = product.variants.find((x) => x.id === variantId)!;
+      if (!variantIsPurchasable(v)) {
+        return { ok: false, error: `${product.name} (${v.label}) is out of stock.` };
+      }
+    }
+
+    const existing = await prisma.cartItem.findFirst({
+      where: {
+        cartId: cart.id,
+        productId: product.id,
+        variantId: variantId ?? null,
+        pricingScopeKey,
+        productKitInstanceId: instanceId,
+      },
+    });
+
+    if (existing) {
+      await prisma.cartItem.update({
+        where: { id: existing.id },
+        data: { quantity: existing.quantity + 1 },
+      });
+    } else {
+      await prisma.cartItem.create({
+        data: {
+          cartId: cart.id,
+          productId: product.id,
+          variantId: variantId ?? undefined,
+          quantity: 1,
+          timedSaleEventId: timedRef,
+          pricingScopeKey,
+          productKitInstanceId: instanceId,
+          productKitId: kit.id,
+        },
+      });
+    }
+  }
+
+  await reconcileCartShippingSelection(customerId);
   revalidatePath("/cart");
   revalidatePath("/");
   return { ok: true };

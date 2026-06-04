@@ -143,7 +143,7 @@ export default async function SettingsCustomersPage({ searchParams }: Props) {
 
       <CustomersAdminToolbar q={qRaw} sort={sort} />
 
-      <div className="admin-table-shell mt-6 overflow-x-auto rounded border border-palm/25 bg-white shadow-sm">
+      <div className="admin-table-shell mt-6 overflow-x-auto rounded border border-palm/25 bg-white shadow-sm dark:border-zinc-600 dark:bg-zinc-900/40">
         <table className="admin-striped w-full min-w-[820px] border-collapse text-left text-sm">
           <thead>
             <tr className="border-b-2 border-palm/30 bg-palm/10">

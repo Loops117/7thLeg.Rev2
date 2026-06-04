@@ -17,8 +17,25 @@ import {
 import type { VariantPriceDisplay } from "@/lib/product-variant-price-display";
 import { hasCustomVariantPickerColors } from "@/lib/variant-picker-style";
 import { variantGreenPaletteStyle } from "@/lib/variant-green-palette";
+import type { ProductImageAdminRow } from "@/app/actions/product-images-admin";
+import { ProductEditorSection } from "@/components/settings/product-editor-section";
 import { ProductPriceTiersEditor } from "@/components/settings/product-price-tiers-editor";
+import { ProductVariantImagePicker } from "@/components/settings/product-variant-image-picker";
+import { RichTextEditor } from "@/components/rich-text-editor";
 import type { ProductPriceTier } from "@/lib/product-price-tiers";
+import { formatPriceUsd } from "@/lib/product-slug";
+
+function variantSectionMeta(
+  v: ProductVariantTableRow,
+  basePriceCents: number,
+  images: ProductImageAdminRow[],
+): string {
+  const listCents = basePriceCents + v.priceDeltaCents;
+  const imageN = images.filter((i) => i.variantId === v.id).length;
+  const stock = v.unlimitedStock ? "Unlimited stock" : `${v.stock} in stock`;
+  const sku = v.sku?.trim() ? ` · SKU ${v.sku.trim()}` : "";
+  return `${formatPriceUsd(listCents)} · ${stock}${sku} · ${imageN} image${imageN === 1 ? "" : "s"}`;
+}
 
 function centsToUsdInput(cents: number): string {
   return (cents / 100).toFixed(2);
@@ -45,6 +62,8 @@ function VariantEditorRow({
 }) {
   const listCents = basePriceCents + v.priceDeltaCents;
   const [label, setLabel] = useState(v.label);
+  const [sku, setSku] = useState(v.sku ?? "");
+  const [description, setDescription] = useState(v.description ?? "");
   const [listPriceUsd, setListPriceUsd] = useState(centsToUsdInput(listCents));
   const [stock, setStock] = useState(String(v.stock));
   const [unlimitedStock, setUnlimitedStock] = useState(v.unlimitedStock);
@@ -64,6 +83,8 @@ function VariantEditorRow({
   useEffect(() => {
     const lc = basePriceCents + v.priceDeltaCents;
     setLabel(v.label);
+    setSku(v.sku ?? "");
+    setDescription(v.description ?? "");
     setListPriceUsd(centsToUsdInput(lc));
     setStock(String(v.stock));
     setUnlimitedStock(v.unlimitedStock);
@@ -90,6 +111,8 @@ function VariantEditorRow({
           productId: v.productId,
           variantId: v.id,
           label,
+          sku,
+          description,
           listPriceUsd,
           stock: Number(stock) || 0,
           unlimitedStock,
@@ -160,6 +183,16 @@ function VariantEditorRow({
       </td>
       <td className="px-2 py-2">
         <input
+          value={sku}
+          onChange={(e) => setSku(e.target.value)}
+          disabled={busy}
+          placeholder="SKU"
+          className="w-full min-w-[5rem] border border-palm-mid px-1 py-1 font-mono text-sm"
+          title="Inventory SKU for this variation"
+        />
+      </td>
+      <td className="px-2 py-2">
+        <input
           value={listPriceUsd}
           onChange={(e) => setListPriceUsd(e.target.value)}
           disabled={busy}
@@ -225,7 +258,21 @@ function VariantEditorRow({
       </td>
     </tr>
     <tr className="border-b border-palm/15 bg-surf/25">
-      <td colSpan={8} className="px-3 py-3">
+      <td colSpan={9} className="px-3 py-3">
+        <RichTextEditor
+          label={`Variation description (${label || v.label})`}
+          value={description}
+          onChange={setDescription}
+          placeholder="Optional. Shown on the product page when this variation is selected — above the main product description."
+          minHeightClassName="min-h-[8rem]"
+        />
+        <p className="mt-1 text-xs text-ink/55">
+          Leave empty to use only the main product description. Save the row above to publish changes.
+        </p>
+      </td>
+    </tr>
+    <tr className="border-b border-palm/15 bg-surf/25">
+      <td colSpan={9} className="px-3 py-3">
         <p className="text-xs font-bold text-palm">Storefront option button (product page)</p>
         <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs font-bold text-ink">
           <input
@@ -284,7 +331,7 @@ function VariantEditorRow({
       </td>
     </tr>
     <tr className="border-b border-palm/15 bg-surf/25">
-      <td colSpan={8} className="px-3 py-3">
+      <td colSpan={9} className="px-3 py-3">
         <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-ink">
           <input
             type="checkbox"
@@ -324,6 +371,8 @@ export function ProductVariantsSection({
   variantPriceDisplay: initialVariantPriceDisplay,
   reloadKey = 0,
   initialVariants,
+  images = [],
+  onAssignImageVariant,
   onVariantsChanged,
   onVariantPriceDisplaySaved,
 }: {
@@ -332,6 +381,8 @@ export function ProductVariantsSection({
   variantPriceDisplay: VariantPriceDisplay;
   reloadKey?: number;
   initialVariants?: ProductVariantAdminRow[];
+  images?: ProductImageAdminRow[];
+  onAssignImageVariant?: (imageId: string, variantId: string | null) => Promise<void>;
   onVariantsChanged?: () => void;
   /** Keeps parent editor state in sync after the dedicated save (avoids stale refresh). */
   onVariantPriceDisplaySaved?: (mode: VariantPriceDisplay) => void;
@@ -431,12 +482,13 @@ export function ProductVariantsSection({
   }
 
   return (
-    <section className="mt-0 border-t-0 pt-0">
-      <h2 className="text-lg font-black text-palm">Pricing &amp; stock (by variation)</h2>
-      <p className="mt-1 text-sm text-ink/70">
+    <div className="mt-0 border-t-0 pt-0">
+      <p className="text-sm text-ink/70 dark:text-zinc-400">
         Set <strong>list price (USD)</strong>, quantity, unlimited stock, active state, optional{" "}
         <strong>shipping units</strong> (admin-only, for checkout box sizing), and optional <strong>bulk pricing</strong>
-        , <strong>display order</strong>, and optional <strong>storefront button colors</strong> per variation. A single
+        , <strong>SKU</strong> (per variation, for inventory), optional <strong>variation description</strong> (rich
+        text on the product page when that option is selected), <strong>display order</strong>, and optional{" "}
+        <strong>storefront button colors</strong> per variation. A single
         row is the whole listing; with multiple rows, the database keeps a base list price and an adjustment per row
         (you only edit the displayed list price in each cell).
       </p>
@@ -462,42 +514,67 @@ export function ProductVariantsSection({
         </div>
       ) : null}
       {variants.length > 0 ? (
-        <div className="mt-4 overflow-x-auto rounded border border-palm/20">
-          <table className="w-full min-w-[40rem] text-left text-sm">
-            <thead className="border-b-2 border-palm bg-surf/50 font-bold text-palm">
-              <tr>
-                <th className="w-12 px-2 py-2">Order</th>
-                <th className="px-2 py-2">Label</th>
-                <th className="px-2 py-2">List price (USD)</th>
-                <th className="px-2 py-2">Qty</th>
-                <th className="px-2 py-2">∞</th>
-                <th className="px-2 py-2">On</th>
-                <th className="px-2 py-2" title="Shipping units (1–10, admin only)">
-                  Ship
-                </th>
-                <th className="px-2 py-2"> </th>
-              </tr>
-            </thead>
-            <tbody>
-              {variants.map((v, idx) => (
-                <VariantEditorRow
-                  key={v.id}
-                  v={v}
-                  basePriceCents={basePriceCents}
-                  sortIndex={idx}
-                  variantCount={variants.length}
-                  onMove={(direction) => moveVariant(direction, v.id)}
-                  onRemove={remove}
-                  onSaved={bump}
-                  pending={pending}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <div className="mt-4 overflow-x-auto rounded border border-palm/20 dark:border-zinc-600">
+            <table className="w-full min-w-[40rem] text-left text-sm">
+              <thead className="border-b-2 border-palm bg-surf/50 font-bold text-palm dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100">
+                <tr>
+                  <th className="w-12 px-2 py-2">Order</th>
+                  <th className="px-2 py-2">Label</th>
+                  <th className="px-2 py-2">SKU</th>
+                  <th className="px-2 py-2">List price (USD)</th>
+                  <th className="px-2 py-2">Qty</th>
+                  <th className="px-2 py-2">∞</th>
+                  <th className="px-2 py-2">On</th>
+                  <th className="px-2 py-2" title="Shipping units (1–10, admin only)">
+                    Ship
+                  </th>
+                  <th className="px-2 py-2"> </th>
+                </tr>
+              </thead>
+            </table>
+          </div>
+          <div className="mt-3 space-y-3">
+            {variants.map((v, idx) => (
+              <ProductEditorSection
+                key={v.id}
+                title={v.label.trim() || `Variation ${idx + 1}`}
+                status={v.active ? "active" : "inactive"}
+                statusLabel={v.active ? "Active" : "Inactive"}
+                meta={variantSectionMeta(v, basePriceCents, images)}
+              >
+                <div className="overflow-x-auto rounded border border-palm/15 dark:border-zinc-700">
+                  <table className="w-full min-w-[40rem] text-left text-sm">
+                    <tbody>
+                      <VariantEditorRow
+                        v={v}
+                        basePriceCents={basePriceCents}
+                        sortIndex={idx}
+                        variantCount={variants.length}
+                        onMove={(direction) => moveVariant(direction, v.id)}
+                        onRemove={remove}
+                        onSaved={bump}
+                        pending={pending}
+                      />
+                    </tbody>
+                  </table>
+                </div>
+                {onAssignImageVariant ? (
+                  <ProductVariantImagePicker
+                    variantId={v.id}
+                    variantLabel={v.label.trim() || `Variation ${idx + 1}`}
+                    images={images}
+                    onAssignVariant={onAssignImageVariant}
+                    disabled={pending}
+                  />
+                ) : null}
+              </ProductEditorSection>
+            ))}
+          </div>
+        </>
       ) : (
         <p className="mt-2 text-sm text-coral">
-          No variations — run the latest database migration, or re-save the product to create a default SKU.
+          No variations — run the latest database migration, or re-save the product to create a default variation.
         </p>
       )}
       <form onSubmit={add} className="mt-4 flex flex-wrap items-end gap-2">
@@ -519,6 +596,6 @@ export function ProductVariantsSection({
         </button>
         {err ? <span className="text-sm text-coral">{err}</span> : null}
       </form>
-    </section>
+    </div>
   );
 }

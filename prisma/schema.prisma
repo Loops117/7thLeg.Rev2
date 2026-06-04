@@ -93,6 +93,8 @@ model SiteConfig {
   imageSubmissionPinBorderWidthPx Int @default(2) @map("image_submission_pin_border_width_px")
   imageSubmissionPinBorderColor String @default("#000000") @map("image_submission_pin_border_color")
   imageSubmissionPinCustomImageUrl String @default("") @map("image_submission_pin_custom_image_url")
+  /// Ring / glow when hovering a pin or its tagged product row in the gallery viewer.
+  imageSubmissionPinHighlightColor String @default("#f4a261") @map("image_submission_pin_highlight_color")
   /// Whole cents each point is worth when applied at checkout (e.g. 10 = $0.10 per point).
   loyaltyRedemptionCentsPerPoint Int @default(10) @map("loyalty_redemption_cents_per_point")
 
@@ -507,8 +509,63 @@ model Product {
   couponPickRows EventCouponProductPick[]
   wishlistItems CustomerWishlistItem[]
   imageSubmissionHotspots ImageSubmissionHotspot[]
+  recommendationsFrom ProductRecommendation[] @relation("ProductRecommendationsFrom")
+  recommendationsTo   ProductRecommendation[] @relation("ProductRecommendationsTo")
+  kitHost             ProductKit?             @relation("ProductKitHost")
+  kitItems            ProductKitItem[]
 
   @@map("products")
+}
+
+/// Combo deal on a product page: fixed variants at a bundle discount (per host product, not per variation).
+model ProductKit {
+  id            String  @id @default(cuid())
+  hostProductId String  @unique @map("host_product_id")
+  label         String  @default("Kit deal")
+  discountCents Int     @default(0) @map("discount_cents")
+  enabled       Boolean @default(true)
+
+  hostProduct Product         @relation("ProductKitHost", fields: [hostProductId], references: [id], onDelete: Cascade)
+  items       ProductKitItem[]
+  cartItems   CartItem[]
+
+  @@map("product_kits")
+}
+
+model ProductKitItem {
+  id        String  @id @default(cuid())
+  kitId     String  @map("kit_id")
+  productId String  @map("product_id")
+  variantId String? @map("variant_id")
+  sortOrder Int     @default(0) @map("sort_order")
+
+  kit     ProductKit      @relation(fields: [kitId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@unique([kitId, productId, variantId])
+  @@index([kitId, sortOrder])
+  @@map("product_kit_items")
+}
+
+enum ProductRecommendationKind {
+  RELATED
+  YOU_MAY_ALSO_WANT
+}
+
+/// Per-product storefront links (not per variant). `sortOrder` controls display order within each kind.
+model ProductRecommendation {
+  productId        String                  @map("product_id")
+  relatedProductId String                  @map("related_product_id")
+  kind             ProductRecommendationKind
+  sortOrder        Int                     @default(0) @map("sort_order")
+
+  product        Product @relation("ProductRecommendationsFrom", fields: [productId], references: [id], onDelete: Cascade)
+  relatedProduct Product @relation("ProductRecommendationsTo", fields: [relatedProductId], references: [id], onDelete: Cascade)
+
+  @@id([productId, relatedProductId, kind])
+  @@index([productId, kind, sortOrder])
+  @@map("product_recommendations")
 }
 
 model ProductVariant {
@@ -516,6 +573,8 @@ model ProductVariant {
   productId      String
   product        Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   label          String
+  /// Rich HTML shown on the product page when this variation is selected (above product description).
+  description    String  @default("") @db.Text
   /// Display order on the product page and in admin (lower = first).
   sortOrder      Int     @default(0) @map("sort_order")
   sku            String?
@@ -539,6 +598,7 @@ model ProductVariant {
   lineItems OrderLineItem[]
   wishlistItems CustomerWishlistItem[]
   imageSubmissionHotspots ImageSubmissionHotspot[]
+  kitItems                ProductKitItem[]
 
   @@map("product_variants")
 }
@@ -1007,6 +1067,8 @@ model Order {
   checkoutCouponCodeSnap      String @default("") @db.Text
   /// Total cents discounted from merchandise via checkout coupon vs pre-coupon merchandise on this order.
   checkoutCouponDiscountCents Int    @default(0)
+  /// Bundle discount when cart includes a complete product kit (see `product_kits`).
+  kitDiscountCents            Int    @default(0) @map("kit_discount_cents")
   /// Points redeemed on this order (deducted from customer balance when paid).
   loyaltyPointsRedeemed Int @default(0) @map("loyalty_points_redeemed")
   /// Merchandise discount from loyalty redemption (cents), included in line totals / subtotal.
@@ -1082,6 +1144,8 @@ model OrderLineItem {
   variant          ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
   productNameSnap  String
   variantLabelSnap String?
+  /// Variation SKU at time of sale (inventory integration).
+  variantSkuSnap   String? @map("variant_sku_snap")
   quantity         Int
   unitPriceCents   Int
   lineTotalCents   Int
@@ -1165,8 +1229,13 @@ model CartItem {
   timedSaleEvent   Event?  @relation("CartItemTimedSaleEvent", fields: [timedSaleEventId], references: [id], onDelete: SetNull)
   /// Discriminates merged lines — `__none__` for normal adds, else equals timedSaleEventId (Prisma rejects null-compound-uniq sentinel).
   pricingScopeKey String @default("__none__")
+  /// When set, line was added as part of a kit bundle; lines sharing an instance id count as one kit purchase.
+  productKitInstanceId String? @map("product_kit_instance_id")
+  productKitId         String? @map("product_kit_id")
+  productKit           ProductKit? @relation(fields: [productKitId], references: [id], onDelete: SetNull)
 
-  @@unique([cartId, productId, variantId, pricingScopeKey])
+  @@unique([cartId, productId, variantId, pricingScopeKey, productKitInstanceId])
+  @@index([productKitInstanceId])
   @@map("cart_items")
 }
 

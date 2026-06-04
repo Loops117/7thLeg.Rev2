@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ProductsAdminPanel } from "@/components/settings/products-admin";
-import { getProductCatalogEditPayload } from "@/app/actions/products-admin";
+import { getProductCatalogEditPayload } from "@/app/actions/product-catalog-edit-payload";
 import { buildProductTypePickerGroups, ProductTypeIndex } from "@/lib/product-type-index";
 import { prisma } from "@/lib/prisma";
 

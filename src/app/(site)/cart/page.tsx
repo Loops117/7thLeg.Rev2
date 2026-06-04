@@ -110,6 +110,7 @@ export default async function CartPage({ searchParams }: Props) {
     ? 0
     : cartPack.merchandiseBeforeCouponSubtotalCents;
   const couponDiscountCents = cartPack.empty ? 0 : cartPack.couponDiscountCents;
+  const kitDiscountCents = cartPack.empty ? 0 : cartPack.kitDiscountCents;
   const appliedCouponCode = cartPack.empty ? null : cartPack.appliedCouponCode;
   const timedEventSavingsCents = cartPack.empty
     ? 0
@@ -149,6 +150,7 @@ export default async function CartPage({ searchParams }: Props) {
         merchandiseListSubtotalCents={merchandiseListSubtotalCents}
         timedEventSavingsCents={timedEventSavingsCents}
         couponDiscountCents={couponDiscountCents}
+        kitDiscountCents={kitDiscountCents}
         appliedCouponCode={appliedCouponCode}
         checkoutTaxRateBps={checkoutTaxRateBps}
         payments={payments}
