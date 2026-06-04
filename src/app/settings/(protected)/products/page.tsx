@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ProductsAdminPanel } from "@/components/settings/products-admin";
 import { getProductCatalogEditPayload } from "@/app/actions/product-catalog-edit-payload";
+import { productListPriceCents } from "@/lib/product-list-price-cents";
 import { buildProductTypePickerGroups, ProductTypeIndex } from "@/lib/product-type-index";
 import { prisma } from "@/lib/prisma";
 
@@ -24,6 +25,10 @@ export default async function SettingsProductsPage({ searchParams }: Props) {
         featured: true,
         onSale: true,
         types: { select: { typeId: true } },
+        variants: {
+          orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
+          select: { priceDeltaCents: true, sortOrder: true },
+        },
       },
     }),
     prisma.productType.findMany({
@@ -63,6 +68,7 @@ export default async function SettingsProductsPage({ searchParams }: Props) {
     name: p.name,
     slug: p.slug,
     basePriceCents: p.basePriceCents,
+    listPriceCents: productListPriceCents(p.basePriceCents, p.variants),
     quantity: p.quantity,
     unlimitedQuantity: p.unlimitedQuantity,
     active: p.active,

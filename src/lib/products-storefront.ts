@@ -1,6 +1,7 @@
 import { EventKind, type EventSaleDiscountMode, type Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { effectiveEventSalePriceCents, eventDisplayPriceForBase, isEventActive } from "@/lib/event-pricing";
+import { productListPriceCents } from "@/lib/product-list-price-cents";
 import { productTypeOrderBy } from "@/lib/product-type-order";
 import { expandEventTypeIds, typeIdsForStoreFilter } from "@/lib/product-type-tree";
 export {
@@ -172,8 +173,9 @@ function enrichProductsWithEventPricing(
     return rows.map((p) => ({ ...p }));
   }
   return rows.map((p) => {
+    const listCents = productListPriceCents(p.basePriceCents, p.variants);
     const { priceCents, showSale } = effectiveEventSalePriceCents(
-      p.basePriceCents,
+      listCents,
       event.saleDiscountMode,
       event.saleDiscountPercent,
       event.saleDiscountCents,

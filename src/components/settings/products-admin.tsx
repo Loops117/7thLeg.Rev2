@@ -372,7 +372,7 @@ export function ProductsAdminPanel({
                     >
                       <td className="px-3 py-2 font-medium text-ink">{p.name}</td>
                       <td className="px-3 py-2 font-mono text-xs text-ink/80">{p.slug}</td>
-                      <td className="px-3 py-2 whitespace-nowrap">{formatPriceUsd(p.basePriceCents)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap">{formatPriceUsd(p.listPriceCents)}</td>
                       <td className="px-3 py-2 whitespace-nowrap">
                         {p.unlimitedQuantity ? (
                           <span className="font-semibold text-lagoon-dark" title="Unlimited (made to order)">

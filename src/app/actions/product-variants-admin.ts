@@ -282,7 +282,13 @@ export async function saveProductVariantRow(input: {
   });
   if (!v) throw new Error("Variation not found");
 
-  const n = await prisma.productVariant.count({ where: { productId: input.productId } });
+  const allVariants = await prisma.productVariant.findMany({
+    where: { productId: input.productId },
+    orderBy: variantOrderBy,
+    select: { id: true, priceDeltaCents: true },
+  });
+  const n = allVariants.length;
+  const isPrimaryVariant = allVariants[0]?.id === input.variantId;
   const stock = input.unlimitedStock ? 0 : Math.max(0, Math.floor(Number(input.stock) || 0));
   const picker = pickerColorsForDb(input);
 
@@ -307,6 +313,39 @@ export async function saveProductVariantRow(input: {
           ...picker,
         },
       }),
+    ]);
+  } else if (isPrimaryVariant) {
+    const oldBase = product.basePriceCents;
+    const newBase = listCents;
+    const shift = oldBase - newBase;
+    await prisma.$transaction([
+      prisma.product.update({
+        where: { id: product.id },
+        data: { basePriceCents: newBase },
+      }),
+      prisma.productVariant.update({
+        where: { id: input.variantId },
+        data: {
+          label,
+          sku,
+          description,
+          priceDeltaCents: 0,
+          stock,
+          unlimitedStock: input.unlimitedStock,
+          active: input.active,
+          priceTiersJson: tiersJson,
+          shippingUnits,
+          ...picker,
+        },
+      }),
+      ...allVariants
+        .filter((row) => row.id !== input.variantId)
+        .map((row) =>
+          prisma.productVariant.update({
+            where: { id: row.id },
+            data: { priceDeltaCents: row.priceDeltaCents + shift },
+          }),
+        ),
     ]);
   } else {
     const delta = listCents - product.basePriceCents;

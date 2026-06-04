@@ -8,6 +8,7 @@ import { ProductVariantBadge, storefrontVariantCount } from "@/components/store/
 import { pickPrimaryProductImage } from "@/lib/product-images-public";
 import { productCardAppearsInStock } from "@/lib/product-stock";
 import { parseVariantPriceDisplay } from "@/lib/product-variant-price-display";
+import { productListPriceCents } from "@/lib/product-list-price-cents";
 import { formatPriceUsd } from "@/lib/product-slug";
 import type { StorefrontProductCard } from "@/lib/products-storefront";
 
@@ -35,7 +36,8 @@ export function StoreProductCard({
   const img = pickPrimaryProductImage(p.images);
   const qs = eventId?.trim() ? `?event=${encodeURIComponent(eventId.trim())}` : "";
   const inStock = productCardAppearsInStock(p);
-  const priceCents = p.displayPriceCents ?? p.basePriceCents;
+  const listPriceCents = productListPriceCents(p.basePriceCents, p.variants);
+  const priceCents = p.displayPriceCents ?? listPriceCents;
   const cardRef = useRef<HTMLDivElement>(null);
   const variantCount = storefrontVariantCount(p.variants);
 

@@ -7,6 +7,8 @@ export type ProductListRow = {
   name: string;
   slug: string;
   basePriceCents: number;
+  /** Primary variation list price (base + first variation delta). */
+  listPriceCents: number;
   quantity: number;
   unlimitedQuantity: boolean;
   active: boolean;
