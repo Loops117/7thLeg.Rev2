@@ -16,6 +16,7 @@ export function StoreProductCard({
   product: p,
   hover: _hover,
   compact,
+  mini,
   eventId,
   showQuickAdd = false,
   productDiagonalBrandName,
@@ -26,6 +27,8 @@ export function StoreProductCard({
   /** Parent wrapper should set `data-store-card-hover` (zoom | glow). Kept for API compatibility. */
   hover?: "zoom" | "glow";
   compact?: boolean;
+  /** Tighter card for product-page recommendation strips. */
+  mini?: boolean;
   eventId?: string | null;
   /** Quick add is for the store catalog grid only, not product detail or featured strips. */
   showQuickAdd?: boolean;
@@ -40,15 +43,18 @@ export function StoreProductCard({
   const priceCents = p.displayPriceCents ?? listPriceCents;
   const cardRef = useRef<HTMLDivElement>(null);
   const variantCount = storefrontVariantCount(p.variants);
+  const isMini = mini && compact;
 
   return (
     <div
       ref={cardRef}
-      className="store-product-card relative flex h-full flex-col rounded"
+      className={`store-product-card relative flex flex-col rounded ${isMini ? "" : "h-full"}`}
     >
-      <Link href={`/product/${p.slug}${qs}`} className="flex min-h-0 flex-1 flex-col">
+      <Link href={`/product/${p.slug}${qs}`} className={`flex flex-col ${isMini ? "" : "min-h-0 flex-1"}`}>
         <div
-          className={`store-product-card__image-area relative shrink-0 overflow-hidden ${compact ? "aspect-square" : "aspect-[4/3]"}`}
+          className={`store-product-card__image-area relative shrink-0 overflow-hidden ${
+            isMini ? "aspect-square max-h-[4.5rem]" : compact ? "aspect-square" : "aspect-[4/3]"
+          }`}
         >
           {img ? (
             // eslint-disable-next-line @next/next/no-img-element -- admin-supplied arbitrary URLs
@@ -58,7 +64,7 @@ export function StoreProductCard({
               No image
             </div>
           )}
-          <ProductVariantBadge count={variantCount} />
+          {!isMini ? <ProductVariantBadge count={variantCount} /> : null}
           {productDiagonalBrandName?.trim() ? (
             <ProductDiagonalBrandOverlay
               brandName={productDiagonalBrandName}
@@ -67,9 +73,17 @@ export function StoreProductCard({
             />
           ) : null}
         </div>
-        <div className={`flex min-h-0 flex-1 flex-col ${compact ? "p-2" : "p-3"}`}>
+        <div
+          className={`flex flex-col ${isMini ? "p-1" : compact ? "min-h-0 flex-1 p-2" : "min-h-0 flex-1 p-3"}`}
+        >
           <p
-            className={`store-product-card__title shrink-0 font-bold ${compact ? "line-clamp-2 min-h-[2.25rem] text-xs" : "line-clamp-2 min-h-[2.5rem] text-sm"}`}
+            className={`store-product-card__title shrink-0 font-bold ${
+              isMini
+                ? "line-clamp-2 text-[10px] leading-tight"
+                : compact
+                  ? "line-clamp-2 min-h-[2.25rem] text-xs"
+                  : "line-clamp-2 min-h-[2.5rem] text-sm"
+            }`}
           >
             {p.name}
           </p>
@@ -78,8 +92,8 @@ export function StoreProductCard({
               {p.shortDescription?.trim() ? p.shortDescription : "\u00a0"}
             </p>
           ) : null}
-          <div className="mt-auto shrink-0 pt-2">
-            <p className={`store-product-card__price font-bold ${compact ? "text-xs" : "text-sm"}`}>
+          <div className={`shrink-0 ${isMini ? "pt-0.5" : "mt-auto pt-2"}`}>
+            <p className={`store-product-card__price font-bold ${isMini ? "text-[10px]" : compact ? "text-xs" : "text-sm"}`}>
               {formatPriceUsd(priceCents)}
               {p.displaySale || p.onSale ? <span className="store-product-card__sale ml-1">Sale</span> : null}
             </p>

@@ -21,16 +21,18 @@ function RecommendationColumn({
   if (products.length === 0) return null;
 
   return (
-    <div className="min-w-0 flex-1">
-      <h2 id={headingId} className="text-base font-black text-palm sm:text-lg">
+    <div className="min-w-0 w-full">
+      <h2 id={headingId} className="text-sm font-black text-palm">
         {title}
       </h2>
-      <ul className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-2.5 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="mt-2 -mx-0.5 overflow-x-auto overscroll-x-contain px-0.5 pb-0.5">
+        <ul className="flex w-max flex-nowrap gap-1.5 sm:gap-2">
         {products.map((p) => (
-          <li key={p.id}>
+          <li key={p.id} className="w-[5.5rem] shrink-0 sm:w-[6.25rem]">
             <StoreProductCard
               product={p}
               compact
+              mini
               eventId={eventId}
               productDiagonalBrandName={productDiagonalBrandName}
               productDiagonalNameGapPx={productDiagonalNameGapPx}
@@ -38,7 +40,8 @@ function RecommendationColumn({
             />
           </li>
         ))}
-      </ul>
+        </ul>
+      </div>
     </div>
   );
 }
@@ -72,13 +75,10 @@ export function ProductRecommendationSections({
   const showDivider = hasRelated && hasAlsoWant;
 
   return (
-    <section
-      className="mt-10 border-t-2 border-palm/20 pt-8"
-      aria-label="Product suggestions"
-    >
-      <div className="flex flex-col gap-8 md:flex-row md:items-start md:gap-0">
+    <section className="mt-6 border-t border-palm/20 pt-4" aria-label="Product suggestions">
+      <div className="flex flex-col gap-5">
         {hasRelated ? (
-          <div className={showDivider ? "md:pr-5 lg:pr-6" : undefined}>
+          <div className={showDivider ? "border-b border-palm/20 pb-5" : undefined}>
             <RecommendationColumn
               title="Related items"
               headingId="product-related-items-heading"
@@ -88,25 +88,13 @@ export function ProductRecommendationSections({
           </div>
         ) : null}
 
-        {showDivider ? (
-          <>
-            <div
-              className="hidden shrink-0 self-stretch md:block md:w-px md:bg-palm/25"
-              aria-hidden
-            />
-            <div className="border-t border-palm/25 md:hidden" aria-hidden />
-          </>
-        ) : null}
-
         {hasAlsoWant ? (
-          <div className={showDivider ? "md:pl-5 lg:pl-6" : undefined}>
-            <RecommendationColumn
-              title="You may also want"
-              headingId="product-you-may-also-want-heading"
-              products={youMayAlsoWant}
-              {...shared}
-            />
-          </div>
+          <RecommendationColumn
+            title="You may also want"
+            headingId="product-you-may-also-want-heading"
+            products={youMayAlsoWant}
+            {...shared}
+          />
         ) : null}
       </div>
     </section>

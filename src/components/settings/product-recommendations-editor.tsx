@@ -73,7 +73,8 @@ export function ProductRecommendationsEditor({
         <Link href="/settings/products/types" className="text-lagoon-dark underline dark:text-emerald-400">
           Product type defaults
         </Link>{" "}
-        apply to every product in that type (and child types); add extra picks below for this product only.
+        apply to every product in that type (and child types). Related items on the storefront also include other
+        products in the same type(s). Add extra picks below for this product only.
       </p>
 
       {inheritedCount > 0 ? (

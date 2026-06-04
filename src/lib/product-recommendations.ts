@@ -127,6 +127,29 @@ async function loadStorefrontCardsInOrder(
   return out;
 }
 
+/** Other active products sharing any of this product's assigned types (storefront related baseline). */
+async function getSameTypeRelatedProductIds(
+  productId: string,
+  typeIds: string[],
+  alreadyPicked: string[],
+  maxAdd: number,
+): Promise<string[]> {
+  if (maxAdd <= 0 || typeIds.length === 0) return [];
+
+  const exclude = new Set([productId, ...alreadyPicked]);
+  const rows = await prisma.product.findMany({
+    where: {
+      active: true,
+      id: { notIn: [...exclude] },
+      types: { some: { typeId: { in: typeIds } } },
+    },
+    orderBy: [{ featured: "desc" }, { name: "asc" }],
+    take: maxAdd,
+    select: { id: true },
+  });
+  return rows.map((r) => r.id);
+}
+
 export async function getEffectiveProductRecommendationIds(
   productId: string,
 ): Promise<ProductRecommendationLists> {
@@ -137,10 +160,22 @@ export async function getEffectiveProductRecommendationIds(
       select: { typeId: true },
     }),
   ]);
-  const typeDefaults = await getTypeDefaultRecommendationIdsForProductTypes(
-    typeRows.map((t) => t.typeId),
-  );
-  return mergeRecommendationLists(typeDefaults, productLists, productId);
+  const typeIds = typeRows.map((t) => t.typeId);
+  const typeDefaults = await getTypeDefaultRecommendationIdsForProductTypes(typeIds);
+  const merged = mergeRecommendationLists(typeDefaults, productLists, productId);
+
+  const sameTypeSlots = MAX_PRODUCT_RECOMMENDATIONS_PER_SECTION - merged.relatedProductIds.length;
+  if (sameTypeSlots > 0) {
+    const sameType = await getSameTypeRelatedProductIds(
+      productId,
+      typeIds,
+      merged.relatedProductIds,
+      sameTypeSlots,
+    );
+    merged.relatedProductIds = [...merged.relatedProductIds, ...sameType];
+  }
+
+  return merged;
 }
 
 export async function getProductRecommendationsForStorefront(
