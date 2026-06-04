@@ -63,6 +63,9 @@ export function ProductsAdminPanel({
     () => editPayload?.kit,
   );
   const loadedFromUrlRef = useRef<string | null>(editPayload ? editPayload.initial.id : null);
+  /** Bumped to remount the form after Clear; blocks stale editPayload from repopulating after Cancel. */
+  const [formEpoch, setFormEpoch] = useState(0);
+  const editorDismissedRef = useRef(false);
 
   const [search, setSearch] = useState("");
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("all");
@@ -82,6 +85,7 @@ export function ProductsAdminPanel({
 
   useEffect(() => {
     if (editPayload) {
+      if (editorDismissedRef.current) return;
       loadedFromUrlRef.current = editPayload.initial.id;
       setEditorInitial(editPayload.initial);
       setEditorMedia(editPayload.media);
@@ -90,15 +94,33 @@ export function ProductsAdminPanel({
       setPaneEditorOpen(true);
       return;
     }
-    if (editIdFromUrl === null && loadedFromUrlRef.current !== null) {
-      loadedFromUrlRef.current = null;
-      setEditorInitial(null);
-      setEditorMedia(undefined);
-      setEditorRecommendations(undefined);
-      setEditorKit(undefined);
-      setPaneEditorOpen(false);
+    if (editIdFromUrl === null) {
+      editorDismissedRef.current = false;
+      if (loadedFromUrlRef.current !== null) {
+        loadedFromUrlRef.current = null;
+        setEditorInitial(null);
+        setEditorMedia(undefined);
+        setEditorRecommendations(undefined);
+        setEditorKit(undefined);
+        setPaneEditorOpen(false);
+      }
     }
   }, [editPayload, editIdFromUrl]);
+
+  function resetEditorState(opts: { closePane?: boolean; leaveUrl?: boolean } = {}) {
+    const { closePane = true, leaveUrl = true } = opts;
+    editorDismissedRef.current = true;
+    loadedFromUrlRef.current = null;
+    setEditorInitial(null);
+    setEditorMedia(undefined);
+    setEditorRecommendations(undefined);
+    setEditorKit(undefined);
+    setFormEpoch((n) => n + 1);
+    if (closePane) setPaneEditorOpen(false);
+    if (leaveUrl && editIdFromUrl) {
+      router.replace("/settings/products");
+    }
+  }
 
   const filteredRows = useMemo(() => {
     let list = rows;
@@ -119,34 +141,22 @@ export function ProductsAdminPanel({
   }, [rows, search, quickFilter, typeFilterMatchIds]);
 
   function handleCatalogSaved() {
-    loadedFromUrlRef.current = null;
-    setEditorInitial(null);
-    setEditorMedia(undefined);
-    setEditorRecommendations(undefined);
-    setEditorKit(undefined);
-    setPaneEditorOpen(false);
+    resetEditorState({ closePane: true, leaveUrl: true });
     router.replace("/settings/products");
     router.refresh();
   }
 
   function handleClear() {
-    loadedFromUrlRef.current = null;
-    setEditorInitial(null);
-    setEditorMedia(undefined);
-    if (editIdFromUrl) {
-      router.replace("/settings/products");
-    }
+    resetEditorState({ closePane: false, leaveUrl: true });
+    setPaneEditorOpen(true);
   }
 
   function handleCancel() {
-    loadedFromUrlRef.current = null;
-    setEditorInitial(null);
-    setEditorMedia(undefined);
-    setPaneEditorOpen(false);
-    router.replace("/settings/products");
+    resetEditorState({ closePane: true, leaveUrl: true });
   }
 
   function openEditorForProduct(id: string) {
+    editorDismissedRef.current = false;
     router.push(`/settings/products?edit=${encodeURIComponent(id)}`);
   }
 
@@ -214,7 +224,10 @@ export function ProductsAdminPanel({
 
       <details
         open={paneEditorOpen}
-        onToggle={(e) => setPaneEditorOpen((e.target as HTMLDetailsElement).open)}
+        onToggle={(e) => {
+          if (e.target !== e.currentTarget) return;
+          setPaneEditorOpen(e.currentTarget.open);
+        }}
         className={adminDetailsPaneClass}
       >
         <summary className="border-b-2 border-palm/20 px-4 py-3 text-lg font-black text-palm dark:text-emerald-300 sm:px-6 dark:border-zinc-700">
@@ -226,7 +239,7 @@ export function ProductsAdminPanel({
         </summary>
         <div className="space-y-4 p-4 sm:p-6">
           <ProductEditForm
-            key={editorInitial?.id ?? "new"}
+            key={`${editorInitial?.id ?? "new"}-${formEpoch}`}
             initial={editorInitial}
             typePickerGroups={typePickerGroups}
             footers={footers}

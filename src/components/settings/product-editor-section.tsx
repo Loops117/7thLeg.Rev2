@@ -30,7 +30,11 @@ export function ProductEditorSection({
   children: ReactNode;
 }) {
   return (
-    <details className={`${adminDetailsPaneClass} border`} open={defaultOpen ? true : undefined}>
+    <details
+      className={`${adminDetailsPaneClass} border`}
+      open={defaultOpen ? true : undefined}
+      onToggle={(e) => e.stopPropagation()}
+    >
       <summary className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-palm/20 px-4 py-3 dark:border-zinc-700 sm:px-5">
         <span className="text-base font-black text-palm dark:text-emerald-300">{title}</span>
         <span className={statusClass[status]}>{statusLabel}</span>
