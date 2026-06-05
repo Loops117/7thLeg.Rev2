@@ -1,23 +1,47 @@
 "use client";
 
-import { btnSecondaryMd } from "@/lib/btn-theme-classes";
-
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { sendAdminTestEmail, type EmailAdminPanelData } from "@/app/actions/email-admin";
+import {
+  sendAdminTestEmail,
+  updateEmailSettings,
+  type EmailAdminPanelData,
+} from "@/app/actions/email-admin";
+import { btnSecondaryMd } from "@/lib/btn-theme-classes";
+import type { EmailSettingsState } from "@/lib/email-config";
 
 export function EmailSettingsEditor({ initial }: { initial: EmailAdminPanelData }) {
+  const router = useRouter();
   const [testTo, setTestTo] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const [saveErr, setSaveErr] = useState<string | null>(null);
+  const [form, setForm] = useState<EmailSettingsState>(initial.settings);
+  const [pendingTest, startTestTransition] = useTransition();
+  const [pendingSave, startSaveTransition] = useTransition();
 
-  const { status } = initial;
+  const { status, envOverrides } = initial;
+
+  function saveSettings() {
+    setSaveMsg(null);
+    setSaveErr(null);
+    startSaveTransition(async () => {
+      const res = await updateEmailSettings(form);
+      if (!res.ok) {
+        setSaveErr(res.error);
+        return;
+      }
+      setSaveMsg("Saved. Send a test email to confirm delivery.");
+      router.refresh();
+    });
+  }
 
   function sendTest(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
     setErr(null);
-    startTransition(async () => {
+    startTestTransition(async () => {
       try {
         const res = await sendAdminTestEmail(testTo);
         if (!res.ok) {
@@ -37,8 +61,8 @@ export function EmailSettingsEditor({ initial }: { initial: EmailAdminPanelData 
 
   return (
     <div className="space-y-8">
-      <section className="rounded border-2 border-palm/25 bg-surf/30 p-4 dark:border-zinc-600 dark:bg-zinc-900/40">
-        <h2 className="text-lg font-black text-palm dark:text-emerald-300">Connection status</h2>
+      <section className="rounded border-2 border-palm/25 bg-white p-4 dark:border-zinc-600 dark:bg-zinc-900/30">
+        <h2 className="text-lg font-black text-palm dark:text-emerald-300">Resend connection</h2>
         <p className="mt-1 text-sm text-ink/70 dark:text-zinc-400">
           Email is sent through{" "}
           <a
@@ -49,10 +73,70 @@ export function EmailSettingsEditor({ initial }: { initial: EmailAdminPanelData 
           >
             Resend
           </a>
-          . Set environment variables on the server (local <code className="text-xs">.env</code>, production in
-          Vercel).
+          . Save credentials here, or set environment variables (env wins when both are set).
         </p>
 
+        <div className="mt-4 space-y-4">
+          <label className="block text-sm font-bold text-ink dark:text-zinc-200">
+            Resend API key
+            <input
+              type="password"
+              autoComplete="off"
+              value={form.resendApiKey}
+              onChange={(e) => setForm((f) => ({ ...f, resendApiKey: e.target.value }))}
+              placeholder="re_…"
+              disabled={envOverrides.resendApiKey}
+              className="mt-1 w-full max-w-lg border-2 border-palm-mid px-3 py-2 font-mono text-sm dark:border-zinc-600 dark:bg-zinc-950"
+              maxLength={200}
+            />
+          </label>
+          {envOverrides.resendApiKey ? (
+            <p className="text-xs text-ink/65 dark:text-zinc-400">
+              Using <code className="rounded bg-black/5 px-1">RESEND_API_KEY</code> from the server environment — clear
+              that env var to use the saved key below.
+            </p>
+          ) : null}
+
+          <label className="block text-sm font-bold text-ink dark:text-zinc-200">
+            From address
+            <input
+              type="text"
+              value={form.emailFromAddress}
+              onChange={(e) => setForm((f) => ({ ...f, emailFromAddress: e.target.value }))}
+              placeholder='Inverts Oasis <noreply@yourdomain.com>'
+              disabled={envOverrides.emailFrom}
+              className="mt-1 w-full max-w-lg border-2 border-palm-mid px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-950"
+              maxLength={200}
+            />
+          </label>
+          {envOverrides.emailFrom ? (
+            <p className="text-xs text-ink/65 dark:text-zinc-400">
+              Using <code className="rounded bg-black/5 px-1">EMAIL_FROM</code> from the server environment.
+            </p>
+          ) : (
+            <p className="text-xs text-ink/55 dark:text-zinc-500">
+              Use a sender on a domain you verified in Resend. Leave blank to use Resend&apos;s sandbox sender (testing
+              only).
+            </p>
+          )}
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            disabled={pendingSave}
+            onClick={saveSettings}
+            className="border-2 border-black bg-black px-4 py-2 text-sm font-bold text-white hover:bg-neutral-900 disabled:opacity-50"
+          >
+            {pendingSave ? "Saving…" : "Save email settings"}
+          </button>
+          {saveMsg ? <span className="text-sm font-bold text-lagoon-dark">{saveMsg}</span> : null}
+          {saveErr ? <span className="text-sm font-bold text-coral">{saveErr}</span> : null}
+        </div>
+      </section>
+
+      <section className="rounded border-2 border-palm/25 bg-surf/30 p-4 dark:border-zinc-600 dark:bg-zinc-900/40">
+        <h2 className="text-lg font-black text-palm dark:text-emerald-300">Connection status</h2>
         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
           <div className="rounded border border-palm/20 bg-white p-3 dark:border-zinc-600 dark:bg-zinc-950">
             <dt className="text-xs font-bold uppercase tracking-wide text-ink/55">Resend API key</dt>
@@ -66,13 +150,22 @@ export function EmailSettingsEditor({ initial }: { initial: EmailAdminPanelData 
             {status.apiKeyHint ? (
               <dd className="mt-0.5 font-mono text-xs text-ink/65">{status.apiKeyHint}</dd>
             ) : null}
+            {status.apiKeySource !== "none" ? (
+              <dd className="mt-1 text-xs text-ink/55">
+                Source: {status.apiKeySource === "env" ? "environment" : "saved settings"}
+              </dd>
+            ) : null}
           </div>
           <div className="rounded border border-palm/20 bg-white p-3 dark:border-zinc-600 dark:bg-zinc-950">
             <dt className="text-xs font-bold uppercase tracking-wide text-ink/55">From address</dt>
             <dd className="mt-1 font-mono text-xs break-all">{status.fromAddress}</dd>
             {status.usingDefaultFrom ? (
               <dd className="mt-1 text-xs text-coral">
-                Using Resend sandbox default — set EMAIL_FROM to your verified domain for production.
+                Using Resend sandbox default — set a verified sender for production.
+              </dd>
+            ) : status.fromSource !== "default" ? (
+              <dd className="mt-1 text-xs text-ink/55">
+                Source: {status.fromSource === "env" ? "environment" : "saved settings"}
               </dd>
             ) : null}
           </div>
@@ -86,9 +179,8 @@ export function EmailSettingsEditor({ initial }: { initial: EmailAdminPanelData 
           <div className="mt-4 rounded border border-coral/40 bg-coral/10 p-3 text-sm text-ink">
             <p className="font-bold text-coral">Email is not connected</p>
             <p className="mt-1">
-              Add <code className="rounded bg-black/5 px-1">RESEND_API_KEY</code> to your environment, redeploy, then
-              send a test message below. Without it, password-reset links are only logged in the server console (dev
-              may show the link on screen).
+              Add your Resend API key above and save, then send a test message. Without a key, password-reset links are
+              only logged in the server console (dev may show the link on screen).
             </p>
           </div>
         ) : null}
@@ -97,7 +189,7 @@ export function EmailSettingsEditor({ initial }: { initial: EmailAdminPanelData 
       <section className="rounded border-2 border-palm/25 bg-white p-4 dark:border-zinc-600 dark:bg-zinc-900/30">
         <h2 className="text-lg font-black text-palm dark:text-emerald-300">Send test email</h2>
         <p className="mt-1 text-sm text-ink/70 dark:text-zinc-400">
-          Sends a real message through Resend using your current <strong>EMAIL_FROM</strong> settings.
+          Sends a real message through Resend using your current from address.
         </p>
         <form onSubmit={sendTest} className="mt-4 flex flex-wrap items-end gap-3">
           <label className="block min-w-[16rem] flex-1 text-sm font-bold text-ink">
@@ -109,15 +201,11 @@ export function EmailSettingsEditor({ initial }: { initial: EmailAdminPanelData 
               onChange={(e) => setTestTo(e.target.value)}
               placeholder="you@example.com"
               className="mt-1 w-full border-2 border-palm-mid px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-950"
-              disabled={pending}
+              disabled={pendingTest}
             />
           </label>
-          <button
-            type="submit"
-            disabled={pending || !status.configured}
-            className={btnSecondaryMd}
-          >
-            {pending ? "Sending…" : "Send test"}
+          <button type="submit" disabled={pendingTest || !status.configured} className={btnSecondaryMd}>
+            {pendingTest ? "Sending…" : "Send test"}
           </button>
         </form>
         {msg ? <p className="mt-3 text-sm font-bold text-lagoon-dark">{msg}</p> : null}
@@ -147,23 +235,22 @@ export function EmailSettingsEditor({ initial }: { initial: EmailAdminPanelData 
             <a href="https://resend.com" className="text-lagoon-dark underline" target="_blank" rel="noreferrer">
               resend.com
             </a>{" "}
-            and verify your sending domain.
+            and verify your sending domain (e.g. <strong>7thleg.com</strong>).
           </li>
           <li>
-            Add <code className="rounded bg-black/5 px-1 text-xs">RESEND_API_KEY</code> to{" "}
-            <code className="rounded bg-black/5 px-1 text-xs">.env</code> locally and to Vercel environment variables for
-            production.
+            Paste your API key in <strong>Resend connection</strong> above and save, or set{" "}
+            <code className="rounded bg-black/5 px-1 text-xs">RESEND_API_KEY</code> in Vercel.
           </li>
           <li>
-            Set <code className="rounded bg-black/5 px-1 text-xs">EMAIL_FROM</code> to a verified sender, e.g.{" "}
-            <code className="rounded bg-black/5 px-1 text-xs">Inverts Oasis &lt;noreply@yourdomain.com&gt;</code>.
+            Set the from address to a verified sender, e.g.{" "}
+            <code className="rounded bg-black/5 px-1 text-xs">7th Leg &lt;noreply@7thleg.com&gt;</code>.
           </li>
-          <li>Redeploy, open this page, and use <strong>Send test</strong> above.</li>
           <li>
-            Test password reset:{" "}
+            Use <strong>Send test</strong> above, then try{" "}
             <a href="/forgot-password" className="text-lagoon-dark underline" target="_blank" rel="noreferrer">
               /forgot-password
             </a>
+            .
           </li>
         </ol>
       </section>

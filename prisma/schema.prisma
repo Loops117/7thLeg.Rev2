@@ -81,6 +81,10 @@ model SiteConfig {
   siteLinkPreviewDescription String @default("") @map("site_link_preview_description")
   /// Google Maps JavaScript API key (Places) for customer address autocomplete on My info.
   googleMapsApiKey String @default("") @map("google_maps_api_key")
+  /// Resend API key for transactional email (password reset, giveaways). Env RESEND_API_KEY overrides.
+  resendApiKey String @default("") @map("resend_api_key")
+  /// Verified sender for Resend, e.g. "Inverts Oasis <noreply@yourdomain.com>". Env EMAIL_FROM overrides.
+  emailFromAddress String @default("") @map("email_from_address")
   /// Longest edge in pixels for server-side downscaling on uploads.
   uploadImageMaxEdgePx   Int @default(2400)
   /// JPEG quality (1–100) when uploads are saved as JPEG.

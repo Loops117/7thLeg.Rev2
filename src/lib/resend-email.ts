@@ -1,11 +1,14 @@
 /**
- * Shared Resend send — configure with `RESEND_API_KEY` and `EMAIL_FROM` in the environment.
+ * Shared Resend send — configure via Settings → Email, or `RESEND_API_KEY` / `EMAIL_FROM` in the environment.
  */
+
+import { resolveResendConfig } from "@/lib/email-config";
 
 export type SendEmailResult =
   | { ok: true; messageId?: string }
   | { ok: false; error: string };
 
+/** @deprecated Use resolveResendConfig() — kept for callers that only need a sync env fallback. */
 export function getResendFromAddress(): string {
   return process.env.EMAIL_FROM?.trim() || "onboarding@resend.dev";
 }
@@ -16,9 +19,13 @@ export async function sendResendHtmlEmail(opts: {
   html: string;
   text?: string;
 }): Promise<SendEmailResult> {
-  const resendKey = process.env.RESEND_API_KEY?.trim();
-  if (!resendKey) {
-    return { ok: false, error: "RESEND_API_KEY is not set in the server environment." };
+  const { apiKey, from } = await resolveResendConfig();
+  if (!apiKey) {
+    return {
+      ok: false,
+      error:
+        "Email is not configured. Add a Resend API key in Settings → Email, or set RESEND_API_KEY in the server environment.",
+    };
   }
 
   const to = opts.to.trim().toLowerCase();
@@ -26,13 +33,11 @@ export async function sendResendHtmlEmail(opts: {
     return { ok: false, error: "Invalid recipient email address." };
   }
 
-  const from = getResendFromAddress();
-
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${resendKey}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({

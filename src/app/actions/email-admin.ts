@@ -2,8 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
-import { CUSTOMER_EMAIL_KINDS, getEmailConfigStatus, type EmailConfigStatus } from "@/lib/email-config";
-import { escapeHtml, getResendFromAddress, sendResendHtmlEmail } from "@/lib/resend-email";
+import {
+  CUSTOMER_EMAIL_KINDS,
+  type EmailConfigStatus,
+  type EmailSettingsState,
+  getEmailConfigStatus,
+  getEmailSettingsForAdmin,
+} from "@/lib/email-config";
+import { prisma } from "@/lib/prisma";
+import { escapeHtml, sendResendHtmlEmail } from "@/lib/resend-email";
 
 async function requireAdmin() {
   const session = await auth();
@@ -14,15 +21,73 @@ async function requireAdmin() {
 
 export type EmailAdminPanelData = {
   status: EmailConfigStatus;
+  settings: EmailSettingsState;
   kinds: typeof CUSTOMER_EMAIL_KINDS;
+  envOverrides: {
+    resendApiKey: boolean;
+    emailFrom: boolean;
+  };
 };
 
 export async function getEmailAdminPanelData(): Promise<EmailAdminPanelData> {
   await requireAdmin();
+  const [status, settings] = await Promise.all([getEmailConfigStatus(), getEmailSettingsForAdmin()]);
   return {
-    status: getEmailConfigStatus(),
+    status,
+    settings,
     kinds: CUSTOMER_EMAIL_KINDS,
+    envOverrides: {
+      resendApiKey: Boolean(process.env.RESEND_API_KEY?.trim()),
+      emailFrom: Boolean(process.env.EMAIL_FROM?.trim()),
+    },
   };
+}
+
+export type UpdateEmailSettingsResult = { ok: true } | { ok: false; error: string };
+
+export async function updateEmailSettings(state: EmailSettingsState): Promise<UpdateEmailSettingsResult> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { ok: false, error: "Unauthorized. Open Settings → Login and sign in again." };
+  }
+
+  const resendApiKey =
+    typeof state.resendApiKey === "string" ? state.resendApiKey.trim().slice(0, 200) : "";
+  const emailFromAddress =
+    typeof state.emailFromAddress === "string" ? state.emailFromAddress.trim().slice(0, 200) : "";
+
+  try {
+    await prisma.siteConfig.upsert({
+      where: { id: 1 },
+      create: {
+        id: 1,
+        companyName: "Inverts Oasis",
+        resendApiKey,
+        emailFromAddress,
+      },
+      update: {
+        resendApiKey,
+        emailFromAddress,
+      },
+    });
+    revalidatePath("/settings/email", "page");
+    return { ok: true };
+  } catch (e) {
+    console.error("updateEmailSettings", e);
+    const msg = e instanceof Error ? e.message : String(e);
+    const missingColumn =
+      /Unknown column|column .* does not exist|does not exist in the current database|\bP2022\b|42703/i.test(msg) ||
+      /\bP2021\b/.test(msg);
+    if (missingColumn) {
+      return {
+        ok: false,
+        error:
+          "Could not save — this database is missing newer columns (run `npx prisma migrate deploy`, then try again).",
+      };
+    }
+    return { ok: false, error: msg.length > 500 ? `${msg.slice(0, 497)}…` : msg };
+  }
 }
 
 export type SendTestEmailResult =
@@ -32,17 +97,17 @@ export type SendTestEmailResult =
 export async function sendAdminTestEmail(to: string): Promise<SendTestEmailResult> {
   await requireAdmin();
 
-  const status = getEmailConfigStatus();
+  const status = await getEmailConfigStatus();
   if (!status.configured) {
     return {
       ok: false,
       error:
-        "RESEND_API_KEY is not set. Add it in Vercel → Project → Settings → Environment Variables, then redeploy.",
+        "Resend is not connected. Add an API key below (or set RESEND_API_KEY in Vercel), then save and try again.",
     };
   }
 
   const recipient = to.trim().toLowerCase();
-  const from = getResendFromAddress();
+  const from = status.fromAddress;
   const subject = "Inverts Oasis — test email";
   const sentAt = new Date().toUTCString();
 
