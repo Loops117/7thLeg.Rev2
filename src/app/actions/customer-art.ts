@@ -16,6 +16,7 @@ import {
 
 const IMG_MAX = 8 * 1024 * 1024;
 const IMG_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp", "image/avif"]);
+const MAX_BATCH_FILES = 20;
 
 async function requireAdmin() {
   const session = await auth();
@@ -235,7 +236,56 @@ export async function deleteCustomerArtSubmission(submissionId: string): Promise
 
 export type SubmitCustomerArtResult = { ok: true } | { ok: false; error: string };
 
-export async function submitCustomerArt(formData: FormData): Promise<SubmitCustomerArtResult> {
+export type SubmitCustomerArtBatchResult =
+  | { ok: true; uploadedCount: number; errors: string[] }
+  | { ok: false; error: string };
+
+function readUploadFiles(formData: FormData): File[] {
+  const fromAll = formData.getAll("file").filter((entry): entry is File => entry instanceof File);
+  if (fromAll.length > 0) return fromAll;
+  const single = formData.get("file");
+  return single instanceof File ? [single] : [];
+}
+
+async function uploadOneCustomerArtFile(
+  customerId: string,
+  artGroup: string,
+  file: File,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (file.size > IMG_MAX) {
+    return { ok: false, error: "Image must be 8MB or smaller." };
+  }
+  if (!IMG_TYPES.has(file.type)) {
+    return { ok: false, error: "Use PNG, WebP, JPEG, GIF, or AVIF." };
+  }
+
+  const buf = Buffer.from(await file.arrayBuffer());
+  const settings = await getUploadImageSettingsFromDb();
+  const norm = await normalizeWatermarkBuffer(buf, file.type, settings);
+  const key = `uploads/customer-art/${customerId}/${randomUUID()}.${norm.ext}`;
+  const url = await putUploadObject(key, norm.buffer, norm.contentType);
+
+  await prisma.customerArtSubmission.create({
+    data: {
+      customerId,
+      artGroup,
+      imageUrl: url,
+    },
+  });
+
+  return { ok: true };
+}
+
+function revalidateCustomerArtPaths() {
+  revalidatePath("/");
+  revalidatePath("/gallery");
+  revalidatePath("/about");
+  revalidatePath("/account/uploads");
+  revalidatePath("/settings/image-submission");
+  revalidatePath("/settings/customer-art");
+}
+
+export async function submitCustomerArtBatch(formData: FormData): Promise<SubmitCustomerArtBatchResult> {
   try {
     const session = await auth();
     if (session?.user?.role !== "customer" || !session.user.id) {
@@ -248,39 +298,40 @@ export async function submitCustomerArt(formData: FormData): Promise<SubmitCusto
       return { ok: false, error: "This upload section is not configured." };
     }
 
-    const file = formData.get("file");
-    if (!file || !(file instanceof File)) {
-      return { ok: false, error: "Choose an image file." };
+    const files = readUploadFiles(formData);
+    if (files.length === 0) {
+      return { ok: false, error: "Choose at least one image file." };
     }
-    if (file.size > IMG_MAX) {
-      return { ok: false, error: "Image must be 8MB or smaller." };
-    }
-    if (!IMG_TYPES.has(file.type)) {
-      return { ok: false, error: "Use PNG, WebP, JPEG, GIF, or AVIF." };
+    if (files.length > MAX_BATCH_FILES) {
+      return { ok: false, error: `You can upload up to ${MAX_BATCH_FILES} images at once.` };
     }
 
-    const buf = Buffer.from(await file.arrayBuffer());
-    const settings = await getUploadImageSettingsFromDb();
-    const norm = await normalizeWatermarkBuffer(buf, file.type, settings);
-    const key = `uploads/customer-art/${session.user.id}/${randomUUID()}.${norm.ext}`;
-    const url = await putUploadObject(key, norm.buffer, norm.contentType);
+    const errors: string[] = [];
+    let uploadedCount = 0;
 
-    await prisma.customerArtSubmission.create({
-      data: {
-        customerId: session.user.id,
-        artGroup,
-        imageUrl: url,
-      },
-    });
+    for (const file of files) {
+      const result = await uploadOneCustomerArtFile(session.user.id, artGroup, file);
+      if (result.ok) {
+        uploadedCount += 1;
+      } else {
+        errors.push(`${file.name}: ${result.error}`);
+      }
+    }
 
-    revalidatePath("/");
-    revalidatePath("/gallery");
-    revalidatePath("/account/uploads");
-    revalidatePath("/settings/image-submission");
-    revalidatePath("/settings/customer-art");
-    return { ok: true };
+    if (uploadedCount === 0) {
+      return { ok: false, error: errors[0] ?? "Upload failed." };
+    }
+
+    revalidateCustomerArtPaths();
+    return { ok: true, uploadedCount, errors };
   } catch (e) {
-    console.error("submitCustomerArt", e);
+    console.error("submitCustomerArtBatch", e);
     return { ok: false, error: e instanceof Error ? e.message : "Upload failed." };
   }
+}
+
+export async function submitCustomerArt(formData: FormData): Promise<SubmitCustomerArtResult> {
+  const result = await submitCustomerArtBatch(formData);
+  if (!result.ok) return result;
+  return { ok: true };
 }

@@ -17,6 +17,7 @@ export function StoreProductCard({
   hover: _hover,
   compact,
   mini,
+  recommendationStrip,
   catalogGrid,
   eventId,
   showQuickAdd = false,
@@ -30,6 +31,8 @@ export function StoreProductCard({
   compact?: boolean;
   /** Tighter card for product-page recommendation strips. */
   mini?: boolean;
+  /** Uniform mini cards on product-page related / also-want strips. */
+  recommendationStrip?: boolean;
   /** Main /store grid: square image (cover) and uniform card height. */
   catalogGrid?: boolean;
   eventId?: string | null;
@@ -47,21 +50,27 @@ export function StoreProductCard({
   const cardRef = useRef<HTMLDivElement>(null);
   const variantCount = storefrontVariantCount(p.variants);
   const isMini = mini && compact;
+  const isRecStrip = recommendationStrip && isMini;
   const isCatalogGrid = catalogGrid && !compact && !mini;
 
   return (
     <div
       ref={cardRef}
-      className={`store-product-card relative flex w-full flex-col rounded ${isMini ? "" : "h-full"}`}
+      className={`store-product-card relative flex w-full flex-col rounded ${isMini && !isRecStrip ? "" : "h-full"}`}
     >
-      <Link href={`/product/${p.slug}${qs}`} className={`flex flex-col ${isMini ? "" : "min-h-0 flex-1"}`}>
+      <Link
+        href={`/product/${p.slug}${qs}`}
+        className={`flex flex-col ${isRecStrip ? "h-full min-h-0" : isMini ? "" : "min-h-0 flex-1"}`}
+      >
         <div
           className={`store-product-card__image-area relative shrink-0 overflow-hidden ${
-            isMini
-              ? "aspect-square max-h-[4.5rem]"
-              : isCatalogGrid || compact
-                ? "aspect-square"
-                : "aspect-[4/3]"
+            isRecStrip
+              ? "aspect-square w-full"
+              : isMini
+                ? "aspect-square max-h-[4.5rem]"
+                : isCatalogGrid || compact
+                  ? "aspect-square"
+                  : "aspect-[4/3]"
           }`}
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- admin-supplied arbitrary URLs */}
@@ -80,15 +89,25 @@ export function StoreProductCard({
           ) : null}
         </div>
         <div
-          className={`flex flex-col ${isMini ? "p-1" : compact ? "min-h-0 flex-1 p-2" : "min-h-0 flex-1 p-3"}`}
+          className={`flex flex-col ${
+            isRecStrip
+              ? "min-h-0 flex-1 p-1"
+              : isMini
+                ? "p-1"
+                : compact
+                  ? "min-h-0 flex-1 p-2"
+                  : "min-h-0 flex-1 p-3"
+          }`}
         >
           <p
             className={`store-product-card__title shrink-0 font-bold ${
-              isMini
-                ? "line-clamp-2 text-[10px] leading-tight"
-                : compact
-                  ? "line-clamp-2 min-h-[2.25rem] text-xs"
-                  : "line-clamp-2 min-h-[2.5rem] text-sm"
+              isRecStrip
+                ? "line-clamp-2 min-h-[1.65rem] text-[10px] leading-tight"
+                : isMini
+                  ? "line-clamp-2 text-[10px] leading-tight"
+                  : compact
+                    ? "line-clamp-2 min-h-[2.25rem] text-xs"
+                    : "line-clamp-2 min-h-[2.5rem] text-sm"
             }`}
           >
             {p.name}
@@ -98,7 +117,7 @@ export function StoreProductCard({
               {p.shortDescription?.trim() ? p.shortDescription : "\u00a0"}
             </p>
           ) : null}
-          <div className={`shrink-0 ${isMini ? "pt-0.5" : "mt-auto pt-2"}`}>
+          <div className={`shrink-0 ${isRecStrip || isMini ? "mt-auto pt-0.5" : "mt-auto pt-2"}`}>
             <p className={`store-product-card__price font-bold ${isMini ? "text-[10px]" : compact ? "text-xs" : "text-sm"}`}>
               {formatPriceUsd(priceCents)}
               {p.displaySale || p.onSale ? <span className="store-product-card__sale ml-1">Sale</span> : null}

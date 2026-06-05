@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { GalleryArtThumb } from "@/components/gallery/gallery-art-thumb";
+import { GalleryUploadPanel } from "@/components/gallery/gallery-upload-panel";
 import { ImageSubmissionGalleryViewer } from "@/components/gallery/image-submission-gallery-viewer";
 import {
   submissionMatchesProductSearch,
   uniqueTaggedProductNames,
 } from "@/lib/gallery-product-search";
+import { btnMainMd } from "@/lib/btn-theme-classes";
 import type { ApprovedArtGalleryItem } from "@/lib/customer-art-gallery";
 import type { ImageSubmissionPinAppearance } from "@/lib/image-submission-pin-appearance-shared";
 import type { StorefrontImagePin } from "@/lib/image-submission-pins-storefront";
@@ -16,13 +18,16 @@ export function PublicImageGallery({
   items,
   pinsBySubmissionId = {},
   pinAppearance,
+  isLoggedIn = false,
 }: {
   items: ApprovedArtGalleryItem[];
   pinsBySubmissionId?: Record<string, StorefrontImagePin[]>;
   pinAppearance: ImageSubmissionPinAppearance;
+  isLoggedIn?: boolean;
 }) {
   const [viewerItem, setViewerItem] = useState<ApprovedArtGalleryItem | null>(null);
   const [productSearch, setProductSearch] = useState("");
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   const productHints = useMemo(() => uniqueTaggedProductNames(pinsBySubmissionId), [pinsBySubmissionId]);
 
@@ -36,24 +41,9 @@ export function PublicImageGallery({
 
   const viewerPins = viewerItem ? (pinsBySubmissionId[viewerItem.id] ?? []) : [];
 
-  if (items.length === 0) {
-    return (
-      <div className="gallery-empty-state rounded-xl border-2 border-dashed p-10 text-center">
-        <p className="text-lg font-bold text-palm">No images yet</p>
-        <p className="mt-2 max-w-md mx-auto text-sm text-ink/75">
-          Approved customer photos will appear here. Check back soon, or submit your own from an image upload section on
-          the home page.
-        </p>
-        <Link href="/" className="mt-6 inline-block text-sm font-bold text-lagoon-dark underline">
-          ← Home
-        </Link>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <div className="mb-6 max-w-xl">
+  const searchAndUpload = (
+    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+      <div className="min-w-0 max-w-xl">
         <label htmlFor="gallery-product-search" className="block text-sm font-bold text-ink">
           Search by product
         </label>
@@ -75,6 +65,35 @@ export function PublicImageGallery({
           Shows photos that have a shoppable pin for a matching product. Clear the field to see all images.
         </p>
       </div>
+      <div className="flex shrink-0 justify-end sm:pt-7">
+        <button type="button" onClick={() => setUploadOpen(true)} className={btnMainMd}>
+          Submit your Images
+        </button>
+      </div>
+    </div>
+  );
+
+  if (items.length === 0) {
+    return (
+      <>
+        {searchAndUpload}
+        <div className="gallery-empty-state rounded-xl border-2 border-dashed p-10 text-center">
+          <p className="text-lg font-bold text-palm">No images yet</p>
+          <p className="mx-auto mt-2 max-w-md text-sm text-ink/75">
+            Approved customer photos will appear here. Check back soon, or upload your own using the button above.
+          </p>
+          <Link href="/" className="mt-6 inline-block text-sm font-bold text-lagoon-dark underline">
+            ← Home
+          </Link>
+        </div>
+        <GalleryUploadPanel open={uploadOpen} onClose={() => setUploadOpen(false)} isLoggedIn={isLoggedIn} />
+      </>
+    );
+  }
+
+  return (
+    <>
+      {searchAndUpload}
 
       {filteredItems.length === 0 ? (
         <div className="gallery-empty-state rounded-xl border-2 border-dashed p-8 text-center">
@@ -115,6 +134,8 @@ export function PublicImageGallery({
           titleId="public-gallery-viewer-title"
         />
       ) : null}
+
+      <GalleryUploadPanel open={uploadOpen} onClose={() => setUploadOpen(false)} isLoggedIn={isLoggedIn} />
     </>
   );
 }

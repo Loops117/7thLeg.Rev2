@@ -1,5 +1,8 @@
 import { formatCustomerFullName } from "@/lib/customer-display-name";
 
+/** Art group tag for customer uploads from the public /gallery page. */
+export const GALLERY_PAGE_ART_GROUP = "Gallery";
+
 export type CustomerArtSubmissionRow = {
   id: string;
   artGroup: string;

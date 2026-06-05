@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { GalleryArtThumb } from "@/components/gallery/gallery-art-thumb";
+import { CustomerSuppliedGalleryThumb } from "@/components/product/customer-supplied-gallery-thumb";
 import { ImageSubmissionGalleryViewer } from "@/components/gallery/image-submission-gallery-viewer";
 import type { ApprovedArtGalleryItem } from "@/lib/customer-art-gallery";
 import type { CustomerSuppliedImageRow } from "@/lib/image-submission-hotspots";
 import type { ImageSubmissionPinAppearance } from "@/lib/image-submission-pin-appearance-shared";
 import type { StorefrontImagePin } from "@/lib/image-submission-pins-storefront";
+import type { StoreRecommendationCardConfig } from "@/lib/store-settings-shared";
 
 function toGalleryItem(img: CustomerSuppliedImageRow): ApprovedArtGalleryItem {
   return {
@@ -22,11 +23,14 @@ export function CustomerSuppliedProductImages({
   pinsBySubmissionId,
   pinAppearance,
   productSlug,
+  recommendationCardConfig,
 }: {
   images: CustomerSuppliedImageRow[];
   pinsBySubmissionId: Record<string, StorefrontImagePin[]>;
   pinAppearance: ImageSubmissionPinAppearance;
   productSlug: string;
+  /** From Settings → Store → Product cards (shared with related / also-want strips). */
+  recommendationCardConfig: StoreRecommendationCardConfig;
 }) {
   const [viewerItem, setViewerItem] = useState<ApprovedArtGalleryItem | null>(null);
   const galleryItems = useMemo(() => images.map(toGalleryItem), [images]);
@@ -44,14 +48,16 @@ export function CustomerSuppliedProductImages({
         {galleryItems.map((item) => {
           const thumbPins = pinsBySubmissionId[item.id] ?? [];
           return (
-            <li key={item.id}>
-              <GalleryArtThumb
-                item={item}
-                pinCount={thumbPins.length}
-                onOpen={() => setViewerItem(item)}
-                size="small"
-              />
-            </li>
+            <CustomerSuppliedGalleryThumb
+              key={item.id}
+              item={item}
+              pinCount={thumbPins.length}
+              onOpen={() => setViewerItem(item)}
+              cardWidthPx={recommendationCardConfig.cardWidthPx}
+              hoverGlowHex={recommendationCardConfig.hoverGlowHex}
+              hoverGlowThicknessPx={recommendationCardConfig.hoverGlowThicknessPx}
+              hoverZoomPercent={recommendationCardConfig.hoverZoomPercent}
+            />
           );
         })}
       </ul>

@@ -1,12 +1,20 @@
 import type { CSSProperties } from "react";
-import { StoreProductCard } from "@/components/store/store-product-card";
+import { ProductRecommendationStripCard } from "@/components/product/product-recommendation-strip-card";
+import { recommendationStripCardHeightPx } from "@/lib/recommendation-strip-layout";
 import type { StorefrontProductCard } from "@/lib/products-storefront";
+import type { StoreRecommendationCardConfig } from "@/lib/store-settings-shared";
+
+type StripHoverConfig = Pick<
+  StoreRecommendationCardConfig,
+  "hoverGlowHex" | "hoverGlowThicknessPx" | "hoverZoomPercent"
+>;
 
 function RecommendationColumn({
   title,
   headingId,
   products,
   cardWidthPx,
+  hoverConfig,
   eventId,
   productDiagonalBrandName,
   productDiagonalNameGapPx,
@@ -16,6 +24,7 @@ function RecommendationColumn({
   headingId: string;
   products: StorefrontProductCard[];
   cardWidthPx: number;
+  hoverConfig: StripHoverConfig;
   eventId?: string | null;
   productDiagonalBrandName?: string | null;
   productDiagonalNameGapPx?: number;
@@ -23,29 +32,37 @@ function RecommendationColumn({
 }) {
   if (products.length === 0) return null;
 
+  const cardHeightPx = recommendationStripCardHeightPx(cardWidthPx);
+
   return (
     <div className="min-w-0 w-full">
       <h2 id={headingId} className="text-sm font-black text-palm">
         {title}
       </h2>
-      <div className="mt-2 -mx-0.5 overflow-x-auto overscroll-x-contain px-0.5 pb-0.5">
-        <ul
-          className="product-recommendation-strip flex w-max flex-nowrap gap-1.5 sm:gap-2"
-          style={{ "--product-recommendation-card-width": `${cardWidthPx}px` } as CSSProperties}
-        >
-        {products.map((p) => (
-          <li key={p.id} className="product-recommendation-strip__item shrink-0">
-            <StoreProductCard
+      <div
+        className="product-recommendation-strip-scroll mt-2 -mx-0.5 px-0.5"
+        style={
+          {
+            "--product-recommendation-card-width": `${cardWidthPx}px`,
+            "--product-recommendation-card-height": `${cardHeightPx}px`,
+          } as CSSProperties
+        }
+      >
+        <ul className="product-recommendation-strip flex w-max flex-nowrap gap-1.5 sm:gap-2">
+          {products.map((p) => (
+            <ProductRecommendationStripCard
+              key={p.id}
               product={p}
-              compact
-              mini
+              cardWidthPx={cardWidthPx}
+              hoverGlowHex={hoverConfig.hoverGlowHex}
+              hoverGlowThicknessPx={hoverConfig.hoverGlowThicknessPx}
+              hoverZoomPercent={hoverConfig.hoverZoomPercent}
               eventId={eventId}
               productDiagonalBrandName={productDiagonalBrandName}
               productDiagonalNameGapPx={productDiagonalNameGapPx}
               watermarkOpacityPercent={watermarkOpacityPercent}
             />
-          </li>
-        ))}
+          ))}
         </ul>
       </div>
     </div>
@@ -55,7 +72,7 @@ function RecommendationColumn({
 export function ProductRecommendationSections({
   related,
   youMayAlsoWant,
-  recommendationCardWidthPx = 88,
+  recommendationCardConfig,
   eventId = null,
   productDiagonalBrandName = null,
   productDiagonalNameGapPx = 8,
@@ -64,7 +81,7 @@ export function ProductRecommendationSections({
   related: StorefrontProductCard[];
   youMayAlsoWant: StorefrontProductCard[];
   /** From Settings → Store → Product cards. */
-  recommendationCardWidthPx?: number;
+  recommendationCardConfig: StoreRecommendationCardConfig;
   eventId?: string | null;
   productDiagonalBrandName?: string | null;
   productDiagonalNameGapPx?: number;
@@ -75,7 +92,12 @@ export function ProductRecommendationSections({
   if (!hasRelated && !hasAlsoWant) return null;
 
   const shared = {
-    cardWidthPx: recommendationCardWidthPx,
+    cardWidthPx: recommendationCardConfig.cardWidthPx,
+    hoverConfig: {
+      hoverGlowHex: recommendationCardConfig.hoverGlowHex,
+      hoverGlowThicknessPx: recommendationCardConfig.hoverGlowThicknessPx,
+      hoverZoomPercent: recommendationCardConfig.hoverZoomPercent,
+    },
     eventId,
     productDiagonalBrandName,
     productDiagonalNameGapPx,

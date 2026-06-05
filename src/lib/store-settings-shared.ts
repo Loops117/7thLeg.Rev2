@@ -1,5 +1,7 @@
 /** Client-safe store settings types and parsers (no Prisma). */
 
+import { normalizePaneColorHex } from "@/lib/pane-config";
+
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
 }
@@ -52,6 +54,12 @@ export function parseStoreProductCardConfig(raw: unknown): StoreProductCardConfi
 
 export type StoreRecommendationCardConfig = {
   cardWidthPx: number;
+  /** Hover preview ring / halo color (#rrggbb). */
+  hoverGlowHex: string;
+  /** Outer glow ring width in px. */
+  hoverGlowThicknessPx: number;
+  /** Hover scale as percent of base size (125 = 25% larger). */
+  hoverZoomPercent: number;
 };
 
 /** Product page related / also-want horizontal strips (mini cards). */
@@ -65,6 +73,9 @@ export const RECOMMENDATION_CARD_WIDTH_PRESETS = [
 
 const DEFAULT_RECOMMENDATION_CARD: StoreRecommendationCardConfig = {
   cardWidthPx: RECOMMENDATION_CARD_WIDTH_PRESETS[1].cardWidthPx,
+  hoverGlowHex: "#2a9d8f",
+  hoverGlowThicknessPx: 4,
+  hoverZoomPercent: 125,
 };
 
 export function parseStoreRecommendationCardConfig(raw: unknown): StoreRecommendationCardConfig {
@@ -75,7 +86,22 @@ export function parseStoreRecommendationCardConfig(raw: unknown): StoreRecommend
     typeof w === "number" && !Number.isNaN(w)
       ? clamp(Math.floor(w), 56, 200)
       : DEFAULT_RECOMMENDATION_CARD.cardWidthPx;
-  return { cardWidthPx };
+  const glowRaw = o.hoverGlowHex;
+  const hoverGlowHex =
+    typeof glowRaw === "string"
+      ? (normalizePaneColorHex(glowRaw) ?? DEFAULT_RECOMMENDATION_CARD.hoverGlowHex)
+      : DEFAULT_RECOMMENDATION_CARD.hoverGlowHex;
+  const thickRaw = o.hoverGlowThicknessPx;
+  const hoverGlowThicknessPx =
+    typeof thickRaw === "number" && !Number.isNaN(thickRaw)
+      ? clamp(Math.floor(thickRaw), 1, 24)
+      : DEFAULT_RECOMMENDATION_CARD.hoverGlowThicknessPx;
+  const zoomRaw = o.hoverZoomPercent;
+  const hoverZoomPercent =
+    typeof zoomRaw === "number" && !Number.isNaN(zoomRaw)
+      ? clamp(Math.floor(zoomRaw), 100, 200)
+      : DEFAULT_RECOMMENDATION_CARD.hoverZoomPercent;
+  return { cardWidthPx, hoverGlowHex, hoverGlowThicknessPx, hoverZoomPercent };
 }
 
 export type StoreSettingsState = {

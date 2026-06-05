@@ -161,12 +161,13 @@ export default async function ProductPage({ params, searchParams }: Props) {
         pinsBySubmissionId={customerSuppliedPinsBySubmissionId}
         pinAppearance={pinAppearance}
         productSlug={product.slug}
+        recommendationCardConfig={storeSettings.storeRecommendationCardConfig}
       />
 
       <ProductRecommendationSections
         related={recommendations.related}
         youMayAlsoWant={recommendations.youMayAlsoWant}
-        recommendationCardWidthPx={storeSettings.storeRecommendationCardConfig.cardWidthPx}
+        recommendationCardConfig={storeSettings.storeRecommendationCardConfig}
         eventId={eventId}
         productDiagonalBrandName={productDiagonalBrandName}
         productDiagonalNameGapPx={sitePub.productDiagonalNameGapPx}

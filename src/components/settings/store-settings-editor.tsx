@@ -6,9 +6,11 @@ import { RichTextEditor } from "@/components/rich-text-editor";
 import { updateStoreSettings } from "@/app/actions/store-settings";
 import { adminDetailsPaneClass } from "@/lib/admin-surface-classes";
 import { StoreCardWidthPicker } from "@/components/settings/store-card-width-picker";
+import { normalizePaneColorHex } from "@/lib/pane-config";
 import {
   RECOMMENDATION_CARD_WIDTH_PRESETS,
   STORE_CARD_WIDTH_PRESETS,
+  type StoreRecommendationCardConfig,
   type StoreSettingsState,
 } from "@/lib/store-settings-shared";
 
@@ -34,6 +36,85 @@ function Section({
       </summary>
       <div className="space-y-4 p-4">{children}</div>
     </details>
+  );
+}
+
+function RecommendationStripHoverSettings({
+  config,
+  onChange,
+}: {
+  config: StoreRecommendationCardConfig;
+  onChange: (patch: Partial<StoreRecommendationCardConfig>) => void;
+}) {
+  const glowHex = normalizePaneColorHex(config.hoverGlowHex) ?? "#2a9d8f";
+
+  return (
+    <fieldset className="mt-4 border-t border-palm/15 pt-4 dark:border-zinc-700">
+      <legend className="text-sm font-bold text-ink dark:text-zinc-100">
+        Product page card hover preview
+      </legend>
+      <p className="mt-1 text-xs text-ink/60 dark:text-zinc-400">
+        When a shopper hovers a related / also-want strip card or a customer supplied product
+        image, it enlarges in place with a colored glow. Related strips scroll horizontally only;
+        the enlarged preview floats above the page.
+      </p>
+      <div className="mt-3 flex flex-wrap items-end gap-4">
+        <label className="block text-sm font-bold text-ink dark:text-zinc-100">
+          Glow color
+          <div className="mt-1 flex items-center gap-2">
+            <input
+              type="color"
+              value={glowHex}
+              onChange={(e) => onChange({ hoverGlowHex: e.target.value })}
+              className="h-10 w-14 cursor-pointer border-2 border-palm-mid dark:border-zinc-600"
+            />
+            <input
+              type="text"
+              value={config.hoverGlowHex}
+              onChange={(e) => {
+                const n = normalizePaneColorHex(e.target.value);
+                onChange({ hoverGlowHex: n ?? e.target.value });
+              }}
+              placeholder="#2a9d8f"
+              className="w-28 border-2 border-palm-mid px-2 py-2 font-mono text-sm dark:border-zinc-600 dark:bg-zinc-900"
+            />
+          </div>
+        </label>
+        <label className="block text-sm font-bold text-ink dark:text-zinc-100">
+          Glow thickness (px)
+          <input
+            type="number"
+            min={1}
+            max={24}
+            value={config.hoverGlowThicknessPx}
+            onChange={(e) => {
+              const n = Number(e.target.value);
+              if (Number.isNaN(n)) return;
+              onChange({ hoverGlowThicknessPx: Math.min(24, Math.max(1, Math.floor(n))) });
+            }}
+            className="mt-1 block w-24 border-2 border-palm-mid px-2 py-2 font-mono text-sm dark:border-zinc-600 dark:bg-zinc-900"
+          />
+        </label>
+        <label className="block text-sm font-bold text-ink dark:text-zinc-100">
+          Zoom on hover (%)
+          <input
+            type="number"
+            min={100}
+            max={200}
+            value={config.hoverZoomPercent}
+            onChange={(e) => {
+              const n = Number(e.target.value);
+              if (Number.isNaN(n)) return;
+              onChange({ hoverZoomPercent: Math.min(200, Math.max(100, Math.floor(n))) });
+            }}
+            className="mt-1 block w-24 border-2 border-palm-mid px-2 py-2 font-mono text-sm dark:border-zinc-600 dark:bg-zinc-900"
+          />
+          <span className="mt-1 block text-xs font-normal text-ink/60 dark:text-zinc-400">
+            125 = 25% larger than the base card
+          </span>
+        </label>
+      </div>
+    </fieldset>
   );
 }
 
@@ -160,12 +241,24 @@ export function StoreSettingsEditor({ initial }: { initial: StoreSettingsState }
           presets={RECOMMENDATION_CARD_WIDTH_PRESETS}
           valuePx={form.storeRecommendationCardConfig.cardWidthPx}
           onChangePx={(cardWidthPx) =>
-            setForm((f) => ({ ...f, storeRecommendationCardConfig: { cardWidthPx } }))
+            setForm((f) => ({
+              ...f,
+              storeRecommendationCardConfig: { ...f.storeRecommendationCardConfig, cardWidthPx },
+            }))
           }
           radioName="recommendationCardWidth"
           minPx={56}
           maxPx={200}
-          hint="Horizontal scroll strips at the bottom of each product page."
+          hint="Related / also-want strips and customer supplied product images on each product page."
+        />
+        <RecommendationStripHoverSettings
+          config={form.storeRecommendationCardConfig}
+          onChange={(patch) =>
+            setForm((f) => ({
+              ...f,
+              storeRecommendationCardConfig: { ...f.storeRecommendationCardConfig, ...patch },
+            }))
+          }
         />
       </Section>
 

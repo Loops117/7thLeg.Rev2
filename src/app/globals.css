@@ -130,9 +130,62 @@ body {
 }
 
 /** Product page — related / you-may-also-want strips */
+.product-recommendation-strip-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+}
+
 .product-recommendation-strip__item {
   width: var(--product-recommendation-card-width, 5.5rem);
+  height: var(--product-recommendation-card-height, calc(var(--product-recommendation-card-width, 5.5rem) + 3.125rem));
   max-width: 100%;
+}
+
+.product-recommendation-strip__item .store-product-card {
+  height: 100%;
+}
+
+.product-recommendation-hover-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  transition: opacity 120ms ease;
+}
+
+.product-recommendation-hover-preview__card {
+  flex-shrink: 0;
+  transform: scale(var(--rec-hover-zoom-scale, 1.25));
+  transform-origin: center center;
+  overflow: visible;
+}
+
+.product-recommendation-hover-preview__card .store-product-card {
+  width: 100%;
+  height: 100%;
+  background-color: var(--product-card-bg, #fff);
+  box-shadow:
+    0 0 0 var(--rec-glow-ring-px, 4px) var(--rec-hover-glow, var(--product-card-hover-glow)),
+    0 0 0 calc(var(--rec-glow-ring-px, 4px) * 2)
+      color-mix(in srgb, var(--rec-hover-glow, var(--product-card-hover-glow)) 40%, transparent),
+    0 0 calc(var(--rec-glow-ring-px, 4px) * 7) calc(var(--rec-glow-ring-px, 4px) * 2.5)
+      color-mix(in srgb, var(--rec-hover-glow, var(--product-card-hover-glow)) 65%, transparent),
+    0 14px 36px color-mix(in srgb, var(--product-card-border) 28%, transparent);
+}
+
+/** Product page — customer supplied image hover preview */
+.customer-supplied-hover-preview__card {
+  width: 100%;
+  height: 100%;
+  background-color: color-mix(in srgb, var(--gallery-card-bg) 90%, transparent);
+  box-shadow:
+    0 0 0 var(--rec-glow-ring-px, 4px) var(--rec-hover-glow, var(--product-card-hover-glow)),
+    0 0 0 calc(var(--rec-glow-ring-px, 4px) * 2)
+      color-mix(in srgb, var(--rec-hover-glow, var(--product-card-hover-glow)) 40%, transparent),
+    0 0 calc(var(--rec-glow-ring-px, 4px) * 7) calc(var(--rec-glow-ring-px, 4px) * 2.5)
+      color-mix(in srgb, var(--rec-hover-glow, var(--product-card-hover-glow)) 65%, transparent),
+    0 14px 36px color-mix(in srgb, var(--gallery-border) 28%, transparent);
 }
 
 .store-product-card__image-area {
@@ -187,6 +240,25 @@ body {
 .gallery-thumb-card {
   background-color: color-mix(in srgb, var(--gallery-card-bg) 90%, transparent);
   border-color: color-mix(in srgb, var(--gallery-border) 20%, transparent);
+}
+
+/** Gallery thumbs — same hover mode as shop product cards (Settings → Theme → Shop & product cards). */
+[data-store-card-hover="zoom"] .gallery-thumb-card {
+  transition: transform 150ms ease;
+}
+
+[data-store-card-hover="zoom"] .gallery-thumb-card:hover {
+  transform: scale(1.02);
+}
+
+[data-store-card-hover="glow"] .gallery-thumb-card {
+  transition: box-shadow 150ms ease;
+}
+
+[data-store-card-hover="glow"] .gallery-thumb-card:hover {
+  box-shadow:
+    0 0 0 3px var(--product-card-hover-glow),
+    0 10px 28px color-mix(in srgb, var(--gallery-border) 18%, transparent);
 }
 
 .gallery-pin-count-badge {
