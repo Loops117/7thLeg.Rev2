@@ -3,12 +3,14 @@ import {
   defaultStoreSettingsState,
   parseFeaturedStripConfig,
   parseStoreProductCardConfig,
+  parseStoreRecommendationCardConfig,
   type StoreSettingsState,
 } from "@/lib/store-settings-shared";
 
 export type {
   StoreFeaturedStripConfig,
   StoreProductCardConfig,
+  StoreRecommendationCardConfig,
   StoreSettingsState,
 } from "@/lib/store-settings-shared";
 
@@ -16,6 +18,8 @@ export {
   defaultStoreSettingsState,
   parseFeaturedStripConfig,
   parseStoreProductCardConfig,
+  parseStoreRecommendationCardConfig,
+  RECOMMENDATION_CARD_WIDTH_PRESETS,
   STORE_CARD_WIDTH_PRESETS,
 } from "@/lib/store-settings-shared";
 
@@ -30,6 +34,7 @@ export async function getStoreSettings(): Promise<StoreSettingsState> {
         storeFeaturedStripEnabled: true,
         storeFeaturedStripConfig: true,
         storeProductCardConfig: true,
+        storeRecommendationCardConfig: true,
         storeFooterEnabled: true,
         storeFooterHtml: true,
         cardHoverMode: true,
@@ -43,6 +48,9 @@ export async function getStoreSettings(): Promise<StoreSettingsState> {
       storeFeaturedStripEnabled: row.storeFeaturedStripEnabled,
       storeFeaturedStripConfig: parseFeaturedStripConfig(row.storeFeaturedStripConfig),
       storeProductCardConfig: parseStoreProductCardConfig(row.storeProductCardConfig),
+      storeRecommendationCardConfig: parseStoreRecommendationCardConfig(
+        row.storeRecommendationCardConfig,
+      ),
       storeFooterEnabled: row.storeFooterEnabled,
       storeFooterHtml: row.storeFooterHtml,
       cardHoverMode: mode,

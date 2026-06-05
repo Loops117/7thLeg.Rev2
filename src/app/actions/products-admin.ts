@@ -1,5 +1,6 @@
 "use server";
 
+import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import type { ProductEditInitial } from "@/lib/products-admin-types";
@@ -68,7 +69,8 @@ export async function createProduct(input: CreateProductInput): Promise<CreatePr
     return { ok: false, error: "Name is required." };
   }
 
-  const basePriceCents = parsePriceToCents(input.basePrice);
+  const priceRaw = input.basePrice?.trim() ?? "";
+  const basePriceCents = priceRaw === "" ? 0 : parsePriceToCents(input.basePrice);
   if (basePriceCents === null) {
     return { ok: false, error: "Enter a valid price (e.g. 12.99)." };
   }
@@ -366,6 +368,94 @@ export async function quickRestockProduct(productId: string, delta: number) {
   revalidatePath("/store");
   revalidatePath("/settings/products");
   revalidatePath(`/product/${product.slug}`);
+}
+
+async function verifyCurrentAdminPassword(
+  password: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { ok: false, error: "Unauthorized." };
+  }
+  const admin = await prisma.adminUser.findUnique({
+    where: { id: session.user.id },
+    select: { passwordHash: true },
+  });
+  if (!admin) {
+    return { ok: false, error: "Admin account not found." };
+  }
+  const valid = await bcrypt.compare(password, admin.passwordHash);
+  if (!valid) {
+    return { ok: false, error: "Incorrect password." };
+  }
+  return { ok: true };
+}
+
+export async function bulkSetProductsActive(
+  productIds: string[],
+  active: boolean,
+): Promise<{ ok: true; updated: number } | { ok: false; error: string }> {
+  await requireAdmin();
+  const ids = [...new Set(productIds.filter(Boolean))];
+  if (ids.length === 0) {
+    return { ok: false, error: "No products selected." };
+  }
+  const result = await prisma.product.updateMany({
+    where: { id: { in: ids } },
+    data: { active: !!active },
+  });
+  const slugs = await prisma.product.findMany({
+    where: { id: { in: ids } },
+    select: { slug: true },
+  });
+  revalidatePath("/store");
+  revalidatePath("/settings/products");
+  for (const p of slugs) {
+    revalidatePath(`/product/${p.slug}`);
+  }
+  return { ok: true, updated: result.count };
+}
+
+export type BulkDeleteProductsResult =
+  | {
+      ok: true;
+      deleted: number;
+      failures: { id: string; name: string; error: string }[];
+    }
+  | { ok: false; error: string };
+
+export async function bulkDeleteProducts(
+  productIds: string[],
+  password: string,
+): Promise<BulkDeleteProductsResult> {
+  await requireAdmin();
+  const pw = await verifyCurrentAdminPassword(password);
+  if (!pw.ok) {
+    return { ok: false, error: pw.error };
+  }
+
+  const ids = [...new Set(productIds.filter(Boolean))];
+  if (ids.length === 0) {
+    return { ok: false, error: "No products selected." };
+  }
+
+  const failures: { id: string; name: string; error: string }[] = [];
+  let deleted = 0;
+
+  for (const id of ids) {
+    const r = await deleteProduct(id);
+    if (r.ok) {
+      deleted++;
+      continue;
+    }
+    const p = await prisma.product.findUnique({
+      where: { id },
+      select: { name: true },
+    });
+    failures.push({ id, name: p?.name ?? id, error: r.error });
+  }
+
+  return { ok: true, deleted, failures };
 }
 
 export async function setProductActive(productId: string, active: boolean) {

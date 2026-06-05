@@ -5,7 +5,8 @@ import { btnSecondaryMd } from "@/lib/btn-theme-classes";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { fetchDefaultShippingExclusionsForProductTypes } from "@/app/actions/product-type-shipping-defaults-admin";
 import { createProduct, updateProduct } from "@/app/actions/products-admin";
 import { RichTextOrHtmlEditor } from "@/components/rich-text-or-html-editor";
 import type {
@@ -47,7 +48,10 @@ export function ProductEditForm({
   footers,
   shippingOptions = [],
   catalogMode = false,
-  onCatalogSaved,
+  catalogFormId = "catalog-product-edit-form",
+  onCatalogSave,
+  onCatalogSaveAndClose,
+  onPendingChange,
   onClear,
   onCancel,
 }: {
@@ -57,13 +61,22 @@ export function ProductEditForm({
   shippingOptions?: ProductShippingOptionRef[];
   /** Catalog panel: allow null initial = new product; show Clear / Cancel. */
   catalogMode?: boolean;
-  /** After successful create or update in catalog mode: reset + collapse (parent handles navigation/refresh). */
-  onCatalogSaved?: () => void;
+  /** Catalog form id for action buttons rendered below the pane. */
+  catalogFormId?: string;
+  /** Stay open after save; on create, parent opens the new product for variation pricing. */
+  onCatalogSave?: (createdProductId?: string) => void;
+  /** Save then close editor (catalog mode). */
+  onCatalogSaveAndClose?: () => void;
+  onPendingChange?: (pending: boolean) => void;
   onClear?: () => void;
   onCancel?: () => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    onPendingChange?.(pending);
+  }, [pending, onPendingChange]);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -86,6 +99,7 @@ export function ProductEditForm({
   const [excludedShippingOptionIds, setExcludedShippingOptionIds] = useState<string[]>(
     base.excludedShippingOptionIds,
   );
+  const typeIdsAtLoadRef = useRef(base.typeIds.join(","));
 
   useEffect(() => {
     if (!initial) {
@@ -104,6 +118,7 @@ export function ProductEditForm({
       setTypeIds(d.typeIds);
       setFooterIds(d.footerIds);
       setExcludedShippingOptionIds(d.excludedShippingOptionIds);
+      typeIdsAtLoadRef.current = "";
       return;
     }
     setName(initial.name);
@@ -120,7 +135,26 @@ export function ProductEditForm({
     setTypeIds(initial.typeIds);
     setFooterIds(initial.footerIds);
     setExcludedShippingOptionIds(initial.excludedShippingOptionIds);
+    typeIdsAtLoadRef.current = initial.typeIds.join(",");
   }, [initial]);
+
+  useEffect(() => {
+    const key = typeIds.join(",");
+    if (key === typeIdsAtLoadRef.current) return;
+
+    if (typeIds.length === 0) {
+      setExcludedShippingOptionIds([]);
+      return;
+    }
+
+    let cancelled = false;
+    void fetchDefaultShippingExclusionsForProductTypes(typeIds).then((ids) => {
+      if (!cancelled) setExcludedShippingOptionIds(ids);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [typeIds]);
 
   function toggleType(id: string) {
     setTypeIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -135,10 +169,15 @@ export function ProductEditForm({
     );
   }
 
-  function submit(e: React.FormEvent) {
+  function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setMsg(null);
     setErr(null);
+    const submitter = (e.nativeEvent as SubmitEvent).submitter;
+    const action =
+      submitter instanceof HTMLButtonElement ? submitter.value : "save";
+    const closeAfter = action === "save-close";
+
     startTransition(async () => {
       if (!initial) {
         const result = await createProduct({
@@ -146,9 +185,9 @@ export function ProductEditForm({
           slug: slug.trim() || undefined,
           shortDescription,
           description,
-          basePrice,
-          quantity: unlimitedQuantity ? 0 : quantity,
-          unlimitedQuantity,
+          basePrice: "",
+          quantity: 0,
+          unlimitedQuantity: false,
           active,
           featured,
           onSale,
@@ -162,7 +201,12 @@ export function ProductEditForm({
           return;
         }
         if (catalogMode) {
-          onCatalogSaved?.();
+          if (closeAfter) {
+            onCatalogSaveAndClose?.();
+          } else {
+            setMsg("Created. Set price and stock in Variation Control below.");
+            onCatalogSave?.(result.id);
+          }
           return;
         }
         setMsg("Created.");
@@ -192,7 +236,15 @@ export function ProductEditForm({
         return;
       }
       if (catalogMode) {
-        onCatalogSaved?.();
+        if (closeAfter) {
+          onCatalogSaveAndClose?.();
+        } else {
+          setMsg("Saved.");
+          if (result.slug !== slug) {
+            setSlug(result.slug);
+          }
+          onCatalogSave?.();
+        }
         return;
       }
       setMsg("Saved.");
@@ -218,7 +270,11 @@ export function ProductEditForm({
   const isEdit = !!initial;
 
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <form
+      id={catalogMode ? catalogFormId : undefined}
+      onSubmit={submit}
+      className="space-y-4"
+    >
       <label className="flex items-start gap-2 text-sm font-bold text-ink">
         <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="mt-1" />
         <span>
@@ -262,53 +318,14 @@ export function ProductEditForm({
         placeholder="Product details. New paragraph: Enter. Line break: Shift+Enter."
       />
       {!isEdit ? (
-        <>
-          <p className="text-sm text-ink/75">
-            After you create the product, set <strong>list price and stock</strong> in the <strong>Pricing &amp; stock</strong>{" "}
-            table (default variation) below, together with any extra variations.
-          </p>
-          <div className="flex flex-wrap gap-4">
-            <label className="block text-sm font-bold text-ink">
-              Initial list price (USD) <span className="text-coral">*</span>
-              <input
-                required
-                value={basePrice}
-                onChange={(e) => setBasePrice(e.target.value)}
-                inputMode="decimal"
-                className="mt-1 w-32 border-2 border-palm-mid px-2 py-2 text-sm"
-                placeholder="12.99"
-              />
-            </label>
-            <label className="flex flex-col text-sm font-bold text-ink">
-              <span>Initial quantity {!unlimitedQuantity ? <span className="text-coral">*</span> : null}</span>
-              <input
-                required={!unlimitedQuantity}
-                disabled={unlimitedQuantity}
-                type="number"
-                min={0}
-                value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value))}
-                className="mt-1 w-28 border-2 border-palm-mid px-2 py-2 text-sm disabled:bg-ink/10"
-              />
-            </label>
-          </div>
-          <label className="flex items-start gap-2 text-sm font-bold text-ink">
-            <input
-              type="checkbox"
-              checked={unlimitedQuantity}
-              onChange={(e) => setUnlimitedQuantity(e.target.checked)}
-              className="mt-1"
-            />
-            <span>
-              Unlimited / made to order (default variation){" "}
-              <span className="block text-xs font-normal text-ink/65">Stored on the &quot;Default&quot; option.</span>
-            </span>
-          </label>
-        </>
+        <p className="text-sm text-ink/75 dark:text-zinc-400">
+          Save to create the product, then set <strong>price, stock, and images</strong> in{" "}
+          <strong>Variation Control</strong> below (no price required here).
+        </p>
       ) : (
-        <p className="text-sm text-ink/75">
-          Edit <strong>list price, quantity, and options</strong> in the <strong>Pricing &amp; stock (by variation)</strong> table
-          below. This form updates title, copy, and catalog settings only.
+        <p className="text-sm text-ink/75 dark:text-zinc-400">
+          Edit <strong>list price, quantity, and options</strong> in <strong>Variation Control</strong> below. This form
+          updates title, copy, and catalog settings only.
         </p>
       )}
       <label className="flex items-center gap-2 text-sm font-bold text-ink">
@@ -378,8 +395,13 @@ export function ProductEditForm({
       ) : null}
       <fieldset className={adminFieldsetClass}>
         <legend className="px-1 text-sm font-bold text-ink dark:text-zinc-100">Shipping exclusions (admin only)</legend>
-        <p className="mb-3 text-xs text-ink/60">
+        <p className="mb-3 text-xs text-ink/60 dark:text-zinc-400">
           Applies to all variations of this product. Set shipping units per variation in the pricing table below.
+          Selecting product types above applies each type&apos;s default exclusions (configure under{" "}
+          <Link href="/settings/products/types" className="font-medium text-lagoon-dark underline dark:text-emerald-400">
+            Product types
+          </Link>
+          ).
         </p>
         {shippingOptions.length > 0 ? (
           <div>
@@ -411,53 +433,35 @@ export function ProductEditForm({
           </p>
         )}
       </fieldset>
-      <div className="flex flex-wrap items-center gap-3 pt-2">
-        <button
-          type="submit"
-          disabled={pending}
-          className={btnSecondaryMd}
-        >
-          {pending ? "Saving…" : isEdit ? "Save product" : "Create product"}
-        </button>
-        {catalogMode ? (
-          <>
-            <button
-              type="button"
-              onClick={handleClear}
-              className={btnSecondaryMd}
+      {catalogMode ? (
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          {msg ? <span className="text-sm text-lagoon-dark">{msg}</span> : null}
+          {err ? <span className="text-sm text-coral">{err}</span> : null}
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-3 pt-2">
+          <button type="submit" disabled={pending} className={btnSecondaryMd}>
+            {pending ? "Saving…" : isEdit ? "Save product" : "Create product"}
+          </button>
+          <Link href="/settings/products" className="text-sm font-medium text-lagoon-dark underline">
+            ← Catalog
+          </Link>
+          {slug.trim() ? (
+            <Link
+              href={`/product/${slug.trim()}`}
+              className="text-sm font-medium text-lagoon-dark underline"
+              target="_blank"
+              rel="noreferrer"
             >
-              Clear
-            </button>
-            <button
-              type="button"
-              onClick={handleCancel}
-              className={btnSecondaryMd}
-            >
-              Cancel
-            </button>
-          </>
-        ) : (
-          <>
-            <Link href="/settings/products" className="text-sm font-medium text-lagoon-dark underline">
-              ← Catalog
+              View live
             </Link>
-            {slug.trim() ? (
-              <Link
-                href={`/product/${slug.trim()}`}
-                className="text-sm font-medium text-lagoon-dark underline"
-                target="_blank"
-                rel="noreferrer"
-              >
-                View live
-              </Link>
-            ) : (
-              <span className="text-sm text-ink/50">Add a slug to open the live page</span>
-            )}
-          </>
-        )}
-        {msg ? <span className="text-sm text-lagoon-dark">{msg}</span> : null}
-        {err ? <span className="text-sm text-coral">{err}</span> : null}
-      </div>
+          ) : (
+            <span className="text-sm text-ink/50">Add a slug to open the live page</span>
+          )}
+          {msg ? <span className="text-sm text-lagoon-dark">{msg}</span> : null}
+          {err ? <span className="text-sm text-coral">{err}</span> : null}
+        </div>
+      )}
     </form>
   );
 }

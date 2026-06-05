@@ -22,6 +22,7 @@ import { ProductRecommendationSections } from "@/components/product/product-reco
 import { getProductKitForStorefront } from "@/lib/product-kits";
 import { getProductRecommendationsForStorefront } from "@/lib/product-recommendations";
 import { productFooterCssVariables } from "@/lib/theme-config";
+import { getStoreSettings } from "@/lib/store-settings";
 import { loadResolvedPublicThemeFromDb } from "@/lib/theme-config-server";
 
 type Props = {
@@ -34,7 +35,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const { event: eventParam, variant: variantParam } = await searchParams;
   const eventId = eventParam?.trim() || null;
   const initialVariantId = variantParam?.trim() || null;
-  const [product, sitePub, publicTheme] = await Promise.all([
+  const [product, sitePub, publicTheme, storeSettings] = await Promise.all([
     prisma.product.findUnique({
       where: { slug },
       include: {
@@ -45,6 +46,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
     }),
     getSiteConfig(),
     loadResolvedPublicThemeFromDb(),
+    getStoreSettings(),
   ]);
   const productFooterStyle = productFooterCssVariables(publicTheme.productFooter);
 
@@ -164,6 +166,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
       <ProductRecommendationSections
         related={recommendations.related}
         youMayAlsoWant={recommendations.youMayAlsoWant}
+        recommendationCardWidthPx={storeSettings.storeRecommendationCardConfig.cardWidthPx}
         eventId={eventId}
         productDiagonalBrandName={productDiagonalBrandName}
         productDiagonalNameGapPx={sitePub.productDiagonalNameGapPx}

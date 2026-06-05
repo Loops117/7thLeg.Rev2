@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { StoreProductCard } from "@/components/store/store-product-card";
 import type { StorefrontProductCard } from "@/lib/products-storefront";
 
@@ -5,6 +6,7 @@ function RecommendationColumn({
   title,
   headingId,
   products,
+  cardWidthPx,
   eventId,
   productDiagonalBrandName,
   productDiagonalNameGapPx,
@@ -13,6 +15,7 @@ function RecommendationColumn({
   title: string;
   headingId: string;
   products: StorefrontProductCard[];
+  cardWidthPx: number;
   eventId?: string | null;
   productDiagonalBrandName?: string | null;
   productDiagonalNameGapPx?: number;
@@ -26,9 +29,12 @@ function RecommendationColumn({
         {title}
       </h2>
       <div className="mt-2 -mx-0.5 overflow-x-auto overscroll-x-contain px-0.5 pb-0.5">
-        <ul className="flex w-max flex-nowrap gap-1.5 sm:gap-2">
+        <ul
+          className="product-recommendation-strip flex w-max flex-nowrap gap-1.5 sm:gap-2"
+          style={{ "--product-recommendation-card-width": `${cardWidthPx}px` } as CSSProperties}
+        >
         {products.map((p) => (
-          <li key={p.id} className="w-[5.5rem] shrink-0 sm:w-[6.25rem]">
+          <li key={p.id} className="product-recommendation-strip__item shrink-0">
             <StoreProductCard
               product={p}
               compact
@@ -49,6 +55,7 @@ function RecommendationColumn({
 export function ProductRecommendationSections({
   related,
   youMayAlsoWant,
+  recommendationCardWidthPx = 88,
   eventId = null,
   productDiagonalBrandName = null,
   productDiagonalNameGapPx = 8,
@@ -56,6 +63,8 @@ export function ProductRecommendationSections({
 }: {
   related: StorefrontProductCard[];
   youMayAlsoWant: StorefrontProductCard[];
+  /** From Settings → Store → Product cards. */
+  recommendationCardWidthPx?: number;
   eventId?: string | null;
   productDiagonalBrandName?: string | null;
   productDiagonalNameGapPx?: number;
@@ -66,6 +75,7 @@ export function ProductRecommendationSections({
   if (!hasRelated && !hasAlsoWant) return null;
 
   const shared = {
+    cardWidthPx: recommendationCardWidthPx,
     eventId,
     productDiagonalBrandName,
     productDiagonalNameGapPx,

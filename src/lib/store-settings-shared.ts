@@ -50,12 +50,41 @@ export function parseStoreProductCardConfig(raw: unknown): StoreProductCardConfi
   return { cardWidthPx };
 }
 
+export type StoreRecommendationCardConfig = {
+  cardWidthPx: number;
+};
+
+/** Product page related / also-want horizontal strips (mini cards). */
+export const RECOMMENDATION_CARD_WIDTH_PRESETS = [
+  { id: "xs", label: "Extra small", cardWidthPx: 72 },
+  { id: "sm", label: "Small", cardWidthPx: 88 },
+  { id: "md", label: "Medium", cardWidthPx: 100 },
+  { id: "lg", label: "Large", cardWidthPx: 120 },
+  { id: "xl", label: "Extra large", cardWidthPx: 144 },
+] as const;
+
+const DEFAULT_RECOMMENDATION_CARD: StoreRecommendationCardConfig = {
+  cardWidthPx: RECOMMENDATION_CARD_WIDTH_PRESETS[1].cardWidthPx,
+};
+
+export function parseStoreRecommendationCardConfig(raw: unknown): StoreRecommendationCardConfig {
+  if (!raw || typeof raw !== "object") return { ...DEFAULT_RECOMMENDATION_CARD };
+  const o = raw as Record<string, unknown>;
+  const w = o.cardWidthPx;
+  const cardWidthPx =
+    typeof w === "number" && !Number.isNaN(w)
+      ? clamp(Math.floor(w), 56, 200)
+      : DEFAULT_RECOMMENDATION_CARD.cardWidthPx;
+  return { cardWidthPx };
+}
+
 export type StoreSettingsState = {
   storeBannerEnabled: boolean;
   storeBannerHtml: string;
   storeFeaturedStripEnabled: boolean;
   storeFeaturedStripConfig: StoreFeaturedStripConfig;
   storeProductCardConfig: StoreProductCardConfig;
+  storeRecommendationCardConfig: StoreRecommendationCardConfig;
   storeFooterEnabled: boolean;
   storeFooterHtml: string;
   cardHoverMode: "zoom" | "glow";
@@ -67,6 +96,7 @@ export const defaultStoreSettingsState = (): StoreSettingsState => ({
   storeFeaturedStripEnabled: false,
   storeFeaturedStripConfig: { ...DEFAULT_STRIP },
   storeProductCardConfig: { ...DEFAULT_PRODUCT_CARD },
+  storeRecommendationCardConfig: { ...DEFAULT_RECOMMENDATION_CARD },
   storeFooterEnabled: false,
   storeFooterHtml: "",
   cardHoverMode: "zoom",

@@ -141,8 +141,10 @@ model SiteConfig {
   storeBannerHtml            String  @default("") @db.Text
   storeFeaturedStripEnabled  Boolean @default(false)
   storeFeaturedStripConfig   Json?
-  /// Store catalog grid card width (px); see `lib/store-settings.ts`.
-  storeProductCardConfig     Json? @map("store_product_card_config")
+  /// Store catalog grid card width (px); see `lib/store-settings-shared.ts`.
+  storeProductCardConfig         Json? @map("store_product_card_config")
+  /// Product page related / you-may-also-want strip card width (px).
+  storeRecommendationCardConfig  Json? @map("store_recommendation_card_config")
   /// When true, `/labels` is available (direct URL works for anyone who has it).
   labelBuilderEnabled Boolean @default(false) @map("label_builder_enabled")
   /// When true and label builder is enabled, main nav shows Labels after Featured.
@@ -446,8 +448,9 @@ model ProductType {
 
   products                 ProductOnType[]
   defaultFooters           ProductTypeDefaultFooter[]
-  defaultRecommendations   ProductTypeDefaultRecommendation[]
-  eventTypeLinks           EventOnProductType[]
+  defaultRecommendations      ProductTypeDefaultRecommendation[]
+  defaultShippingExclusions ProductTypeDefaultShippingExclusion[]
+  eventTypeLinks              EventOnProductType[]
 
   @@index([sortOrder])
   @@index([parentId])
@@ -490,6 +493,18 @@ model ProductTypeDefaultRecommendation {
   @@id([typeId, relatedProductId, kind])
   @@index([typeId, kind, sortOrder])
   @@map("product_type_default_recommendations")
+}
+
+/// Default shipping box exclusions for products with this type (and child types inherit via type tree).
+model ProductTypeDefaultShippingExclusion {
+  typeId           String @map("type_id")
+  shippingOptionId String @map("shipping_option_id")
+
+  type           ProductType    @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  shippingOption ShippingOption @relation(fields: [shippingOptionId], references: [id], onDelete: Cascade)
+
+  @@id([typeId, shippingOptionId])
+  @@map("product_type_default_shipping_exclusions")
 }
 
 model Product {
@@ -1057,7 +1072,8 @@ model ShippingOption {
 
   carts  Cart[]
   orders Order[]
-  productExclusions ProductShippingOptionExclusion[]
+  productExclusions     ProductShippingOptionExclusion[]
+  typeDefaultExclusions ProductTypeDefaultShippingExclusion[]
 
   @@map("shipping_options")
 }

@@ -5,7 +5,9 @@ import { useState, useTransition, type ReactNode } from "react";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { updateStoreSettings } from "@/app/actions/store-settings";
 import { adminDetailsPaneClass } from "@/lib/admin-surface-classes";
+import { StoreCardWidthPicker } from "@/components/settings/store-card-width-picker";
 import {
+  RECOMMENDATION_CARD_WIDTH_PRESETS,
   STORE_CARD_WIDTH_PRESETS,
   type StoreSettingsState,
 } from "@/lib/store-settings-shared";
@@ -133,73 +135,38 @@ export function StoreSettingsEditor({ initial }: { initial: StoreSettingsState }
         </p>
       </Section>
 
-      <Section title="Product cards" summary="Catalog grid size (not featured strip)" defaultOpen={false}>
+      <Section title="Product cards" summary="Store grid & product-page suggestion strips" defaultOpen={false}>
         <p className="text-sm text-ink/80 dark:text-zinc-300">
-          Applies to the main product grid on the store page only. The featured strip keeps its own compact layout.
           Card colors and hover (zoom vs glow) are under{" "}
           <a href="/settings/theme" className="font-medium text-lagoon-dark underline dark:text-emerald-400">
             Settings → Theme → Shop &amp; product cards
           </a>
-          .
+          . The featured strip on the store page keeps its own fixed layout.
         </p>
-        <fieldset>
-          <legend className="text-sm font-bold text-ink dark:text-zinc-100">Grid card width</legend>
-          <div className="mt-2 flex flex-wrap gap-3">
-            {STORE_CARD_WIDTH_PRESETS.map((preset) => {
-              const active = form.storeProductCardConfig.cardWidthPx === preset.cardWidthPx;
-              return (
-                <label
-                  key={preset.id}
-                  className={`flex cursor-pointer items-center gap-2 rounded border-2 px-3 py-2 text-sm ${
-                    active
-                      ? "border-palm bg-surf/60 font-bold dark:border-emerald-600 dark:bg-zinc-800"
-                      : "border-palm/30 dark:border-zinc-600"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="storeCardWidth"
-                    checked={active}
-                    onChange={() =>
-                      setForm((f) => ({
-                        ...f,
-                        storeProductCardConfig: { cardWidthPx: preset.cardWidthPx },
-                      }))
-                    }
-                    className="sr-only"
-                  />
-                  {preset.label}
-                  <span className="font-mono text-xs font-normal text-ink/55 dark:text-zinc-500">
-                    {preset.cardWidthPx}px
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        </fieldset>
-        <label className="mt-3 block text-sm font-bold text-ink dark:text-zinc-100">
-          Custom width (px)
-          <input
-            type="number"
-            min={120}
-            max={320}
-            value={form.storeProductCardConfig.cardWidthPx}
-            onChange={(e) => {
-              const n = Number(e.target.value);
-              if (Number.isNaN(n)) return;
-              setForm((f) => ({
-                ...f,
-                storeProductCardConfig: {
-                  cardWidthPx: Math.min(320, Math.max(120, Math.floor(n))),
-                },
-              }));
-            }}
-            className="mt-1 w-28 border-2 border-palm-mid px-2 py-2 font-mono text-sm dark:border-zinc-600 dark:bg-zinc-900"
-          />
-        </label>
-        <p className="text-xs text-ink/60 dark:text-zinc-400">
-          Images fill a square slot (cropped to cover). Cards wrap in centered rows so nothing sits half off the page.
-        </p>
+        <StoreCardWidthPicker
+          legend="Store catalog grid"
+          presets={STORE_CARD_WIDTH_PRESETS}
+          valuePx={form.storeProductCardConfig.cardWidthPx}
+          onChangePx={(cardWidthPx) =>
+            setForm((f) => ({ ...f, storeProductCardConfig: { cardWidthPx } }))
+          }
+          radioName="storeCardWidth"
+          minPx={120}
+          maxPx={320}
+          hint="Main /store product grid. Square images (cover). Cards wrap in centered rows."
+        />
+        <StoreCardWidthPicker
+          legend="Related items & You may also want (product page)"
+          presets={RECOMMENDATION_CARD_WIDTH_PRESETS}
+          valuePx={form.storeRecommendationCardConfig.cardWidthPx}
+          onChangePx={(cardWidthPx) =>
+            setForm((f) => ({ ...f, storeRecommendationCardConfig: { cardWidthPx } }))
+          }
+          radioName="recommendationCardWidth"
+          minPx={56}
+          maxPx={200}
+          hint="Horizontal scroll strips at the bottom of each product page."
+        />
       </Section>
 
       <Section title="Store footer" summary="Text below the grid" defaultOpen={false}>

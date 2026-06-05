@@ -103,7 +103,8 @@ export function ProductTypesAdmin({
         <p className="mb-4 max-w-2xl text-sm text-ink/75 dark:text-zinc-400">
           Build a hierarchy (e.g. Live Inverts → Isopods → Cubaris sp.). Assign the{" "}
           <strong>most specific (leaf)</strong> type on each product. Parent types group the store filters and apply
-          their default footers and related-item defaults to descendants. Set related / also-want defaults when editing a type.
+          their default footers, shipping exclusions, and related-item defaults to descendants. Configure per-type
+          defaults when editing a type.
         </p>
         {initialTreeRows.length === 0 ? (
           <p className="text-ink/70">No types yet. Add one below — they power store filters and default footers.</p>

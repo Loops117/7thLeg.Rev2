@@ -7,6 +7,7 @@ import {
   defaultStoreSettingsState,
   parseFeaturedStripConfig,
   parseStoreProductCardConfig,
+  parseStoreRecommendationCardConfig,
   type StoreFeaturedStripConfig,
   type StoreSettingsState,
 } from "@/lib/store-settings-shared";
@@ -30,6 +31,9 @@ export async function updateStoreSettings(state: StoreSettingsState) {
   const productCards = parseStoreProductCardConfig(
     state.storeProductCardConfig ?? base.storeProductCardConfig,
   );
+  const recommendationCards = parseStoreRecommendationCardConfig(
+    state.storeRecommendationCardConfig ?? base.storeRecommendationCardConfig,
+  );
   const mode = state.cardHoverMode === "glow" ? "glow" : "zoom";
 
   const data = {
@@ -38,6 +42,7 @@ export async function updateStoreSettings(state: StoreSettingsState) {
     storeFeaturedStripEnabled: !!state.storeFeaturedStripEnabled,
     storeFeaturedStripConfig: strip as object,
     storeProductCardConfig: productCards as object,
+    storeRecommendationCardConfig: recommendationCards as object,
     storeFooterEnabled: !!state.storeFooterEnabled,
     storeFooterHtml: typeof state.storeFooterHtml === "string" ? state.storeFooterHtml : "",
     cardHoverMode: mode,
@@ -55,4 +60,9 @@ export async function updateStoreSettings(state: StoreSettingsState) {
 
   revalidatePath("/store");
   revalidatePath("/settings/store");
+
+  const products = await prisma.product.findMany({ select: { slug: true } });
+  for (const { slug } of products) {
+    revalidatePath(`/product/${slug}`);
+  }
 }

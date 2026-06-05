@@ -129,6 +129,12 @@ body {
   max-width: 100%;
 }
 
+/** Product page — related / you-may-also-want strips */
+.product-recommendation-strip__item {
+  width: var(--product-recommendation-card-width, 5.5rem);
+  max-width: 100%;
+}
+
 .store-product-card__image-area {
   background-color: color-mix(in srgb, var(--product-card-image-bg) 50%, transparent);
 }

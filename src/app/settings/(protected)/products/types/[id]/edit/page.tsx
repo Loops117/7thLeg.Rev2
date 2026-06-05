@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { getProductTypeDefaultRecommendationsForAdmin } from "@/app/actions/product-type-recommendation-defaults-admin";
+import { getProductTypeDefaultShippingExclusionsForAdmin } from "@/app/actions/product-type-shipping-defaults-admin";
 import { ProductTypeEditForm } from "@/components/settings/product-type-edit-form";
 import { ProductTypeRecommendationDefaultsEditor } from "@/components/settings/product-type-recommendation-defaults-editor";
+import { ProductTypeShippingDefaultsEditor } from "@/components/settings/product-type-shipping-defaults-editor";
 import type { ProductFooterOption } from "@/lib/products-admin-types";
 import { productTypeOrderBy } from "@/lib/product-type-order";
 import { ProductTypeIndex } from "@/lib/product-type-index";
@@ -11,7 +13,7 @@ type Props = { params: Promise<{ id: string }> };
 
 export default async function EditProductTypePage({ params }: Props) {
   const { id } = await params;
-  const [type, allTypes, footers] = await Promise.all([
+  const [type, allTypes, footers, shippingOptions] = await Promise.all([
     prisma.productType.findUnique({
       where: { id },
       include: { defaultFooters: { select: { footerId: true } } },
@@ -31,6 +33,10 @@ export default async function EditProductTypePage({ params }: Props) {
       orderBy: { title: "asc" },
       select: { id: true, title: true },
     }),
+    prisma.shippingOption.findMany({
+      orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
+      select: { id: true, label: true },
+    }),
   ]);
 
   if (!type) {
@@ -45,7 +51,10 @@ export default async function EditProductTypePage({ params }: Props) {
     .map((row) => ({ id: row.id, pathLabel: row.pathLabel }));
 
   const initialFooterIds = type.defaultFooters.map((d) => d.footerId);
-  const typeDefaults = await getProductTypeDefaultRecommendationsForAdmin(type.id);
+  const [typeDefaults, initialShippingExclusions] = await Promise.all([
+    getProductTypeDefaultRecommendationsForAdmin(type.id),
+    getProductTypeDefaultShippingExclusionsForAdmin(type.id),
+  ]);
 
   return (
     <div>
@@ -67,6 +76,12 @@ export default async function EditProductTypePage({ params }: Props) {
           typeName={type.name}
           initialRelated={typeDefaults.related}
           initialYouMayAlsoWant={typeDefaults.youMayAlsoWant}
+        />
+        <ProductTypeShippingDefaultsEditor
+          typeId={type.id}
+          typeName={type.name}
+          shippingOptions={shippingOptions}
+          initialExcludedShippingOptionIds={initialShippingExclusions}
         />
       </div>
     </div>
