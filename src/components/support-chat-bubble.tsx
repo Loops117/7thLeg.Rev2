@@ -73,12 +73,12 @@ export function SupportChatBubble({ initialUnread }: { initialUnread: number }) 
     <div className="pointer-events-none fixed bottom-0 right-0 z-50 flex flex-col items-end p-4 sm:p-6">
       {open ? (
         <div
-          className="pointer-events-auto mb-3 flex max-h-[min(28rem,70dvh)] w-[min(100vw-2rem,22rem)] flex-col overflow-hidden rounded border-4 border-palm bg-sand shadow-lg"
+          className="support-chat pointer-events-auto mb-3 flex max-h-[min(28rem,70dvh)] w-[min(100vw-2rem,22rem)] flex-col overflow-hidden"
           role="dialog"
           aria-label="Messages to the store"
         >
-          <div className="flex items-center justify-between border-b-2 border-palm/25 bg-white/90 px-3 py-2">
-            <p className="text-sm font-black text-palm">Message the store</p>
+          <div className="support-chat__header">
+            <p className="support-chat__title">Message the store</p>
             <button
               type="button"
               onClick={() => setOpen(false)}
@@ -87,42 +87,42 @@ export function SupportChatBubble({ initialUnread }: { initialUnread: number }) 
               Close
             </button>
           </div>
-          <p className="border-b border-palm/15 px-3 py-2 text-[11px] text-ink/70">
+          <p className="support-chat__hint">
             Replies also appear under{" "}
-            <Link href="/account/messages" className="font-bold text-lagoon-dark underline">
+            <Link href="/account/messages" className="support-chat__hint-link">
               Account → Messages
             </Link>
             .
           </p>
-          <div ref={listRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 py-2">
+          <div ref={listRef} className="support-chat__messages space-y-2">
             {messages === null && !err ? (
-              <p className="text-center text-xs text-ink/60">{pending ? "Loading…" : "…"}</p>
+              <p className="support-chat__status">{pending ? "Loading…" : "…"}</p>
             ) : null}
-            {err ? <p className="text-center text-xs text-coral">{err}</p> : null}
+            {err ? <p className="support-chat__status support-chat__status--error">{err}</p> : null}
             {messages?.map((m) => (
               <div
                 key={m.id}
-                className={`max-w-[92%] rounded border px-2 py-1.5 text-sm ${
+                className={`support-chat__bubble ${
                   m.sender === "CUSTOMER"
-                    ? "ml-auto border-palm/30 bg-palm/10 text-ink"
-                    : "border-palm/20 bg-white text-ink"
+                    ? "support-chat__bubble--customer"
+                    : "support-chat__bubble--admin"
                 }`}
               >
                 <p className="whitespace-pre-wrap break-words">{m.body}</p>
-                <p className="mt-1 text-[10px] text-ink/45">
+                <p className="support-chat__bubble-time">
                   {new Date(m.createdAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}
                 </p>
               </div>
             ))}
           </div>
-          <div className="border-t-2 border-palm/25 bg-white/95 p-2">
+          <div className="support-chat__composer">
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
               rows={3}
               maxLength={4000}
               placeholder="Write a message…"
-              className="w-full resize-none border-2 border-palm/30 px-2 py-1.5 text-sm"
+              className="support-chat__field"
             />
             <button
               type="button"

@@ -12,7 +12,10 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "npx tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:migrate-customers": "npx tsx scripts/migrate-legacy-customers.ts",
+    "db:migrate-customers:dry": "npx tsx scripts/migrate-legacy-customers.ts --dry-run",
+    "db:reset-customer-password": "npx tsx scripts/reset-customer-password.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
