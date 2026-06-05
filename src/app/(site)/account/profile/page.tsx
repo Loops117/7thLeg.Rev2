@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth as readAuthSession } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getGoogleMapsApiKeyForClient } from "@/lib/site-config";
 import { CustomerAddressForm } from "../customer-address-form";
 import { CustomerNameForm } from "../customer-name-form";
 
@@ -30,7 +31,8 @@ export default async function AccountProfilePage() {
     );
   }
 
-  const customer = await prisma.customer.findUnique({
+  const [customer, mapsApiKey] = await Promise.all([
+    prisma.customer.findUnique({
     where: { id: session.user.id },
     select: {
       email: true,
@@ -44,7 +46,9 @@ export default async function AccountProfilePage() {
       postalCode: true,
       country: true,
     },
-  });
+  }),
+    getGoogleMapsApiKeyForClient(),
+  ]);
 
   if (!customer) {
     return (
@@ -60,14 +64,14 @@ export default async function AccountProfilePage() {
       <h1 className="border-b-4 border-palm pb-4 text-2xl font-black text-palm">My info</h1>
       <p className="mt-4 max-w-xl text-sm text-ink/75">Email, loyalty points, your name, and saved shipping address.</p>
 
-      <dl className="mt-8 max-w-lg space-y-4 border border-palm/20 bg-white/80 p-6 shadow-sm">
+      <dl className="account-panel mt-8 max-w-lg space-y-4">
         <div>
-          <dt className="text-xs font-bold uppercase tracking-wide text-palm-mid">Email</dt>
-          <dd className="mt-1 text-ink">{customer.email}</dd>
+          <dt className="account-panel__dt">Email</dt>
+          <dd className="account-panel__dd">{customer.email}</dd>
         </div>
         <div>
-          <dt className="text-xs font-bold uppercase tracking-wide text-palm-mid">Loyalty points</dt>
-          <dd className="mt-1 text-2xl font-black text-palm">{customer.pointsBalance}</dd>
+          <dt className="account-panel__dt">Loyalty points</dt>
+          <dd className="account-panel__stat">{customer.pointsBalance}</dd>
           <dd className="mt-2">
             <Link href="/account/points" className="text-sm font-bold text-lagoon-dark underline">
               View point history
@@ -76,9 +80,9 @@ export default async function AccountProfilePage() {
         </div>
       </dl>
 
-      <section className="mt-10 max-w-lg border border-palm/20 bg-white/80 p-6 shadow-sm">
-        <h2 className="text-lg font-black text-palm">Your name</h2>
-        <p className="mt-2 text-sm text-ink/75">Used for shipping labels and giveaways.</p>
+      <section className="account-panel mt-10 max-w-lg">
+        <h2 className="account-panel__heading">Your name</h2>
+        <p className="account-panel__text mt-2">Used for shipping labels and giveaways.</p>
         <CustomerNameForm
           initial={{
             firstName: customer.firstName,
@@ -87,12 +91,13 @@ export default async function AccountProfilePage() {
         />
       </section>
 
-      <section className="mt-10 max-w-lg border border-palm/20 bg-white/80 p-6 shadow-sm">
-        <h2 className="text-lg font-black text-palm">Shipping address</h2>
-        <p className="mt-2 text-sm text-ink/75">
+      <section className="account-panel mt-10 max-w-lg">
+        <h2 className="account-panel__heading">Shipping address</h2>
+        <p className="account-panel__text mt-2">
           Used for orders and giveaways when we need to ship to you. You can update this anytime.
         </p>
         <CustomerAddressForm
+          mapsApiKey={mapsApiKey}
           initial={{
             addressLine1: customer.addressLine1,
             addressLine2: customer.addressLine2,

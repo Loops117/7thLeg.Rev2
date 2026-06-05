@@ -114,22 +114,22 @@ export const prisma = new Proxy({} as PrismaClient, {
     let client = getPrismaClient();
     let value = getClientDelegate(client, prop);
 
-    // Dev: cached client from before `prisma generate` lacks new model delegates (e.g. productKit).
-    if (
-      process.env.NODE_ENV !== "production" &&
-      typeof prop === "string" &&
-      value === undefined &&
-      prop !== "$connect" &&
-      !prop.startsWith("$") &&
-      prop !== "constructor"
-    ) {
-      globalForPrisma.prismaFreshnessKey = undefined;
-      client = getPrismaClient();
-      value = getClientDelegate(client, prop);
-      if (value === undefined) {
-        throw new Error(
-          `Prisma model "${prop}" is not available. Run "npx prisma generate" and restart the dev server (stop and run "npm run dev" again).`,
-        );
+    // Dev: cached client from before `prisma generate` lacks new delegates (models, `_globalOmit`, etc.).
+    if (process.env.NODE_ENV !== "production" && typeof prop === "string" && value === undefined) {
+      const isInternal = prop.startsWith("_") || prop.startsWith("$");
+      if (!isInternal && prop !== "constructor") {
+        globalForPrisma.prismaFreshnessKey = undefined;
+        client = getPrismaClient();
+        value = getClientDelegate(client, prop);
+        if (value === undefined) {
+          throw new Error(
+            `Prisma model "${prop}" is not available. Run "npx prisma generate" and restart the dev server (stop and run "npm run dev" again).`,
+          );
+        }
+      } else if (prop.startsWith("_")) {
+        globalForPrisma.prismaFreshnessKey = undefined;
+        client = getPrismaClient();
+        value = getClientDelegate(client, prop);
       }
     }
 

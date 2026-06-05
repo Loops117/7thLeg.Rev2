@@ -10,7 +10,8 @@ export default async function SettingsGlobalPage() {
       <h1 className="border-b-4 border-palm pb-3 text-2xl font-black text-palm">Global</h1>
       <p className="mt-4 text-ink/80">
         <strong>Company name</strong> appears in the public site header. <strong>Browser icon &amp; link previews</strong>{" "}
-        sets favicons and social share images. For loyalty program rules and member points, see{" "}
+        sets favicons and share images; <strong>Link preview text</strong> sets the title and description in those cards.
+        For loyalty program rules and member points, see{" "}
         <Link href="/settings/loyalty" className="font-medium text-lagoon-dark underline">
           Loyalty
         </Link>

@@ -62,6 +62,8 @@ export async function HomePaneBlock({
 
   const storeBannerFallback: SiteConfigPublic = {
     companyName: "Shop",
+    linkPreviewTitle: "",
+    linkPreviewDescription: "",
     companyLogoUrl: "",
     companyLogoPlacement: "beside",
     headerShowCompanyName: true,

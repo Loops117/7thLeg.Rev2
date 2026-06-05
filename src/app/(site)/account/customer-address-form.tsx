@@ -7,6 +7,7 @@ import { btnSecondaryMd } from "@/lib/btn-theme-classes";
 import { parseGooglePlaceAddress } from "@/lib/parse-google-place";
 
 type Props = {
+  mapsApiKey: string;
   initial: {
     addressLine1: string | null;
     addressLine2: string | null;
@@ -17,9 +18,7 @@ type Props = {
   };
 };
 
-const mapsKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() ?? "";
-
-export function CustomerAddressForm({ initial }: Props) {
+export function CustomerAddressForm({ mapsApiKey, initial }: Props) {
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -31,6 +30,7 @@ export function CustomerAddressForm({ initial }: Props) {
   const [country, setCountry] = useState(initial.country ?? "");
   const line1Ref = useRef<HTMLInputElement>(null);
   const acInstanceRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const autocompleteEnabled = mapsApiKey.trim().length > 0;
 
   useEffect(() => {
     setAddressLine1(initial.addressLine1 ?? "");
@@ -49,10 +49,10 @@ export function CustomerAddressForm({ initial }: Props) {
   ]);
 
   useEffect(() => {
-    if (!mapsKey || !line1Ref.current) return;
+    if (!autocompleteEnabled || !line1Ref.current) return;
 
     let cancelled = false;
-    loadGoogleMapsScript(mapsKey)
+    loadGoogleMapsScript(mapsApiKey)
       .then(() => {
         if (cancelled || !line1Ref.current) return;
         const ac = new google.maps.places.Autocomplete(line1Ref.current, {
@@ -83,7 +83,7 @@ export function CustomerAddressForm({ initial }: Props) {
         acInstanceRef.current = null;
       }
     };
-  }, [mapsKey]);
+  }, [autocompleteEnabled, mapsApiKey]);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -108,17 +108,12 @@ export function CustomerAddressForm({ initial }: Props) {
 
   return (
     <form onSubmit={onSubmit} className="mt-4 space-y-4">
-      {mapsKey ? (
-        <p className="text-xs text-ink/65">
+      {autocompleteEnabled ? (
+        <p className="account-panel__muted">
           Start typing your street address for suggestions; pick one to fill the rest, or enter everything manually.
         </p>
-      ) : (
-        <p className="text-xs text-ink/55">
-          Add <code className="rounded bg-black/5 px-1">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> to enable address
-          autocomplete (Places API enabled for the key).
-        </p>
-      )}
-      <label className="block text-sm font-bold text-ink">
+      ) : null}
+      <label className="account-panel__label">
         Street address
         <input
           ref={line1Ref}
@@ -126,53 +121,53 @@ export function CustomerAddressForm({ initial }: Props) {
           value={addressLine1}
           onChange={(e) => setAddressLine1(e.target.value)}
           autoComplete="address-line1"
-          className="mt-1 w-full border-2 border-palm-mid bg-white px-3 py-2 text-base text-ink outline-none focus:border-lagoon focus:ring-2 focus:ring-lagoon/30"
+          className="account-field"
         />
       </label>
-      <label className="block text-sm font-bold text-ink">
+      <label className="account-panel__label">
         Apt, suite, unit (optional)
         <input
           name="addressLine2"
           value={addressLine2}
           onChange={(e) => setAddressLine2(e.target.value)}
           autoComplete="address-line2"
-          className="mt-1 w-full border-2 border-palm-mid bg-white px-3 py-2 text-base text-ink outline-none focus:border-lagoon focus:ring-2 focus:ring-lagoon/30"
+          className="account-field"
         />
       </label>
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block text-sm font-bold text-ink">
+        <label className="account-panel__label">
           City
           <input
             name="city"
             value={city}
             onChange={(e) => setCity(e.target.value)}
             autoComplete="address-level2"
-            className="mt-1 w-full border-2 border-palm-mid bg-white px-3 py-2 text-base text-ink outline-none focus:border-lagoon focus:ring-2 focus:ring-lagoon/30"
+            className="account-field"
           />
         </label>
-        <label className="block text-sm font-bold text-ink">
+        <label className="account-panel__label">
           State / province
           <input
             name="stateRegion"
             value={stateRegion}
             onChange={(e) => setStateRegion(e.target.value)}
             autoComplete="address-level1"
-            className="mt-1 w-full border-2 border-palm-mid bg-white px-3 py-2 text-base text-ink outline-none focus:border-lagoon focus:ring-2 focus:ring-lagoon/30"
+            className="account-field"
           />
         </label>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block text-sm font-bold text-ink">
+        <label className="account-panel__label">
           ZIP / postal code
           <input
             name="postalCode"
             value={postalCode}
             onChange={(e) => setPostalCode(e.target.value)}
             autoComplete="postal-code"
-            className="mt-1 w-full border-2 border-palm-mid bg-white px-3 py-2 text-base text-ink outline-none focus:border-lagoon focus:ring-2 focus:ring-lagoon/30"
+            className="account-field"
           />
         </label>
-        <label className="block text-sm font-bold text-ink">
+        <label className="account-panel__label">
           Country
           <input
             name="country"
@@ -180,17 +175,17 @@ export function CustomerAddressForm({ initial }: Props) {
             onChange={(e) => setCountry(e.target.value)}
             autoComplete="country-name"
             placeholder="e.g. United States"
-            className="mt-1 w-full border-2 border-palm-mid bg-white px-3 py-2 text-base text-ink outline-none focus:border-lagoon focus:ring-2 focus:ring-lagoon/30"
+            className="account-field"
           />
         </label>
       </div>
       {error ? <p className="text-sm font-medium text-coral">{error}</p> : null}
-      {saved ? <p className="text-sm font-medium text-palm">Address saved.</p> : null}
-      <button
-        type="submit"
-        disabled={pending}
-        className={btnSecondaryMd}
-      >
+      {saved ? (
+        <p className="text-sm font-bold" style={{ color: "var(--lagoon-dark)" }}>
+          Address saved.
+        </p>
+      ) : null}
+      <button type="submit" disabled={pending} className={btnSecondaryMd}>
         {pending ? "Saving…" : "Save address"}
       </button>
     </form>

@@ -33,6 +33,9 @@ export function parseWatermarkPlacement(s: string | null | undefined): Watermark
   return "bottomRight";
 }
 
+/** Default OG/Twitter description when admin leaves the field blank. */
+export const DEFAULT_SITE_LINK_PREVIEW_DESCRIPTION = "Insects, stickers, and more";
+
 export type GlobalSettingsState = {
   companyName: string;
   headerShowCompanyName: boolean;
@@ -50,6 +53,12 @@ export type GlobalSettingsState = {
   checkoutSalesTaxPercent: number;
   siteBrandingSource: SiteBrandingSource;
   siteBrandingAssets: SiteBrandingAssets | null;
+  /** Social share title (Open Graph / Twitter). Empty uses company name. */
+  linkPreviewTitle: string;
+  /** Social share description. Empty uses DEFAULT_SITE_LINK_PREVIEW_DESCRIPTION. */
+  linkPreviewDescription: string;
+  /** Google Maps API key for customer address autocomplete (Places API must be enabled). */
+  googleMapsApiKey: string;
 };
 
 export const globalSettingsDefaults: GlobalSettingsState = {
@@ -68,6 +77,9 @@ export const globalSettingsDefaults: GlobalSettingsState = {
   checkoutSalesTaxPercent: 0,
   siteBrandingSource: "default",
   siteBrandingAssets: null,
+  linkPreviewTitle: "",
+  linkPreviewDescription: "",
+  googleMapsApiKey: "",
 };
 
 /** Managed from Settings → Home (not Global). Persists urgent pop-up revision in the database. */
@@ -112,6 +124,8 @@ export const paymentGatewaysDefaults: PaymentGatewaysState = {
 
 export type SiteConfigPublic = {
   companyName: string;
+  linkPreviewTitle: string;
+  linkPreviewDescription: string;
   companyLogoUrl: string;
   companyLogoPlacement: CompanyLogoPlacement;
   headerShowCompanyName: boolean;

@@ -41,29 +41,33 @@ export function CustomerNameForm({ initial }: Props) {
   return (
     <form onSubmit={onSubmit} className="mt-4 space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block text-sm font-bold text-ink">
+        <label className="account-panel__label">
           First name
           <input
             name="firstName"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             autoComplete="given-name"
-            className="mt-1 w-full border-2 border-palm-mid bg-white px-3 py-2 text-base text-ink outline-none focus:border-lagoon focus:ring-2 focus:ring-lagoon/30"
+            className="account-field"
           />
         </label>
-        <label className="block text-sm font-bold text-ink">
+        <label className="account-panel__label">
           Last name
           <input
             name="lastName"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
             autoComplete="family-name"
-            className="mt-1 w-full border-2 border-palm-mid bg-white px-3 py-2 text-base text-ink outline-none focus:border-lagoon focus:ring-2 focus:ring-lagoon/30"
+            className="account-field"
           />
         </label>
       </div>
       {error ? <p className="text-sm font-medium text-coral">{error}</p> : null}
-      {saved ? <p className="text-sm font-medium text-palm">Name saved.</p> : null}
+      {saved ? (
+        <p className="text-sm font-bold" style={{ color: "var(--lagoon-dark)" }}>
+          Name saved.
+        </p>
+      ) : null}
       <button
         type="submit"
         disabled={pending}

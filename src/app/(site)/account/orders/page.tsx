@@ -127,55 +127,70 @@ export default async function AccountOrdersPage() {
             return (
               <li
                 key={o.id}
-                className="overflow-hidden rounded border border-palm/25 bg-white/90 shadow-sm [&_summary]:list-none [&_summary::-webkit-details-marker]:hidden"
+                className="account-order-card [&_summary]:list-none [&_summary::-webkit-details-marker]:hidden"
               >
                 <details className="group">
-                  <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2 px-4 py-3 text-left hover:bg-black/[0.03]">
-                    <span className="font-bold text-palm">
+                  <summary className="account-order-card__summary">
+                    <span className="font-bold" style={{ color: "var(--product-card-title)" }}>
                       <span
                         aria-hidden
-                        className="mr-2 inline-block text-xs text-ink/50 transition-transform select-none group-open:rotate-90"
+                        className="account-panel__muted mr-2 inline-block text-xs transition-transform select-none group-open:rotate-90"
                       >
                         ▶
                       </span>
                       {o.createdAt.toLocaleString()}
                     </span>
-                    <span className="text-sm font-semibold uppercase tracking-wide text-ink/80">{o.status}</span>
-                    <span className="text-sm font-black text-ink">{formatPriceUsd(o.totalCents)}</span>
+                    <span className="text-sm font-semibold uppercase tracking-wide">{o.status}</span>
+                    <span className="text-sm font-black" style={{ color: "var(--product-card-title)" }}>
+                      {formatPriceUsd(o.totalCents)}
+                    </span>
                   </summary>
-                  <div className="border-t border-palm/15 px-4 py-4 text-sm [&_tbody_tr:nth-child(odd)]:bg-surf/30">
+                  <div className="account-order-card__body">
                     <OrderProgressBar status={o.status} />
-                    <p className="font-mono text-[11px] text-ink/55">
+                    <p className="account-panel__muted font-mono text-[11px]">
                       Order id: <span className="break-all">{o.id}</span>
                     </p>
-                    <dl className="mt-3 grid gap-1 rounded border border-palm/15 bg-white/70 p-3">
+                    <dl className="account-order-card__totals">
                       <div className="flex justify-between gap-4">
-                        <dt className="text-ink/65">Subtotal</dt>
-                        <dd className="font-bold text-ink">{formatPriceUsd(o.subtotalCents)}</dd>
+                        <dt>Subtotal</dt>
+                        <dd>{formatPriceUsd(o.subtotalCents)}</dd>
                       </div>
                       <div className="flex justify-between gap-4">
-                        <dt className="text-ink/65">Tax</dt>
-                        <dd className="font-bold text-ink">{formatPriceUsd(o.taxCents)}</dd>
+                        <dt>Tax</dt>
+                        <dd>{formatPriceUsd(o.taxCents)}</dd>
                       </div>
                       {snap ? (
                         <div className="flex justify-between gap-4">
-                          <dt className="text-ink/65">Shipping method</dt>
-                          <dd className="max-w-[60%] text-right font-semibold text-ink">{snap}</dd>
+                          <dt>Shipping method</dt>
+                          <dd className="max-w-[60%] text-right font-semibold">{snap}</dd>
                         </div>
                       ) : null}
                       <div className="flex justify-between gap-4">
-                        <dt className="text-ink/65">Shipping</dt>
-                        <dd className="font-bold text-ink">{formatPriceUsd(o.shippingCents)}</dd>
+                        <dt>Shipping</dt>
+                        <dd>{formatPriceUsd(o.shippingCents)}</dd>
                       </div>
-                      <div className="flex justify-between gap-4 border-t border-palm/15 pt-2">
-                        <dt className="font-black text-palm">Total paid</dt>
-                        <dd className="font-black text-ink">{formatPriceUsd(o.totalCents)}</dd>
+                      <div
+                        className="flex justify-between gap-4 border-t pt-2"
+                        style={{ borderColor: "color-mix(in srgb, var(--product-card-border) 24%, transparent)" }}
+                      >
+                        <dt className="font-black" style={{ color: "var(--product-card-title)" }}>
+                          Total paid
+                        </dt>
+                        <dd className="font-black" style={{ color: "var(--product-card-title)" }}>
+                          {formatPriceUsd(o.totalCents)}
+                        </dd>
                       </div>
                     </dl>
 
                     {track ? (
-                      <div className="mt-3 rounded border border-palm/20 bg-lagoon-dark/10 px-3 py-2">
-                        <p className="text-xs font-bold uppercase tracking-wide text-palm-mid">Tracking</p>
+                      <div
+                        className="mt-3 rounded border px-3 py-2"
+                        style={{
+                          borderColor: "color-mix(in srgb, var(--product-card-border) 32%, transparent)",
+                          backgroundColor: "color-mix(in srgb, var(--lagoon) 10%, var(--product-card-bg) 90%)",
+                        }}
+                      >
+                        <p className="account-panel__dt">Tracking</p>
                         {trackHref ? (
                           <a
                             href={trackHref}
@@ -186,18 +201,18 @@ export default async function AccountOrdersPage() {
                             {carrierName ? `Track on ${carrierName}` : "Track shipment"}
                           </a>
                         ) : (
-                          <p className="mt-1 break-all font-mono text-sm text-ink">{track}</p>
+                          <p className="account-panel__dd mt-1 break-all font-mono text-sm">{track}</p>
                         )}
-                        <p className="mt-2 break-all font-mono text-[11px] text-ink/70">
+                        <p className="account-panel__muted mt-2 break-all font-mono text-[11px]">
                           {o.trackingCarrier !== "NONE" ? `${o.trackingCarrier}: ` : ""}
                           {track}
                         </p>
                       </div>
                     ) : null}
 
-                    <table className="mt-4 w-full min-w-[16rem] border-collapse text-left text-sm">
+                    <table className="account-order-card__table">
                       <thead>
-                        <tr className="border-b border-palm/30 text-xs font-bold uppercase tracking-wide text-palm-mid">
+                        <tr>
                           <th className="pb-2 pr-2">Items</th>
                           <th className="pb-2 pr-2 text-right">Qty</th>
                           <th className="pb-2 pr-2 text-right">Each</th>
@@ -206,11 +221,11 @@ export default async function AccountOrdersPage() {
                       </thead>
                       <tbody>
                         {o.lineItems.map((li) => (
-                          <tr key={li.id} className="border-b border-palm/10">
+                          <tr key={li.id}>
                             <td className="py-2 pr-2">
-                              <span className="font-semibold text-ink">{li.productNameSnap}</span>
+                              <span className="font-semibold">{li.productNameSnap}</span>
                               {li.variantLabelSnap ? (
-                                <span className="ml-1 text-xs text-ink/65">({li.variantLabelSnap})</span>
+                                <span className="account-panel__muted ml-1 text-xs">({li.variantLabelSnap})</span>
                               ) : null}
                               {li.product?.slug ? (
                                 <>
@@ -226,7 +241,7 @@ export default async function AccountOrdersPage() {
                             </td>
                             <td className="py-2 pr-2 text-right tabular-nums">{li.quantity}</td>
                             <td className="py-2 pr-2 text-right tabular-nums">{formatPriceUsd(li.unitPriceCents)}</td>
-                            <td className="py-2 text-right font-bold tabular-nums">
+                            <td className="py-2 text-right font-bold tabular-nums" style={{ color: "var(--product-card-title)" }}>
                               {formatPriceUsd(li.lineTotalCents)}
                             </td>
                           </tr>

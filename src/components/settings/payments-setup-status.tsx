@@ -71,9 +71,27 @@ export function PaymentsSetupStatus({
             <StatusRow ok={squareReady} label="Visible on cart" detail={squareReady ? "yes" : "no"} />
           </ul>
           {square.fullyConfigured ? (
-            <button type="button" disabled={pending} onClick={testSquare} className={`mt-3 ${btnSecondaryMd}`}>
-              {pending ? "Testing…" : "Test Square connection"}
-            </button>
+            <>
+              <button type="button" disabled={pending} onClick={testSquare} className={`mt-3 ${btnSecondaryMd}`}>
+                {pending ? "Testing…" : "Test Square connection"}
+              </button>
+              {square.sandbox ? (
+                <p className="mt-3 text-xs text-ink/65">
+                  Sandbox is active. For live checkout on{" "}
+                  <strong className="text-ink">www.7thleg.com</strong>, switch the dashboard toggle to{" "}
+                  <strong className="text-ink">Production</strong>, copy production credentials into Vercel (
+                  <code className="rounded bg-black/5 px-1">SQUARE_ACCESS_TOKEN</code>,{" "}
+                  <code className="rounded bg-black/5 px-1">SQUARE_LOCATION_ID</code>,{" "}
+                  <code className="rounded bg-black/5 px-1">NEXT_PUBLIC_SQUARE_APPLICATION_ID</code> with a{" "}
+                  <code className="rounded bg-black/5 px-1">sq0id…</code> app id), remove{" "}
+                  <code className="rounded bg-black/5 px-1">SQUARE_ENV=sandbox</code>, and redeploy.
+                </p>
+              ) : (
+                <p className="mt-3 text-xs text-ink/65">
+                  Production credentials detected. After updating Vercel env vars, redeploy so the live card SDK loads.
+                </p>
+              )}
+            </>
           ) : (
             <p className="mt-3 text-xs text-ink/65">
               In the{" "}
@@ -85,8 +103,10 @@ export function PaymentsSetupStatus({
               >
                 Square Developer Dashboard
               </a>
-              : create an app → Credentials → copy Sandbox access token and Application ID → Locations → copy Location
-              ID. Use sandbox application ids that start with <code className="rounded bg-black/5 px-1">sandbox-</code>.
+              : open your app → toggle <strong>Sandbox</strong> or <strong>Production</strong> → Credentials → copy
+              access token and Application ID → Locations → copy Location ID. Sandbox app ids start with{" "}
+              <code className="rounded bg-black/5 px-1">sandbox-</code>; production uses{" "}
+              <code className="rounded bg-black/5 px-1">sq0id…</code>.
             </p>
           )}
         </div>

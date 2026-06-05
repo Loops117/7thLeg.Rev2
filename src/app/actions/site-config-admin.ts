@@ -123,6 +123,15 @@ export async function updateGlobalSettings(state: GlobalSettingsState): Promise<
   if (!Number.isFinite(checkoutTaxRateBps) || checkoutTaxRateBps < 0) checkoutTaxRateBps = 0;
   checkoutTaxRateBps = Math.min(999_999, checkoutTaxRateBps);
 
+  const linkPreviewTitle =
+    typeof state.linkPreviewTitle === "string" ? state.linkPreviewTitle.trim().slice(0, 120) : "";
+  const linkPreviewDescription =
+    typeof state.linkPreviewDescription === "string"
+      ? state.linkPreviewDescription.trim().slice(0, 300)
+      : "";
+  const googleMapsApiKey =
+    typeof state.googleMapsApiKey === "string" ? state.googleMapsApiKey.trim().slice(0, 200) : "";
+
   const siteBrandingSource = parseSiteBrandingSource(state.siteBrandingSource);
   const prevBranding = await prisma.siteConfig
     .findUnique({
@@ -166,7 +175,10 @@ export async function updateGlobalSettings(state: GlobalSettingsState): Promise<
         "watermark_opacity_percent" = ${watermarkOpacityPercent},
         "product_diagonal_name_gap_px" = ${productDiagonalNameGapPx},
         "checkout_tax_rate_bps" = ${checkoutTaxRateBps},
-        "site_branding_source" = ${siteBrandingSource}
+        "site_branding_source" = ${siteBrandingSource},
+        "site_link_preview_title" = ${linkPreviewTitle},
+        "site_link_preview_description" = ${linkPreviewDescription},
+        "google_maps_api_key" = ${googleMapsApiKey}
       WHERE "id" = 1
     `;
 

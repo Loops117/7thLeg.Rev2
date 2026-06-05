@@ -123,6 +123,284 @@ body {
   border: 2px solid color-mix(in srgb, var(--product-card-border) 30%, transparent);
 }
 
+/** Customer account — panels, fields, tables (theme product-card tokens) */
+.account-panel {
+  border: 2px solid color-mix(in srgb, var(--product-card-border) 35%, transparent);
+  background-color: color-mix(in srgb, var(--product-card-bg) 94%, transparent);
+  border-radius: 0.25rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--product-card-border) 14%, transparent);
+}
+
+.account-panel__title {
+  font-size: 0.875rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--product-card-title);
+}
+
+.account-panel__text {
+  font-size: 0.875rem;
+  color: color-mix(in srgb, var(--product-card-description) 88%, transparent);
+}
+
+.account-panel__label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--product-card-title);
+}
+
+.account-panel__muted {
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--product-card-description) 65%, transparent);
+}
+
+/** Site header account dropdown (product-card tokens) */
+.header-account-menu {
+  border: 2px solid color-mix(in srgb, var(--product-card-border) 45%, transparent);
+  background-color: var(--product-card-bg);
+  border-radius: 0.25rem;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--product-card-border) 35%, transparent);
+}
+
+.header-account-menu__item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--product-card-description);
+  transition: background-color 0.15s ease;
+}
+
+.header-account-menu__item:hover {
+  background-color: color-mix(in srgb, var(--product-card-title) 8%, var(--product-card-bg) 92%);
+}
+
+.header-account-menu__divider {
+  margin-top: 0.25rem;
+  border-top: 1px solid color-mix(in srgb, var(--product-card-border) 35%, transparent);
+  padding-top: 0.25rem;
+}
+
+.header-account-menu__sign-out {
+  color: var(--coral);
+}
+
+.header-account-menu__sign-out:hover {
+  background-color: color-mix(in srgb, var(--coral) 10%, var(--product-card-bg) 90%);
+}
+
+.account-field {
+  display: block;
+  margin-top: 0.25rem;
+  width: 100%;
+  border: 2px solid color-mix(in srgb, var(--product-card-border) 55%, transparent);
+  background-color: var(--product-card-bg);
+  color: var(--product-card-description);
+  padding: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.account-field:focus {
+  outline: none;
+  border-color: var(--lagoon);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--lagoon) 28%, transparent);
+}
+
+.account-table-shell {
+  overflow-x: auto;
+  border-radius: 0.25rem;
+  border: 1px solid color-mix(in srgb, var(--product-card-border) 32%, transparent);
+  background-color: color-mix(in srgb, var(--product-card-bg) 96%, transparent);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--product-card-border) 12%, transparent);
+}
+
+.account-table-shell table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.account-table-shell thead tr {
+  border-bottom: 2px solid color-mix(in srgb, var(--product-card-border) 42%, transparent);
+  background-color: color-mix(in srgb, var(--product-card-title) 9%, var(--product-card-bg) 91%);
+}
+
+.account-table-shell th {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--product-card-title);
+}
+
+.account-table-shell td {
+  padding: 0.5rem 0.75rem;
+  color: var(--product-card-description);
+  border-bottom: 1px solid color-mix(in srgb, var(--product-card-border) 20%, transparent);
+  vertical-align: top;
+}
+
+.account-table-shell tbody tr:nth-child(even) {
+  background-color: color-mix(in srgb, var(--product-card-title) 5%, var(--product-card-bg) 95%);
+}
+
+.account-table-shell .account-table-shell__edit-row {
+  background-color: color-mix(in srgb, var(--product-card-title) 6%, var(--product-card-bg) 94%);
+}
+
+.account-code {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 0.25rem;
+  background-color: color-mix(in srgb, var(--product-card-title) 8%, var(--product-card-bg) 92%);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  color: var(--product-card-description);
+}
+
+.account-panel__heading {
+  font-size: 1.125rem;
+  font-weight: 900;
+  color: var(--product-card-title);
+}
+
+.account-panel__dt {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: color-mix(in srgb, var(--product-card-title) 82%, transparent);
+}
+
+.account-panel__dd {
+  margin-top: 0.25rem;
+  color: var(--product-card-description);
+}
+
+.account-panel__stat {
+  margin-top: 0.25rem;
+  font-size: 1.875rem;
+  font-weight: 900;
+  color: var(--product-card-title);
+}
+
+.account-order-card {
+  overflow: hidden;
+  border-radius: 0.25rem;
+  border: 1px solid color-mix(in srgb, var(--product-card-border) 32%, transparent);
+  background-color: color-mix(in srgb, var(--product-card-bg) 96%, transparent);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--product-card-border) 12%, transparent);
+}
+
+.account-order-card__summary {
+  display: flex;
+  cursor: pointer;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  color: var(--product-card-description);
+}
+
+.account-order-card__summary:hover {
+  background-color: color-mix(in srgb, var(--product-card-title) 6%, var(--product-card-bg) 94%);
+}
+
+.account-order-card__body {
+  border-top: 1px solid color-mix(in srgb, var(--product-card-border) 24%, transparent);
+  padding: 1rem;
+  font-size: 0.875rem;
+  color: var(--product-card-description);
+}
+
+.account-order-card__totals {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.25rem;
+  border-radius: 0.25rem;
+  border: 1px solid color-mix(in srgb, var(--product-card-border) 28%, transparent);
+  background-color: color-mix(in srgb, var(--product-card-title) 5%, var(--product-card-bg) 95%);
+  padding: 0.75rem;
+}
+
+.account-order-card__totals dt {
+  color: color-mix(in srgb, var(--product-card-description) 72%, transparent);
+}
+
+.account-order-card__totals dd {
+  color: var(--product-card-description);
+  font-weight: 700;
+}
+
+.account-order-card__table {
+  margin-top: 1rem;
+  width: 100%;
+  min-width: 16rem;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.account-order-card__table thead tr {
+  border-bottom: 1px solid color-mix(in srgb, var(--product-card-border) 35%, transparent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--product-card-title);
+}
+
+.account-order-card__table tbody tr {
+  border-bottom: 1px solid color-mix(in srgb, var(--product-card-border) 18%, transparent);
+}
+
+.account-order-card__table tbody tr:nth-child(odd) {
+  background-color: color-mix(in srgb, var(--product-card-title) 4%, var(--product-card-bg) 96%);
+}
+
+.account-messages-thread {
+  max-height: min(28rem, 55dvh);
+  overflow-y: auto;
+  border-radius: 0.25rem;
+  border: 2px solid color-mix(in srgb, var(--product-card-border) 35%, transparent);
+  background-color: color-mix(in srgb, var(--product-card-bg) 94%, transparent);
+  padding: 1rem;
+}
+
+.account-message-bubble {
+  max-width: 90%;
+  border-radius: 0.25rem;
+  border: 1px solid color-mix(in srgb, var(--product-card-border) 30%, transparent);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--product-card-description);
+}
+
+.account-message-bubble--customer {
+  margin-left: auto;
+  background-color: color-mix(in srgb, var(--palm) 14%, var(--product-card-bg) 86%);
+}
+
+.account-message-bubble--admin {
+  background-color: color-mix(in srgb, var(--product-card-title) 8%, var(--product-card-bg) 92%);
+}
+
+.account-message-bubble__meta {
+  margin-top: 0.25rem;
+  font-size: 0.625rem;
+  color: color-mix(in srgb, var(--product-card-description) 58%, transparent);
+}
+
 /** /store catalog grid — fixed card width from Settings → Store → Product cards */
 .store-catalog-grid__item {
   width: var(--store-catalog-card-width, 11rem);

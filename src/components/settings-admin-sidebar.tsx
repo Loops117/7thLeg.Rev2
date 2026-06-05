@@ -10,6 +10,7 @@ const MAIN_LINKS: { href: string; label: string; badge?: "messages" }[] = [
   { href: "/settings/sales", label: "Sales" },
   { href: "/settings/messages", label: "Messages", badge: "messages" },
   { href: "/settings/customers", label: "Customers" },
+  { href: "/settings/species-list", label: "Species List" },
 ];
 
 const PRODUCT_LINKS: { href: string; label: string }[] = [

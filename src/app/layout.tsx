@@ -5,7 +5,7 @@ import { Providers } from "@/components/providers";
 import { UrgentHomeNotificationClient } from "@/components/urgent-home-notification";
 import { getPublicAppOrigin } from "@/lib/public-app-origin";
 import { getSiteBrandingForMetadata } from "@/lib/site-branding";
-import { getSiteConfig, getUrgentHomeNotificationPayload } from "@/lib/site-config";
+import { getSiteConfig, getUrgentHomeNotificationPayload, resolveSiteLinkPreviewText } from "@/lib/site-config";
 import { getRootLayoutThemePayload } from "@/lib/theme-config-server";
 import "./globals.css";
 
@@ -25,7 +25,7 @@ const geistMono = Geist_Mono({
 export async function generateMetadata(): Promise<Metadata> {
   const [config, branding] = await Promise.all([getSiteConfig(), getSiteBrandingForMetadata()]);
   const siteName = config.companyName?.trim() || "Inverts Oasis";
-  const description = "Insects, stickers, and more";
+  const { title: linkPreviewTitle, description } = resolveSiteLinkPreviewText(config);
 
   return {
     metadataBase: new URL(getPublicAppOrigin()),
@@ -41,13 +41,13 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       type: "website",
       siteName,
-      title: siteName,
+      title: linkPreviewTitle,
       description,
-      images: [{ url: branding.og1200, width: 1200, height: 630, alt: siteName }],
+      images: [{ url: branding.og1200, width: 1200, height: 630, alt: linkPreviewTitle }],
     },
     twitter: {
       card: "summary_large_image",
-      title: siteName,
+      title: linkPreviewTitle,
       description,
       images: [branding.og1200],
     },

@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import {
+  DEFAULT_SITE_LINK_PREVIEW_DESCRIPTION,
   type GlobalSettingsState,
   type HomePageUrgentState,
   type LabelBuilderAdminState,
@@ -36,6 +37,8 @@ export type UrgentHomeNotificationPayload = {
 
 const fallback: SiteConfigPublic = {
   companyName: "Inverts Oasis",
+  linkPreviewTitle: "",
+  linkPreviewDescription: "",
   companyLogoUrl: PUBLIC_DEFAULT_BRAND_LOGO_PATH,
   companyLogoPlacement: "beside",
   headerShowCompanyName: true,
@@ -66,6 +69,9 @@ export const getSiteConfig = cache(async function getSiteConfig(): Promise<SiteC
     const nav = normalizeStorefrontNavSettings(row);
     return {
       companyName: row.companyName,
+      linkPreviewTitle: typeof row.siteLinkPreviewTitle === "string" ? row.siteLinkPreviewTitle : "",
+      linkPreviewDescription:
+        typeof row.siteLinkPreviewDescription === "string" ? row.siteLinkPreviewDescription : "",
       companyLogoUrl: rawLogo.length > 0 ? rawLogo : PUBLIC_DEFAULT_BRAND_LOGO_PATH,
       companyLogoPlacement: parseLogoPlacement(row.companyLogoPlacement),
       headerShowCompanyName: row.headerShowCompanyName ?? true,
@@ -113,10 +119,41 @@ export async function getGlobalSettingsForAdmin(): Promise<GlobalSettingsState> 
       checkoutSalesTaxPercent: taxBps / 100,
       siteBrandingSource: parseSiteBrandingSource(row.siteBrandingSource),
       siteBrandingAssets: parseSiteBrandingAssets(row.siteBrandingAssets),
+      linkPreviewTitle: typeof row.siteLinkPreviewTitle === "string" ? row.siteLinkPreviewTitle : "",
+      linkPreviewDescription:
+        typeof row.siteLinkPreviewDescription === "string" ? row.siteLinkPreviewDescription : "",
+      googleMapsApiKey: typeof row.googleMapsApiKey === "string" ? row.googleMapsApiKey : "",
     };
   } catch {
     return { ...globalSettingsDefaults };
   }
+}
+
+/** Resolves Maps JS key for customer address autocomplete (env overrides admin setting). */
+export async function getGoogleMapsApiKeyForClient(): Promise<string> {
+  const fromEnv = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() ?? "";
+  if (fromEnv) return fromEnv;
+  try {
+    const row = await prisma.siteConfig.findUnique({
+      where: { id: 1 },
+      select: { googleMapsApiKey: true },
+    });
+    return row?.googleMapsApiKey?.trim() ?? "";
+  } catch {
+    return "";
+  }
+}
+
+/** Resolved Open Graph / Twitter title and description for root layout metadata. */
+export function resolveSiteLinkPreviewText(config: Pick<SiteConfigPublic, "companyName" | "linkPreviewTitle" | "linkPreviewDescription">): {
+  title: string;
+  description: string;
+} {
+  const siteName = config.companyName?.trim() || "Inverts Oasis";
+  const title = config.linkPreviewTitle?.trim() || siteName;
+  const description =
+    config.linkPreviewDescription?.trim() || DEFAULT_SITE_LINK_PREVIEW_DESCRIPTION;
+  return { title, description };
 }
 
 export async function getLoyaltyProgramForAdmin(): Promise<LoyaltyProgramState> {

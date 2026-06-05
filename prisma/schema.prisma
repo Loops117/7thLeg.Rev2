@@ -75,6 +75,12 @@ model SiteConfig {
   siteBrandingSource String @default("default") @map("site_branding_source")
   /// Generated icon + OG URLs: { icon16, icon32, apple180, og1200 }.
   siteBrandingAssets Json? @map("site_branding_assets")
+  /// Open Graph / Twitter share title (empty = company name).
+  siteLinkPreviewTitle String @default("") @map("site_link_preview_title")
+  /// Open Graph / Twitter share description.
+  siteLinkPreviewDescription String @default("") @map("site_link_preview_description")
+  /// Google Maps JavaScript API key (Places) for customer address autocomplete on My info.
+  googleMapsApiKey String @default("") @map("google_maps_api_key")
   /// Longest edge in pixels for server-side downscaling on uploads.
   uploadImageMaxEdgePx   Int @default(2400)
   /// JPEG quality (1–100) when uploads are saved as JPEG.
@@ -336,8 +342,51 @@ model Customer {
   labelBag            CustomerLabelBag?
   artSubmissions           CustomerArtSubmission[]
   speciesSuggestionVotes   SpeciesSuggestionVote[]
+  speciesEntries           CustomerSpeciesEntry[]
+
+  /// Opaque token for public species list URL (`/species/[token]`).
+  speciesListShareToken    String?  @unique @map("species_list_share_token")
+  /// When false, the public species page returns not found.
+  speciesListPublicEnabled Boolean  @default(true) @map("species_list_public_enabled")
+  /// Optional public title for the shared species list page.
+  speciesListDisplayName   String?  @map("species_list_display_name")
 
   @@map("customers")
+}
+
+/// Admin-defined insect type options for customer species lists.
+model CustomerSpeciesInsectType {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  sortOrder Int      @default(0) @map("sort_order")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([active, sortOrder])
+  @@map("customer_species_insect_types")
+}
+
+/// Customer-maintained personal species collection (account → My Species).
+model CustomerSpeciesEntry {
+  id               String    @id @default(cuid())
+  customerId       String    @map("customer_id")
+  customer         Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  species          String
+  insectType       String    @default("") @map("insect_type")
+  morphName        String    @default("") @map("morph_name")
+  commonName       String    @default("") @map("common_name")
+  dateObtained     DateTime? @map("date_obtained") @db.Date
+  source           String    @default("")
+  priceCents       Int?      @map("price_cents")
+  acquisitionNotes String    @default("") @map("acquisition_notes") @db.Text
+  available        Boolean   @default(false)
+  availabilityNotes String   @default("") @map("availability_notes")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@index([customerId, species])
+  @@map("customer_species_entries")
 }
 
 /// Customer-uploaded artwork (e.g. coloring pages), grouped for admin review.

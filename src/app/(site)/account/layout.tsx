@@ -18,7 +18,13 @@ export default async function AccountLayout({ children }: { children: React.Reac
   return (
     <>
       {isCustomer ? (
-        <div className="border-b border-palm/25 bg-white/40 px-6 pb-4 pt-6 sm:px-10">
+        <div
+          className="border-b px-6 pb-4 pt-6 sm:px-10"
+          style={{
+            borderColor: "color-mix(in srgb, var(--product-card-border) 28%, transparent)",
+            backgroundColor: "color-mix(in srgb, var(--product-card-bg) 55%, transparent)",
+          }}
+        >
           <AccountNav unreadMessages={unread} showMyUploads={showMyUploads} />
         </div>
       ) : null}

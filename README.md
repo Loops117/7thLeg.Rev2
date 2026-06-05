@@ -27,11 +27,11 @@ npm run dev
 
 Generate `AUTH_SECRET`: `openssl rand -base64 32`
 
-**Vercel Blob:** Project → **Storage** → **Blob** → create/connect store to `7thleg-rev2` (adds `BLOB_READ_WRITE_TOKEN` automatically). Or: `npx vercel blob create-store 7thleg-rev2 --access public --yes` from this directory. Local dev: `vercel env pull` for `.env.local`.
+**Vercel Blob:** Project → **Storage** → **Blob** → create/connect store to **`7th-leg-rev2`** (adds `BLOB_READ_WRITE_TOKEN` automatically). Or: `npx vercel blob create-store 7th-leg-rev2 --access public --yes` from this directory. Local dev: `vercel env pull` for `.env.local`.
 
 **Vercel:** copy the same `DATABASE_URL` and `AUTH_SECRET` from your local `.env` into Project → Settings → Environment Variables (Production + Preview), then redeploy.
 
-Set **`AUTH_URL`** to your live URL, e.g. `https://7thleg-rev2.vercel.app` (no trailing slash). **Do not** use `http://localhost:3000` on Vercel — sign-in will fail even when `/api/health` shows `hasAuthSecret: true`.
+Set **`AUTH_URL`** to your live URL, e.g. `https://www.7thleg.com` or `https://7th-leg-rev2.vercel.app` (no trailing slash). **Do not** use `http://localhost:3000` on Vercel — sign-in will fail even when `/api/health` shows `hasAuthSecret: true`.
 
 Check deployment: open `/api/health` — `hasAuthSecret`, `hasDatabaseUrl`, and `hasBlobStorage` should be `true`, and `authUrlLooksLocal` should be `false`.
 
@@ -42,7 +42,7 @@ Those are stored in **Postgres** (`site_config`, theme JSON), not in git. Local 
 ## Deploy (7th Leg Vercel project only)
 
 1. `npm run build`
-2. `npx vercel link --yes --project 7thleg-rev2` (use your Vercel project slug)
+2. `npx vercel link --yes --project 7th-leg-rev2` (hyphenated project slug — not `7thleg-rev2`)
 3. `npx vercel deploy --prod --yes`
 
 Confirm deploy output shows your **7th Leg** project name, not `io-danny`.

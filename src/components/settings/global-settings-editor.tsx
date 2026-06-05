@@ -13,6 +13,7 @@ import { PUBLIC_DEFAULT_BRAND_LOGO_PATH } from "@/lib/brand-assets";
 import { btnSecondaryMd } from "@/lib/btn-theme-classes";
 import type { SiteBrandingSource } from "@/lib/site-branding";
 import {
+  DEFAULT_SITE_LINK_PREVIEW_DESCRIPTION,
   LOGO_PLACEMENTS,
   WATERMARK_PLACEMENTS,
   type CompanyLogoPlacement,
@@ -298,6 +299,69 @@ export function GlobalSettingsEditor({ initial }: { initial: GlobalSettingsState
         ) : form.siteBrandingSource !== "default" ? (
           <p className="mt-3 text-xs text-ink/55">No generated sizes yet — use the actions above, then save.</p>
         ) : null}
+      </fieldset>
+
+      <fieldset className="rounded border-2 border-palm/25 bg-white p-4">
+        <legend className="text-sm font-bold text-palm">Link preview text</legend>
+        <p className="mt-0 text-xs text-ink/65">
+          Title and description shown when someone shares your site link in iMessage, Facebook, Discord, X, and similar
+          apps. The preview <strong>image</strong> comes from &ldquo;Browser icon &amp; link previews&rdquo; above.
+        </p>
+
+        <label className="mt-4 block text-sm font-bold text-ink">
+          Share title
+          <input
+            type="text"
+            value={form.linkPreviewTitle}
+            onChange={(e) => setForm((f) => ({ ...f, linkPreviewTitle: e.target.value }))}
+            placeholder={form.companyName.trim() || "Uses company name when blank"}
+            className="mt-1 w-full max-w-md border-2 border-palm-mid px-2 py-2 text-sm"
+            maxLength={120}
+          />
+        </label>
+        <p className="mt-1 text-xs text-ink/55">
+          Leave blank to use the company name ({form.companyName.trim() || "Inverts Oasis"}).
+        </p>
+
+        <label className="mt-4 block text-sm font-bold text-ink">
+          Share description
+          <textarea
+            value={form.linkPreviewDescription}
+            onChange={(e) => setForm((f) => ({ ...f, linkPreviewDescription: e.target.value }))}
+            placeholder={DEFAULT_SITE_LINK_PREVIEW_DESCRIPTION}
+            rows={3}
+            className="mt-1 w-full max-w-lg border-2 border-palm-mid px-2 py-2 text-sm"
+            maxLength={300}
+          />
+        </label>
+        <p className="mt-1 text-xs text-ink/55">
+          Short summary under the title in link cards. Leave blank for &ldquo;{DEFAULT_SITE_LINK_PREVIEW_DESCRIPTION}
+          &rdquo;.
+        </p>
+      </fieldset>
+
+      <fieldset className="rounded border-2 border-palm/25 bg-white p-4">
+        <legend className="text-sm font-bold text-palm">Customer portal</legend>
+        <p className="mt-0 text-xs text-ink/65">
+          Powers address autocomplete on Account → My info. In Google Cloud, enable <strong>Maps JavaScript API</strong>{" "}
+          and <strong>Places API</strong> for the key, and restrict it to your site&apos;s HTTP referrers.
+        </p>
+        <label className="mt-4 block text-sm font-bold text-ink">
+          Google Maps API key
+          <input
+            type="password"
+            autoComplete="off"
+            value={form.googleMapsApiKey}
+            onChange={(e) => setForm((f) => ({ ...f, googleMapsApiKey: e.target.value }))}
+            placeholder="AIza…"
+            className="mt-1 w-full max-w-lg border-2 border-palm-mid px-2 py-2 font-mono text-sm"
+            maxLength={200}
+          />
+        </label>
+        <p className="mt-1 text-xs text-ink/55">
+          Leave blank to disable autocomplete (customers can still type their address manually). You can also set{" "}
+          <code className="rounded bg-black/5 px-1">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> in the environment instead.
+        </p>
       </fieldset>
 
       <fieldset className="rounded border-2 border-palm/25 bg-white p-4">
