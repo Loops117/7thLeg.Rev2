@@ -5,6 +5,7 @@ import {
   extraVariantsCatalogCsvTemplate,
   productsCatalogCsvTemplate,
 } from "@/lib/product-catalog-csv";
+import { csvWithUtf8Bom } from "@/lib/csv-text-encoding";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import {
@@ -17,7 +18,7 @@ import {
 } from "@/app/actions/product-catalog-import-export";
 
 function downloadCsv(csv: string, filename: string) {
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const blob = new Blob([csvWithUtf8Bom(csv)], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -133,7 +134,8 @@ export function ProductCatalogCsvPanel() {
         Two CSV types: <strong>products</strong> (one row per item + default variation, kit, types, etc.) and{" "}
         <strong>extra variations</strong> (additional options only). File names do not matter. Import products first;
         add extra variations when ready. Kit member products that are not in the catalog are skipped (logged). Images
-        are not included.
+        are not included. When saving from Excel, use <strong>CSV UTF-8 (Comma delimited) (*.csv)</strong> so symbols
+        like ° and – stay correct.
       </p>
 
       <div className="flex flex-wrap gap-2">

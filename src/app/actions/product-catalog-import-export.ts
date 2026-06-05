@@ -25,6 +25,7 @@ import { loadProductTypeIndex } from "@/lib/product-type-tree";
 import { syncProductRecommendations } from "@/lib/product-recommendations";
 import { parseVariantPriceDisplay } from "@/lib/product-variant-price-display";
 import type { Prisma } from "@/generated/prisma/client";
+import { csvWithUtf8Bom, readUploadedCsvText } from "@/lib/csv-text-encoding";
 import { prisma } from "@/lib/prisma";
 import { parsePriceToCents, slugifyProductName } from "@/lib/product-slug";
 import { clampShippingUnits } from "@/lib/shipping-units";
@@ -623,7 +624,7 @@ export async function exportProductsCatalogCsv(): Promise<{ ok: true; csv: strin
       prisma.product.findMany({ orderBy: { name: "asc" }, include: productCatalogExportInclude }),
       loadProductTypesForExport(),
     ]);
-    return { ok: true, csv: buildProductsCatalogCsv(products, types) };
+    return { ok: true, csv: csvWithUtf8Bom(buildProductsCatalogCsv(products, types)) };
   } catch (e) {
     console.error("exportProductsCatalogCsv", e);
     return { ok: false, error: e instanceof Error ? e.message : "Export failed." };
@@ -650,7 +651,7 @@ export async function exportSelectedProductsCatalogCsv(
     if (products.length === 0) {
       return { ok: false, error: "Selected products were not found." };
     }
-    return { ok: true, csv: buildProductsCatalogCsv(products, types) };
+    return { ok: true, csv: csvWithUtf8Bom(buildProductsCatalogCsv(products, types)) };
   } catch (e) {
     console.error("exportSelectedProductsCatalogCsv", e);
     return { ok: false, error: e instanceof Error ? e.message : "Export failed." };
@@ -697,7 +698,7 @@ export async function exportExtraVariantsCatalogCsv(): Promise<
       }
     }
 
-    return { ok: true, csv: `${lines.join("\n")}\n` };
+    return { ok: true, csv: csvWithUtf8Bom(`${lines.join("\n")}\n`) };
   } catch (e) {
     console.error("exportExtraVariantsCatalogCsv", e);
     return { ok: false, error: e instanceof Error ? e.message : "Export failed." };
@@ -715,7 +716,7 @@ export async function importProductsCatalogCsv(formData: FormData): Promise<Cata
       return { ok: false, error: "CSV must be 8MB or smaller." };
     }
 
-    const parsed = parseProductsCatalogCsv(await file.text());
+    const parsed = parseProductsCatalogCsv(await readUploadedCsvText(file));
     if (!parsed.ok) return { ok: false, error: parsed.error };
 
     const lookups = await loadCatalogLookups();
@@ -901,7 +902,7 @@ export async function importExtraVariantsCatalogCsv(
       return { ok: false, error: "CSV must be 8MB or smaller." };
     }
 
-    const parsed = parseExtraVariantsCatalogCsv(await file.text());
+    const parsed = parseExtraVariantsCatalogCsv(await readUploadedCsvText(file));
     if (!parsed.ok) return { ok: false, error: parsed.error };
 
     const lookups = await loadCatalogLookups();

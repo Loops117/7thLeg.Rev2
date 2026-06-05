@@ -3,6 +3,7 @@
 import { adminDetailsPaneClass } from "@/lib/admin-surface-classes";
 import { adminTableRowClass } from "@/lib/admin-table-classes";
 import { btnChip, btnChipActive, btnSecondaryMd } from "@/lib/btn-theme-classes";
+import { csvWithUtf8Bom } from "@/lib/csv-text-encoding";
 import { ProductTypeIndex, type ProductTypeFlat } from "@/lib/product-type-index";
 
 import Link from "next/link";
@@ -218,7 +219,7 @@ export function ProductsAdminPanel({
   }
 
   function downloadCsv(csv: string, filename: string) {
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([csvWithUtf8Bom(csv)], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
