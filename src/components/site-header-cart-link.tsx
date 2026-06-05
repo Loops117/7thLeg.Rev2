@@ -45,29 +45,24 @@ export function SiteHeaderCartLink({
         </span>
       </Link>
       {open && count > 0 ? (
-        <div
-          className="absolute right-0 top-full z-50 mt-1 w-72 rounded border-2 border-palm/30 bg-white p-3 shadow-xl dark:border-zinc-600 dark:bg-zinc-900"
-          role="tooltip"
-        >
-          <p className="text-xs font-black uppercase text-palm">Cart preview</p>
-          <ul className="mt-2 max-h-48 space-y-2 overflow-y-auto text-sm">
+        <div className="header-cart-preview" role="tooltip">
+          <p className="header-cart-preview__heading">Cart preview</p>
+          <ul className="mt-2 max-h-48 space-y-2 overflow-y-auto">
             {lines.slice(0, 8).map((line, i) => (
-              <li key={`${line.name}-${i}`} className="border-b border-palm/10 pb-2 last:border-0 dark:border-zinc-700">
-                <p className="font-bold text-ink dark:text-zinc-100">
+              <li key={`${line.name}-${i}`} className="header-cart-preview__line">
+                <p className="header-cart-preview__line-name">
                   {line.quantity}× {line.name}
                 </p>
-                {line.detail ? <p className="text-xs text-ink/60">{line.detail}</p> : null}
-                <p className="text-xs font-bold text-palm">{formatPriceUsd(line.lineTotalCents)}</p>
+                {line.detail ? <p className="header-cart-preview__line-detail">{line.detail}</p> : null}
+                <p className="header-cart-preview__line-price">{formatPriceUsd(line.lineTotalCents)}</p>
               </li>
             ))}
           </ul>
           {lines.length > 8 ? (
-            <p className="mt-1 text-[10px] text-ink/50">+ {lines.length - 8} more…</p>
+            <p className="header-cart-preview__hint">+ {lines.length - 8} more…</p>
           ) : null}
-          <p className="mt-2 border-t border-palm/15 pt-2 text-sm font-black text-ink dark:border-zinc-700 dark:text-zinc-100">
-            Subtotal {formatPriceUsd(subtotalCents)}
-          </p>
-          <p className="mt-1 text-[10px] text-ink/50">Open cart for full details</p>
+          <p className="header-cart-preview__subtotal">Subtotal {formatPriceUsd(subtotalCents)}</p>
+          <p className="header-cart-preview__hint">Open cart for full details</p>
         </div>
       ) : null}
     </div>

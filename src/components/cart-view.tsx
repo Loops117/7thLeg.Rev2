@@ -31,18 +31,18 @@ import { cartLabelEntryDescription, labelPreviewEntriesForCartLine } from "@/lib
 import type { CartLineView } from "@/lib/store-cart";
 
 function summaryRow(label: ReactNode, amount: ReactNode, tone: "muted" | "accent" | "savings" = "muted") {
-  const amt =
-    tone === "savings" ? (
-      <span className="font-black text-lagoon-dark">{amount}</span>
-    ) : tone === "accent" ? (
-      <span className="font-bold text-ink">{amount}</span>
-    ) : (
-      <span className="text-ink/90">{amount}</span>
-    );
+  const labelClass =
+    tone === "muted" ? "cart-summary__label" : "cart-summary__label--strong";
+  const amountClass =
+    tone === "savings"
+      ? "cart-summary__amount--savings"
+      : tone === "accent"
+        ? "cart-summary__amount--accent"
+        : "cart-summary__amount";
   return (
-    <div className="flex justify-between gap-4 text-sm">
-      <span className={tone === "muted" ? "text-ink/75" : "text-ink"}>{label}</span>
-      {amt}
+    <div className="cart-summary__row">
+      <span className={labelClass}>{label}</span>
+      <span className={amountClass}>{amount}</span>
     </div>
   );
 }
@@ -113,10 +113,17 @@ export function CartView({
   const shippingListCents = shippingPick?.priceCents ?? 0;
   const shippingCentsPick = shippingCentsAfterEventDiscount(shippingListCents, freeShippingActive);
 
-  const effectiveRequested =
-    loyaltyPreview && loyaltyPreview.maxPoints > 0
-      ? Math.min(Math.max(0, loyaltyPreview.appliedPoints), loyaltyPreview.maxPoints)
-      : 0;
+  const sliderMax = loyaltyPreview?.pointsBalance ?? 0;
+  const orderRedeemCap = loyaltyPreview?.maxPoints ?? 0;
+
+  const effectiveRequested = loyaltyPreview
+    ? Math.min(Math.max(0, loyaltyPreview.appliedPoints), sliderMax)
+    : 0;
+
+  const [pointsDraft, setPointsDraft] = useState(effectiveRequested);
+  useEffect(() => {
+    setPointsDraft(effectiveRequested);
+  }, [effectiveRequested]);
 
   const loyaltyPlan =
     loyaltyPreview && subtotalCents > 0
@@ -124,20 +131,19 @@ export function CartView({
           loyaltyProgramEnabled: true,
           redemptionCentsPerPoint: loyaltyPreview.centsPerPoint,
           customerPointsBalance: loyaltyPreview.pointsBalance,
-          appliedLoyaltyPointsRequested: effectiveRequested,
+          appliedLoyaltyPointsRequested: pointsDraft,
           merchandiseSubtotalCents: subtotalCents,
         })
       : null;
 
+  const pointsRedeeming = loyaltyPlan?.pointsToRedeem ?? 0;
   const loyaltyDiscountCents = loyaltyPlan?.discountCents ?? 0;
+  const selectedPointsValueCents = loyaltyPreview
+    ? loyaltyDollarValueCents(pointsDraft, loyaltyPreview.centsPerPoint)
+    : 0;
   const payableMerchCents = Math.max(0, subtotalCents - loyaltyDiscountCents);
   const estimatedTaxCents = taxCentsFromSubtotal(payableMerchCents, checkoutTaxRateBps);
   const orderTotalPreview = payableMerchCents + shippingCentsPick + estimatedTaxCents;
-
-  const [pointsDraft, setPointsDraft] = useState(effectiveRequested);
-  useEffect(() => {
-    setPointsDraft(effectiveRequested);
-  }, [effectiveRequested]);
 
   useEffect(() => {
     return () => {
@@ -149,7 +155,11 @@ export function CartView({
   const totalCouponSavingsCents = couponDiscountCents + labelCouponDiscountCents;
   const promoHasSavings = totalCouponSavingsCents > 0;
   const summaryHasDiscountRows =
-    timedEventSavingsCents > 0 || hasActivePromo || kitDiscountCents > 0 || loyaltyDiscountCents > 0;
+    timedEventSavingsCents > 0 ||
+    hasActivePromo ||
+    kitDiscountCents > 0 ||
+    pointsDraft > 0 ||
+    loyaltyDiscountCents > 0;
 
   useEffect(() => {
     if (!promoFlash || promoFlash.tone !== "success") return;
@@ -333,24 +343,18 @@ export function CartView({
       ) : null}
 
       <div
-        className={`rounded border-2 p-4 shadow-sm ${
-          hasActivePromo
-            ? promoHasSavings
-              ? "border-lagoon/40 bg-lagoon/10"
-              : "border-mango/50 bg-mango/10"
-            : "border-palm/25 bg-white/80"
+        className={`cart-panel ${
+          hasActivePromo ? (promoHasSavings ? "cart-panel--promo-savings" : "cart-panel--promo-neutral") : ""
         }`}
       >
-        <h2 className="text-xs font-black uppercase tracking-wide text-palm-mid">Promo code</h2>
-        <p className="mt-1 text-sm text-ink/75">Enter a code and press Apply. You’ll see below whether it’s accepted and how much you save.</p>
+        <h2 className="cart-panel__heading">Promo code</h2>
+        <p className="cart-panel__text">
+          Enter a code and press Apply. You’ll see below whether it’s accepted and how much you save.
+        </p>
 
         {promoFlash ? (
           <p
-            className={`mt-3 rounded border px-3 py-2 text-sm font-medium ${
-              promoFlash.tone === "success"
-                ? "border-lagoon/45 bg-white text-lagoon-dark"
-                : "border-coral/45 bg-coral/10 text-coral"
-            }`}
+            className={promoFlash.tone === "success" ? "cart-panel__flash--success" : "cart-panel__flash--error"}
             role="status"
           >
             {promoFlash.text}
@@ -358,12 +362,12 @@ export function CartView({
         ) : null}
 
         {hasActivePromo ? (
-          <div className="mt-3 rounded border border-palm/20 bg-white/90 px-3 py-2 text-sm text-ink">
-            <p className="font-bold text-palm">
-              Promotion status: <span className="font-mono text-ink">{appliedCouponCode}</span>
+          <div className="cart-panel__inset">
+            <p className="font-bold" style={{ color: "var(--product-card-title)" }}>
+              Promotion status: <span className="font-mono">{appliedCouponCode}</span>
             </p>
             {promoHasSavings ? (
-              <p className="mt-1 text-ink/85">
+              <p className="mt-1">
                 This code is{" "}
                 <span className="font-bold text-lagoon-dark">saving you {formatPriceUsd(totalCouponSavingsCents)}</span>{" "}
                 on your cart
@@ -375,7 +379,7 @@ export function CartView({
                 .
               </p>
             ) : (
-              <p className="mt-1 text-ink/80">
+              <p className="mt-1">
                 The code is saved, but <span className="font-bold">it isn’t taking anything off yet</span> — usually that
                 means none of these items match the promotion catalog, the coupon doesn’t include Label Maker, or
                 products are excluded by the coupon’s product picker in Settings → Events.
@@ -412,7 +416,7 @@ export function CartView({
             });
           }}
         >
-          <label className="block min-w-[12rem] flex-1 text-sm font-bold text-ink">
+          <label className="cart-panel__label block min-w-[12rem] flex-1 text-sm font-bold">
             Code
             <input
               value={couponRaw}
@@ -421,7 +425,7 @@ export function CartView({
                 if (promoFlash?.tone === "error") setPromoFlash(null);
               }}
               disabled={pending}
-              className="mt-1 w-full border-2 border-palm-mid px-2 py-2 font-mono text-sm uppercase"
+              className="cart-field font-mono uppercase"
               placeholder="ENTER CODE"
               autoComplete="off"
             />
@@ -435,7 +439,7 @@ export function CartView({
           </button>
         </form>
         {hasActivePromo ? (
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-ink/85">
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm" style={{ color: "var(--product-card-description)" }}>
             <button
               type="button"
               disabled={pending}
@@ -459,104 +463,123 @@ export function CartView({
         ) : null}
       </div>
 
-      {loyaltyPreview && loyaltyPreview.pointsBalance > 0 ? (
-        <div className="rounded border-2 border-palm/25 bg-white/80 p-4 shadow-sm">
-          <h2 className="text-xs font-black uppercase tracking-wide text-palm-mid">Loyalty points</h2>
-          {loyaltyPreview.maxPoints > 0 ? (
-            <>
-              <p className="mt-2 text-sm text-ink/85">
-                You have <span className="font-bold text-palm">{loyaltyPreview.pointsBalance}</span> points
-                {loyaltyPreview.centsPerPoint > 0 ? (
-                  <>
-                    {" "}
-                    (worth <span className="font-bold">{formatPriceUsd(loyaltyDollarValueCents(loyaltyPreview.pointsBalance, loyaltyPreview.centsPerPoint))}</span> at{" "}
-                    <span className="font-bold">{formatPriceUsd(loyaltyPreview.centsPerPoint)}</span> per point).
-                  </>
-                ) : null}
-              </p>
-              <p className="mt-1 text-xs text-ink/70">
-                Up to <span className="font-bold">{loyaltyPreview.maxPoints}</span> points can apply to this order (
-                <span className="font-bold">{formatPriceUsd(loyaltyPreview.maxPoints * loyaltyPreview.centsPerPoint)}</span>{" "}
-                max off merchandise).
-              </p>
-              <div className="mt-4 space-y-2">
-                <label className="block text-sm font-bold text-ink">
-                  Points to use on this order
-                  <div className="mt-2 flex flex-wrap items-center gap-3">
-                    <input
-                      type="range"
-                      min={0}
-                      max={loyaltyPreview.maxPoints}
-                      value={pointsDraft}
-                      disabled={pending}
-                      className="min-w-[12rem] flex-1 accent-palm"
-                      onChange={(e) => {
-                        const v = Math.min(loyaltyPreview.maxPoints, Math.max(0, parseInt(e.target.value, 10) || 0));
-                        setPointsDraft(v);
-                        if (loyaltyDebounceRef.current) clearTimeout(loyaltyDebounceRef.current);
-                        loyaltyDebounceRef.current = setTimeout(() => {
-                          loyaltyDebounceRef.current = null;
-                          setError("");
-                          startTransition(async () => {
-                            const res = await setCartAppliedLoyaltyPointsAction(v);
-                            if (!res.ok) setError(res.error);
-                            router.refresh();
-                          });
-                        }, 350);
-                      }}
-                    />
-                    <input
-                      type="number"
-                      min={0}
-                      max={loyaltyPreview.maxPoints}
-                      value={pointsDraft}
-                      disabled={pending}
-                      className="w-20 border-2 border-palm-mid px-2 py-1 text-center text-sm"
-                      onChange={(e) => {
-                        const v = Math.min(
-                          loyaltyPreview.maxPoints,
-                          Math.max(0, Math.floor(Number(e.target.value) || 0)),
-                        );
-                        setPointsDraft(v);
-                        if (loyaltyDebounceRef.current) clearTimeout(loyaltyDebounceRef.current);
-                        loyaltyDebounceRef.current = setTimeout(() => {
-                          loyaltyDebounceRef.current = null;
-                          setError("");
-                          startTransition(async () => {
-                            const res = await setCartAppliedLoyaltyPointsAction(v);
-                            if (!res.ok) setError(res.error);
-                            router.refresh();
-                          });
-                        }, 350);
-                      }}
-                    />
-                  </div>
-                </label>
-                {loyaltyDiscountCents > 0 ? (
-                  <p className="text-sm font-bold text-lagoon-dark">
-                    ≈ {formatPriceUsd(loyaltyDiscountCents)} off merchandise (preview — exact total is confirmed at
-                    payment).
+      {loyaltyPreview ? (
+        <div className="cart-panel">
+          <h2 className="cart-panel__heading">Loyalty points</h2>
+          <p className="cart-panel__text">
+            You have{" "}
+            <span className="font-bold" style={{ color: "var(--product-card-title)" }}>
+              {loyaltyPreview.pointsBalance}
+            </span>{" "}
+            points available
+            {loyaltyPreview.centsPerPoint > 0 ? (
+              <>
+                {" "}
+                (up to{" "}
+                <span className="font-bold">
+                  {formatPriceUsd(loyaltyDollarValueCents(loyaltyPreview.pointsBalance, loyaltyPreview.centsPerPoint))}
+                </span>{" "}
+                at {formatPriceUsd(loyaltyPreview.centsPerPoint)} per point).
+              </>
+            ) : null}
+          </p>
+
+          {subtotalCents > 0 && loyaltyPreview.centsPerPoint > 0 && sliderMax > 0 ? (
+            <div className="mt-4 space-y-3">
+              <div>
+                <p className="cart-panel__label text-sm font-bold">Points to use on this order</p>
+                <p className="cart-panel__muted">0 to {sliderMax} available</p>
+                <div className="cart-loyalty-slider-row">
+                  <input
+                    type="range"
+                    min={0}
+                    max={sliderMax}
+                    value={pointsDraft}
+                    disabled={pending}
+                    className="cart-loyalty-slider"
+                    aria-label="Points to use on this order"
+                    onChange={(e) => {
+                      const v = Math.min(sliderMax, Math.max(0, parseInt(e.target.value, 10) || 0));
+                      setPointsDraft(v);
+                      if (loyaltyDebounceRef.current) clearTimeout(loyaltyDebounceRef.current);
+                      loyaltyDebounceRef.current = setTimeout(() => {
+                        loyaltyDebounceRef.current = null;
+                        setError("");
+                        startTransition(async () => {
+                          const res = await setCartAppliedLoyaltyPointsAction(v);
+                          if (!res.ok) setError(res.error);
+                          router.refresh();
+                        });
+                      }, 350);
+                    }}
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    max={sliderMax}
+                    value={pointsDraft}
+                    disabled={pending}
+                    className="cart-loyalty-points-input"
+                    aria-label="Points selected"
+                    onChange={(e) => {
+                      const v = Math.min(sliderMax, Math.max(0, Math.floor(Number(e.target.value) || 0)));
+                      setPointsDraft(v);
+                      if (loyaltyDebounceRef.current) clearTimeout(loyaltyDebounceRef.current);
+                      loyaltyDebounceRef.current = setTimeout(() => {
+                        loyaltyDebounceRef.current = null;
+                        setError("");
+                        startTransition(async () => {
+                          const res = await setCartAppliedLoyaltyPointsAction(v);
+                          if (!res.ok) setError(res.error);
+                          router.refresh();
+                        });
+                      }, 350);
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="cart-panel__inset">
+                <p className="font-bold" style={{ color: "var(--product-card-title)" }}>
+                  {pointsDraft} point{pointsDraft === 1 ? "" : "s"} selected
+                </p>
+                <p className="cart-loyalty-value">
+                  {formatPriceUsd(selectedPointsValueCents)} toward this order
+                </p>
+                {pointsDraft > 0 && orderRedeemCap > 0 && pointsDraft > orderRedeemCap ? (
+                  <p className="cart-panel__muted mt-2">
+                    This cart can apply up to {orderRedeemCap} points right now (
+                    {formatPriceUsd(loyaltyDiscountCents)} off merchandise).
+                  </p>
+                ) : pointsDraft > 0 && loyaltyDiscountCents > 0 ? (
+                  <p className="cart-panel__muted mt-2">
+                    {pointsRedeeming} point{pointsRedeeming === 1 ? "" : "s"} will be redeemed at checkout.
+                  </p>
+                ) : pointsDraft > 0 ? (
+                  <p className="cart-panel__muted mt-2">
+                    Selected points cannot reduce this order further — try a lower amount or add more merchandise.
                   </p>
                 ) : (
-                  <p className="text-xs text-ink/65">Move the slider to apply points. Points are removed from your balance after the order is paid.</p>
+                  <p className="cart-panel__muted mt-2">
+                    Move the slider to choose how many points to use. Points are deducted after payment.
+                  </p>
                 )}
               </div>
-            </>
+            </div>
           ) : (
-            <p className="mt-2 text-sm text-ink/80">
-              You have <span className="font-bold">{loyaltyPreview.pointsBalance}</span> points, but none can be applied
-              to this cart total at the current rate.
+            <p className="cart-panel__text mt-3">
+              Add merchandise to your cart to redeem points on this order.
             </p>
           )}
         </div>
       ) : null}
 
       {shippingOptions.length > 0 ? (
-        <div className="rounded border-2 border-palm/25 bg-white/80 p-4 shadow-sm">
-          <h2 className="text-xs font-black uppercase tracking-wide text-palm-mid">Shipping</h2>
-          <p className="mt-1 text-sm text-ink/75">Choose how this order should be delivered or picked up.</p>
+        <div className="cart-panel">
+          <h2 className="cart-panel__heading">Shipping</h2>
+          <p className="cart-panel__text">Choose how this order should be delivered or picked up.</p>
           {cartShippingUnitsTotal > 0 ? (
-            <p className="mt-1 text-xs text-ink/60">Order size: {cartShippingUnitsTotal} shipping units</p>
+            <p className="cart-panel__muted">Order size: {cartShippingUnitsTotal} shipping units</p>
           ) : null}
           {shippingError ? <p className="mt-2 text-sm font-medium text-coral">{shippingError}</p> : null}
           <ul className="mt-4 space-y-3">
@@ -564,11 +587,11 @@ export function CartView({
               const checked = opt.id === selectedShippingOptionId;
               return (
                 <li key={opt.id}>
-                  <label className="flex cursor-pointer gap-3 rounded border border-palm/20 bg-sand/40 p-3 hover:bg-sand/70">
+                  <label className={`cart-shipping-option${checked ? " cart-shipping-option--selected" : ""}`}>
                     <input
                       type="radio"
                       name="shipping-option"
-                      className="mt-1 h-4 w-4 border-palm accent-palm"
+                      className="mt-1 h-4 w-4 shrink-0 accent-[var(--lagoon)]"
                       checked={checked}
                       disabled={pending}
                       onChange={() => {
@@ -581,12 +604,12 @@ export function CartView({
                       }}
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="font-bold text-ink">{opt.label}</span>
+                      <span className="cart-shipping-option__title">{opt.label}</span>
                       {opt.description.trim() ? (
-                        <span className="mt-1 block text-sm text-ink/70">{opt.description}</span>
+                        <span className="cart-shipping-option__desc">{opt.description}</span>
                       ) : null}
                     </span>
-                    <span className="shrink-0 font-bold text-ink">{formatPriceUsd(opt.priceCents)}</span>
+                    <span className="cart-shipping-option__price">{formatPriceUsd(opt.priceCents)}</span>
                   </label>
                 </li>
               );
@@ -594,17 +617,19 @@ export function CartView({
           </ul>
         </div>
       ) : shippingRequiredButUnavailable ? (
-        <div className="rounded border-2 border-coral/40 bg-coral/5 p-4 shadow-sm">
-          <h2 className="text-xs font-black uppercase tracking-wide text-coral">Shipping unavailable</h2>
-          <p className="mt-2 text-sm text-ink/85">
+        <div className="cart-panel cart-panel--alert">
+          <h2 className="cart-panel__heading" style={{ color: "var(--coral)" }}>
+            Shipping unavailable
+          </h2>
+          <p className="cart-panel__text">
             No shipping method fits this cart ({cartShippingUnitsTotal} units). Remove items or contact the store.
           </p>
         </div>
       ) : null}
 
-      <div className="border-t-4 border-palm pt-4">
-        <h2 className="mb-3 text-xs font-black uppercase tracking-wide text-palm-mid">Order summary</h2>
-        <div className="max-w-md space-y-2 text-right sm:ml-auto">
+      <div className="border-t-4 pt-4" style={{ borderColor: "var(--product-card-border)" }}>
+        <h2 className="cart-summary__heading">Order summary</h2>
+        <div className="cart-summary space-y-2">
           {summaryHasDiscountRows
             ? summaryRow("Merchandise (catalog)", formatPriceUsd(merchandiseListSubtotalCents), "muted")
             : null}
@@ -623,11 +648,15 @@ export function CartView({
           {kitDiscountCents > 0
             ? summaryRow("Kit bundle savings", `−${formatPriceUsd(kitDiscountCents)}`, "savings")
             : null}
-          {loyaltyDiscountCents > 0
+          {pointsDraft > 0 && loyaltyPreview
             ? summaryRow(
-                <>Loyalty points ({effectiveRequested} pts)</>,
-                `−${formatPriceUsd(loyaltyDiscountCents)}`,
-                "savings",
+                <>
+                  Loyalty points ({pointsRedeeming > 0 ? pointsRedeeming : pointsDraft} pt
+                  {(pointsRedeeming > 0 ? pointsRedeeming : pointsDraft) === 1 ? "" : "s"}
+                  {pointsRedeeming > 0 && pointsRedeeming < pointsDraft ? " applied" : ""})
+                </>,
+                loyaltyDiscountCents > 0 ? `−${formatPriceUsd(loyaltyDiscountCents)}` : formatPriceUsd(0),
+                loyaltyDiscountCents > 0 ? "savings" : "muted",
               )
             : null}
           {summaryRow(
@@ -658,16 +687,20 @@ export function CartView({
                 "muted",
               )
             : null}
-          <div className="border-t-2 border-palm/25 pt-2">
-            <div className="flex justify-between gap-4 text-lg font-black text-palm">
-              <span>Total</span>
-              <span className="text-ink">{formatPriceUsd(orderTotalPreview)}</span>
-            </div>
+          <div className="cart-summary__total">
+            <span className="cart-summary__total-label">Total</span>
+            <span className="cart-summary__total-amount">{formatPriceUsd(orderTotalPreview)}</span>
           </div>
+          {loyaltyDiscountCents > 0 ? (
+            <p className="cart-panel__muted mt-2 text-right text-xs">
+              Includes {formatPriceUsd(loyaltyDiscountCents)} off from {pointsRedeeming} loyalty point
+              {pointsRedeeming === 1 ? "" : "s"}.
+            </p>
+          ) : null}
         </div>
 
         {!payments.stripeEnabled && !payments.squareEnabled && orderTotalPreview > 0 ? (
-          <p className="mt-4 max-w-md text-sm text-ink/70 sm:ml-auto sm:text-right">
+          <p className="cart-panel__muted mt-4 cart-summary text-right text-sm">
             Checkout is turned off here or hasn’t finished setup yet — ask the store when online payments open.
           </p>
         ) : null}
@@ -689,7 +722,7 @@ export function CartView({
               ) : null}
               {payments.squareEnabled ? (
                 <div className="text-left">
-                  <CartSquarePayment />
+                  <CartSquarePayment disabled={pending} />
                 </div>
               ) : null}
             </>

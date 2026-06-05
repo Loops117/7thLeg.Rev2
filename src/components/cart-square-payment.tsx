@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { completeSquarePaymentAction, prepareSquareCheckoutAction } from "@/app/actions/checkout-square";
+import { btnMainMd } from "@/lib/btn-theme-classes";
 import { formatPriceUsd } from "@/lib/product-slug";
+import { buildSquareCardStyle } from "@/lib/square-card-theme";
 
 declare global {
   interface Window {
@@ -17,7 +19,7 @@ declare global {
 }
 
 type SquarePaymentsInstance = {
-  card(): Promise<SquareCardInstance>;
+  card(options?: { style?: Record<string, Record<string, string>> }): Promise<SquareCardInstance>;
 };
 
 type SquareCardInstance = {
@@ -131,7 +133,7 @@ export function CartSquarePayment({ disabled }: { disabled?: boolean }) {
             ? await (rawPayments as Promise<SquarePaymentsInstance>)
             : (rawPayments as SquarePaymentsInstance);
 
-        const card = await payments.card();
+        const card = await payments.card({ style: buildSquareCardStyle() });
         await card.attach("#square-card-mount");
         if (cancelled) {
           await card.destroy?.().catch(() => {});
@@ -206,24 +208,25 @@ export function CartSquarePayment({ disabled }: { disabled?: boolean }) {
   const btnDisabled = disabled || pending || paying;
 
   return (
-    <div className="mt-6 rounded border border-palm/25 bg-white/70 p-4 text-left shadow-sm">
-      <p className="text-sm font-bold text-ink">Checking out with Square!</p>
+    <div className="cart-panel cart-panel--square">
+      <p className="cart-panel__heading">Square</p>
+      <p className="cart-panel__text">Checking out with Square — enter your card below after starting checkout.</p>
 
       {!prep ? (
         <button
           type="button"
           disabled={btnDisabled}
-          className="mt-4 inline-flex rounded border-2 border-ink bg-ink px-5 py-2.5 text-sm font-black uppercase tracking-wide text-white hover:bg-black disabled:pointer-events-none disabled:opacity-50"
+          className={`${btnMainMd} mt-4 font-black uppercase tracking-wide`}
           onClick={prepare}
         >
           {pending ? "Starting…" : "Checkout Now"}
         </button>
       ) : (
         <>
-          <p className="mt-4 text-sm text-ink">
-            Order total: <strong>{formatPriceUsd(prep.totalCents)}</strong>
+          <p className="cart-panel__text mt-3">
+            Order total: <strong style={{ color: "var(--product-card-title)" }}>{formatPriceUsd(prep.totalCents)}</strong>
           </p>
-          <div id="square-card-mount" className="mt-4 min-h-[90px]" />
+          <div id="square-card-mount" className="square-card-mount mt-4 min-h-[90px]" />
           {cardSdkError ? (
             <p className="mt-2 text-sm font-medium text-coral">{cardSdkError}</p>
           ) : null}
@@ -231,7 +234,7 @@ export function CartSquarePayment({ disabled }: { disabled?: boolean }) {
             <button
               type="button"
               disabled={btnDisabled || !!cardSdkError || !cardReady}
-              className="inline-flex rounded border-2 border-ink bg-ink px-5 py-2.5 text-sm font-black uppercase tracking-wide text-white hover:bg-black disabled:pointer-events-none disabled:opacity-50"
+              className={`${btnMainMd} font-black uppercase tracking-wide`}
               onClick={() => void submitPayment()}
             >
               {paying ? "Processing…" : "Pay Now"}
@@ -239,7 +242,8 @@ export function CartSquarePayment({ disabled }: { disabled?: boolean }) {
             <button
               type="button"
               disabled={paying}
-              className="text-sm font-bold text-ink underline"
+              className="text-sm font-bold underline"
+              style={{ color: "var(--btn-important-bg)" }}
               onClick={() => setPrep(null)}
             >
               Cancel
@@ -250,7 +254,7 @@ export function CartSquarePayment({ disabled }: { disabled?: boolean }) {
 
       {error ? <p className="mt-3 text-sm font-medium text-coral">{error}</p> : null}
 
-      <p className="mt-3 text-xs text-ink/55">
+      <p className="cart-panel__muted mt-3">
         Card data is handled by Square. We never store your card number.
       </p>
     </div>

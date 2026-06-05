@@ -96,13 +96,14 @@ export default async function CartPage({ searchParams }: Props) {
         merchandiseSubtotalCents: subtotalCents,
       })
     : 0;
+  const hasCartItems = !cartPack.empty || labelLines.length > 0;
   const loyaltyPreview =
-    !cartPack.empty && loyaltyEnabled
+    hasCartItems && loyaltyEnabled && balance > 0
       ? {
           centsPerPoint: cpp,
           pointsBalance: balance,
           maxPoints,
-          appliedPoints: cartPack.appliedLoyaltyPoints,
+          appliedPoints: cartPack.empty ? 0 : cartPack.appliedLoyaltyPoints,
         }
       : null;
   const merchandiseListSubtotalCents = cartPack.empty ? 0 : cartPack.merchandiseListSubtotalCents;

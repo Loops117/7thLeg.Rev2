@@ -55,9 +55,12 @@ export function maxRedeemablePointsForCart(input: {
   customerPointsBalance: number;
   merchandiseSubtotalCents: number;
 }): number {
-  const plan = planLoyaltyRedemptionForCheckout({
-    ...input,
-    appliedLoyaltyPointsRequested: 2_000_000_000,
-  });
-  return plan?.pointsToRedeem ?? 0;
+  if (!input.loyaltyProgramEnabled) return 0;
+  const cpp = Math.floor(Number(input.redemptionCentsPerPoint) || 0);
+  if (cpp <= 0) return 0;
+  const merch = Math.max(0, Math.floor(input.merchandiseSubtotalCents));
+  if (merch <= 0) return 0;
+  const balance = Math.max(0, Math.floor(input.customerPointsBalance));
+  const maxPointsByMerch = Math.floor(merch / cpp);
+  return Math.min(balance, maxPointsByMerch);
 }
