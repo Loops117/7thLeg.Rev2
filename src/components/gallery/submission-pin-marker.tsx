@@ -16,6 +16,7 @@ export function SubmissionPinMarker({
   onMouseEnter,
   onMouseMove,
   onMouseLeave,
+  onPinClick,
 }: {
   appearance: ImageSubmissionPinAppearance;
   position: { left: string; top: string };
@@ -26,6 +27,8 @@ export function SubmissionPinMarker({
   onMouseEnter?: (e: React.MouseEvent) => void;
   onMouseMove?: (e: React.MouseEvent) => void;
   onMouseLeave?: (e: React.MouseEvent) => void;
+  /** Touch / tap selection — uses a button instead of navigating immediately. */
+  onPinClick?: (e: React.MouseEvent) => void;
 }) {
   const size = appearance.sizePx;
   const useCustom = pinMarkerUsesCustomImage(appearance);
@@ -68,7 +71,9 @@ export function SubmissionPinMarker({
   };
 
   const className = `${BASE_CLASS} ${highlighted ? "gallery-pin-marker--highlighted" : ""} ${
-    interactive ? "cursor-pointer shadow-md transition-[transform,box-shadow,border-color] duration-150" : "pointer-events-none shadow-md"
+    interactive
+      ? "pointer-events-auto cursor-pointer shadow-md transition-[transform,box-shadow,border-color] duration-150"
+      : "pointer-events-none shadow-md"
   }`;
 
   const mouseHandlers = {
@@ -76,6 +81,24 @@ export function SubmissionPinMarker({
     onMouseMove,
     onMouseLeave,
   };
+
+  if (interactive && onPinClick) {
+    return (
+      <button
+        type="button"
+        className={className}
+        style={shellStyle}
+        aria-label={label ? `View ${label}` : undefined}
+        onClick={(e) => {
+          e.stopPropagation();
+          onPinClick(e);
+        }}
+        {...mouseHandlers}
+      >
+        {inner}
+      </button>
+    );
+  }
 
   if (interactive && href) {
     return (
