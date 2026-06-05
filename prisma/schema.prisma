@@ -81,9 +81,15 @@ model SiteConfig {
   siteLinkPreviewDescription String @default("") @map("site_link_preview_description")
   /// Google Maps JavaScript API key (Places) for customer address autocomplete on My info.
   googleMapsApiKey String @default("") @map("google_maps_api_key")
-  /// Resend API key for transactional email (password reset, giveaways). Env RESEND_API_KEY overrides.
-  resendApiKey String @default("") @map("resend_api_key")
-  /// Verified sender for Resend, e.g. "Inverts Oasis <noreply@yourdomain.com>". Env EMAIL_FROM overrides.
+  /// Microsoft 365 / GoDaddy SMTP host (default smtp.office365.com). Env SMTP_HOST overrides.
+  smtpHost String @default("smtp.office365.com") @map("smtp_host")
+  /// SMTP port (587 for Microsoft STARTTLS). Env SMTP_PORT overrides.
+  smtpPort Int @default(587) @map("smtp_port")
+  /// Mailbox login, e.g. noreply@yourdomain.com. Env SMTP_USER overrides.
+  smtpUser String @default("") @map("smtp_user")
+  /// Mailbox password. Env SMTP_PASS overrides. Not returned to the admin UI after save.
+  smtpPassword String @default("") @map("smtp_password")
+  /// Optional display from, e.g. "7th Leg <noreply@7thleg.com>". Env EMAIL_FROM overrides; else SMTP user.
   emailFromAddress String @default("") @map("email_from_address")
   /// Longest edge in pixels for server-side downscaling on uploads.
   uploadImageMaxEdgePx   Int @default(2400)

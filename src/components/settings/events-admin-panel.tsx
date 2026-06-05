@@ -393,8 +393,8 @@ export function EventsAdminPanel({
                   <legend className="text-sm font-bold text-coral">Random draw (admin)</legend>
                   <p className="mb-3 text-xs text-ink/65">
                     After sign-ups are collected, run a draw from the Events list (expand the row). Configure how many
-                    primary and backup email addresses to pick, and optional Resend email on draw (
-                    <code className="rounded bg-black/5 px-0.5">RESEND_API_KEY</code>).
+                    primary and backup email addresses to pick, and optional email on draw (configure SMTP in Settings →
+                    Email).
                   </p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <label className="block text-sm font-bold text-ink">
@@ -1017,7 +1017,7 @@ export function EventsAdminPanel({
                                           }
                                           setDrawMsg(
                                             `Draw complete: ${res.primary} primary, ${res.backup} backup.` +
-                                              (res.emailed > 0 ? ` Emailed ${res.emailed} (Resend).` : " No auto-email."),
+                                              (res.emailed > 0 ? ` Emailed ${res.emailed}.` : " No auto-email."),
                                           );
                                           loadGiveawayWinners(r.id);
                                           router.refresh();

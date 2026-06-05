@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { escapeHtml, sendResendHtmlEmail } from "@/lib/resend-email";
+import { escapeHtml, sendHtmlEmail } from "@/lib/send-email";
 
 const RESET_TTL_MS = 60 * 60 * 1000;
 
@@ -57,7 +57,7 @@ export async function requestCustomerPasswordReset(formData: FormData): Promise<
   const resetUrl = `${origin}/reset-password?token=${encodeURIComponent(rawToken)}`;
 
   const safeUrl = escapeHtml(resetUrl);
-  const result = await sendResendHtmlEmail({
+  const result = await sendHtmlEmail({
     to: email,
     subject: "Reset your Inverts Oasis password",
     html: `<p>Hi,</p><p><a href="${safeUrl}">Click here to choose a new password</a>.</p><p>This link expires in one hour. If you didn’t ask for this, you can ignore this email.</p>`,

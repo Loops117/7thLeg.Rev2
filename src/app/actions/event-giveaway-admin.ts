@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import type { EventGiveawayRole } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
-import { escapeHtml, sendResendHtmlEmail } from "@/lib/resend-email";
+import { escapeHtml, sendHtmlEmail } from "@/lib/send-email";
 
 async function requireAdmin() {
   const session = await auth();
@@ -181,7 +181,7 @@ export async function runEventGiveawayDraw(eventId: string): Promise<DrawGiveawa
           role: "Primary winner",
         }),
       );
-      const r = await sendResendHtmlEmail({ to: email, subject, html });
+      const r = await sendHtmlEmail({ to: email, subject, html });
       if (r.ok) {
         emailed++;
         await prisma.eventGiveawayWinner.updateMany({
@@ -207,7 +207,7 @@ export async function runEventGiveawayDraw(eventId: string): Promise<DrawGiveawa
           role: "Backup winner",
         }),
       );
-      const r = await sendResendHtmlEmail({ to: email, subject, html });
+      const r = await sendHtmlEmail({ to: email, subject, html });
       if (r.ok) {
         emailed++;
         await prisma.eventGiveawayWinner.updateMany({
@@ -226,7 +226,7 @@ export async function runEventGiveawayDraw(eventId: string): Promise<DrawGiveawa
 
 export type EmailGiveawayResult = { ok: true; sent: number; failed: string | null } | { ok: false; error: string };
 
-/** Resend to winners with no `emailSentAt` yet. */
+/** Email winners with no `emailSentAt` yet. */
 export async function sendUnsentGiveawayEmails(eventId: string): Promise<EmailGiveawayResult> {
   try {
     await requireAdmin();
@@ -260,7 +260,7 @@ export async function sendUnsentGiveawayEmails(eventId: string): Promise<EmailGi
       applyTemplate(bodyTpl, { email, eventName, eventUrl, role: roleLabel }),
       applyTemplate(subj, { email, eventName, eventUrl, role: roleLabel }),
     );
-    const r = await sendResendHtmlEmail({ to: email, subject, html });
+    const r = await sendHtmlEmail({ to: email, subject, html });
     if (r.ok) {
       sent++;
       await prisma.eventGiveawayWinner.update({
