@@ -10,20 +10,67 @@ import {
   uniqueTaggedProductNames,
 } from "@/lib/gallery-product-search";
 import { btnMainMd } from "@/lib/btn-theme-classes";
+import { loyaltyDollarValueCents } from "@/lib/loyalty-redemption-preview";
+import { formatPriceUsd } from "@/lib/product-slug";
 import type { ApprovedArtGalleryItem } from "@/lib/customer-art-gallery";
 import type { ImageSubmissionPinAppearance } from "@/lib/image-submission-pin-appearance-shared";
 import type { StorefrontImagePin } from "@/lib/image-submission-pins-storefront";
+
+function GalleryImagePointsInfo({
+  approvalPoints,
+  redemptionCentsPerPoint,
+  isLoggedIn,
+}: {
+  approvalPoints: number;
+  redemptionCentsPerPoint: number;
+  isLoggedIn: boolean;
+}) {
+  if (approvalPoints <= 0) return null;
+
+  const valueCents = loyaltyDollarValueCents(approvalPoints, redemptionCentsPerPoint);
+  const rewardLabel =
+    valueCents > 0
+      ? `${approvalPoints} pt${approvalPoints === 1 ? "" : "s"} (${formatPriceUsd(valueCents)})`
+      : `${approvalPoints} pt${approvalPoints === 1 ? "" : "s"}`;
+
+  return (
+    <p className="mt-1.5 max-w-[14rem] rounded border border-lagoon/25 bg-lagoon/5 px-2 py-1 text-right text-[10px] leading-snug text-ink/75 sm:max-w-[15rem] sm:text-[11px]">
+      <span className="font-bold text-palm">Earn {rewardLabel}</span> per approved image.
+      {!isLoggedIn ? (
+        <>
+          {" "}
+          <Link href="/login?callbackUrl=/gallery" className="font-bold text-lagoon-dark underline">
+            Log in
+          </Link>{" "}
+          to collect.
+        </>
+      ) : (
+        <>
+          {" "}
+          <Link href="/account/points" className="font-bold text-lagoon-dark underline">
+            My points
+          </Link>
+          .
+        </>
+      )}
+    </p>
+  );
+}
 
 export function PublicImageGallery({
   items,
   pinsBySubmissionId = {},
   pinAppearance,
   isLoggedIn = false,
+  imageSubmissionApprovalPoints = 0,
+  loyaltyRedemptionCentsPerPoint = 0,
 }: {
   items: ApprovedArtGalleryItem[];
   pinsBySubmissionId?: Record<string, StorefrontImagePin[]>;
   pinAppearance: ImageSubmissionPinAppearance;
   isLoggedIn?: boolean;
+  imageSubmissionApprovalPoints?: number;
+  loyaltyRedemptionCentsPerPoint?: number;
 }) {
   const [viewerItem, setViewerItem] = useState<ApprovedArtGalleryItem | null>(null);
   const [productSearch, setProductSearch] = useState("");
@@ -65,10 +112,15 @@ export function PublicImageGallery({
           Shows photos that have a shoppable pin for a matching product. Clear the field to see all images.
         </p>
       </div>
-      <div className="flex shrink-0 justify-end sm:pt-7">
+      <div className="flex shrink-0 flex-col items-end sm:pt-7">
         <button type="button" onClick={() => setUploadOpen(true)} className={btnMainMd}>
           Submit your Images
         </button>
+        <GalleryImagePointsInfo
+          approvalPoints={imageSubmissionApprovalPoints}
+          redemptionCentsPerPoint={loyaltyRedemptionCentsPerPoint}
+          isLoggedIn={isLoggedIn}
+        />
       </div>
     </div>
   );

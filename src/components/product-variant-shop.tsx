@@ -137,6 +137,15 @@ export function ProductVariantShop({
 
   const hero = gallery[imageIndex] ?? gallery[0];
   const heroUrl = hero ? storefrontImageUrl(hero) : PRODUCT_IMAGE_PLACEHOLDER_URL;
+  const hasGalleryNav = gallery.length > 1;
+
+  function showPrevImage() {
+    setImageIndex((idx) => (idx <= 0 ? gallery.length - 1 : idx - 1));
+  }
+
+  function showNextImage() {
+    setImageIndex((idx) => (idx >= gallery.length - 1 ? 0 : idx + 1));
+  }
 
   const selectedVar = variants.find((v) => v.id === selectedVariantId);
   const variantDescriptionHtml =
@@ -175,20 +184,42 @@ export function ProductVariantShop({
     <div className="mt-6 grid gap-8 lg:grid-cols-2">
       <div className="space-y-4">
         <div className="overflow-hidden rounded border-2 border-palm/25 bg-surf/40">
-          <div className="relative block aspect-square w-full overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={heroUrl}
-              alt={productName}
-              className="aspect-square w-full object-contain"
-              draggable={false}
-            />
-            {hero && productDiagonalBrandName?.trim() ? (
-              <ProductDiagonalBrandOverlay
-                brandName={productDiagonalBrandName}
-                spacingPx={productDiagonalNameGapPx}
-                opacityPercent={watermarkOpacityPercent}
+          <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden">
+            <div className="relative h-[85%] w-[85%]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={heroUrl}
+                alt={productName}
+                className="h-full w-full object-contain"
+                draggable={false}
               />
+              {hero && productDiagonalBrandName?.trim() ? (
+                <ProductDiagonalBrandOverlay
+                  brandName={productDiagonalBrandName}
+                  spacingPx={productDiagonalNameGapPx}
+                  opacityPercent={watermarkOpacityPercent}
+                />
+              ) : null}
+            </div>
+            {hasGalleryNav ? (
+              <>
+                <button
+                  type="button"
+                  onClick={showPrevImage}
+                  className="absolute left-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border-2 border-palm/25 bg-white/90 text-lg font-black leading-none text-palm shadow-sm hover:border-palm/45 hover:bg-white sm:h-10 sm:w-10 sm:text-xl"
+                  aria-label="Previous image"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  onClick={showNextImage}
+                  className="absolute right-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border-2 border-palm/25 bg-white/90 text-lg font-black leading-none text-palm shadow-sm hover:border-palm/45 hover:bg-white sm:h-10 sm:w-10 sm:text-xl"
+                  aria-label="Next image"
+                >
+                  ›
+                </button>
+              </>
             ) : null}
           </div>
         </div>

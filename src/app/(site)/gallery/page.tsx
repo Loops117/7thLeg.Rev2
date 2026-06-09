@@ -4,14 +4,17 @@ import { PublicImageGallery } from "@/components/gallery/public-image-gallery";
 import { listAllApprovedArtForPublicGallery } from "@/lib/customer-art-gallery";
 import { listHotspotsBySubmissionIds } from "@/lib/image-submission-hotspots";
 import { getImageSubmissionPinAppearance } from "@/lib/image-submission-pin-appearance";
-import { getSiteConfig } from "@/lib/site-config";
+import { getImageSubmissionApprovalPoints } from "@/lib/loyalty-points";
+import { getLoyaltyProgramForAdmin, getSiteConfig } from "@/lib/site-config";
 
 export default async function GalleryPage() {
-  const [items, site, pinAppearance, session] = await Promise.all([
+  const [items, site, pinAppearance, session, imageSubmissionApprovalPoints, loyalty] = await Promise.all([
     listAllApprovedArtForPublicGallery(),
     getSiteConfig(),
     getImageSubmissionPinAppearance(),
     auth(),
+    getImageSubmissionApprovalPoints(),
+    getLoyaltyProgramForAdmin(),
   ]);
   const isLoggedIn = session?.user?.role === "customer";
   const pinsBySubmissionId = await listHotspotsBySubmissionIds(items.map((i) => i.id));
@@ -34,6 +37,8 @@ export default async function GalleryPage() {
           pinsBySubmissionId={pinsBySubmissionId}
           pinAppearance={pinAppearance}
           isLoggedIn={isLoggedIn}
+          imageSubmissionApprovalPoints={imageSubmissionApprovalPoints}
+          loyaltyRedemptionCentsPerPoint={loyalty.loyaltyRedemptionCentsPerPoint}
         />
       </div>
     </div>
