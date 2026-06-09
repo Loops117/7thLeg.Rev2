@@ -16,7 +16,7 @@ export default async function SettingsShippingPage() {
   });
 
   return (
-    <div className="max-w-5xl">
+    <div>
       <h1 className="border-b-4 border-palm pb-3 text-2xl font-black text-palm dark:border-zinc-600 dark:text-emerald-200">
         Shipping
       </h1>

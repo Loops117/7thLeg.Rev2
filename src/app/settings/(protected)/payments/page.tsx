@@ -8,7 +8,7 @@ export default async function SettingsPaymentsPage() {
   const square = getSquareSetupStatus();
 
   return (
-    <div className="max-w-5xl">
+    <div>
       <h1 className="border-b-4 border-palm pb-3 text-2xl font-black text-palm">Payments</h1>
       <p className="mt-4 max-w-xl text-sm text-ink/80">
         Choose which processors appear at checkout. You can enable both Stripe and Square; customers will see every

@@ -39,7 +39,7 @@ export default async function SettingsThemePage() {
   const storeNameGap = storeText.storeWatermarkNameGapPx;
 
   return (
-    <div className="max-w-4xl">
+    <div>
       <h1 className="border-b-4 border-palm pb-3 text-2xl font-black text-palm">Theme</h1>
       <p className="mt-4 text-ink/80">
         Controls the <strong>public storefront</strong> look (not the dark admin sidebar). Use the sections below for

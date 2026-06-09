@@ -29,7 +29,7 @@ export default async function SettingsFeaturedPage() {
   const publicHref = storefrontPathForPageKey(PageKey.FEATURED);
 
   return (
-    <div className="max-w-3xl">
+    <div>
       <StorefrontNavHeaderPanel linkId="featured" initial={nav.featured} />
       <h1 className="border-b-4 border-palm pb-3 text-2xl font-black text-palm">Featured page</h1>
       <p className="mt-4 text-ink/80">

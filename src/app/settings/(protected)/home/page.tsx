@@ -27,7 +27,7 @@ export default async function SettingsHomePage() {
   ]);
 
   return (
-    <div className="max-w-3xl">
+    <div>
       <h1 className="border-b-4 border-palm pb-3 text-2xl font-black text-palm">Home settings</h1>
       <p className="mt-4 text-ink/80">
         Add panes, set each pane’s <strong>background transparency</strong> (0–100%), and use <strong>Save pane</strong>{" "}

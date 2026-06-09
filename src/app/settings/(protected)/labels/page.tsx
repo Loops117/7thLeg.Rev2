@@ -86,7 +86,7 @@ export default async function SettingsLabelsPage() {
   }));
 
   return (
-    <div className="max-w-6xl">
+    <div>
       <h1 className="border-b-4 border-palm pb-3 text-2xl font-black text-palm">Labels</h1>
       <p className="mt-4 max-w-3xl text-ink/80">
         Custom label ordering: enable the storefront section, manage templates, and maintain the species catalog for the

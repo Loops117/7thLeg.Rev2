@@ -67,7 +67,7 @@ export default async function SettingsSpeciesCatalogPage({ searchParams }: Props
   );
 
   return (
-    <div className="max-w-6xl">
+    <div>
       <p className="text-sm font-bold text-ink/70 dark:text-zinc-400">
         <Link href="/settings/labels" className="text-lagoon-dark underline dark:text-emerald-300">
           ← Labels

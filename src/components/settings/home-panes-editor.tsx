@@ -23,6 +23,8 @@ import {
 } from "@/lib/pane-config";
 import { storefrontPathForPageKey } from "@/lib/pane-pages";
 import { RichTextEditor } from "@/components/rich-text-editor";
+import { TheatricalPaneEditor } from "@/components/settings/theatrical-pane-editor";
+import { DEFAULT_THEATRICAL_STAGE_BG_HEX } from "@/lib/theatrical-pane";
 
 export type HomePaneRow = {
   id: string;
@@ -194,7 +196,9 @@ function PaneCard({
                 ? "Art Sub"
                 : pane.type === "SUGGESTION_BOX"
                   ? "Suggestion box"
-                  : "Event block";
+                  : pane.type === "THEATRICAL"
+                    ? "Theatrical stage"
+                    : "Event block";
 
   const paneTitleInSummary = form.title?.trim() ? ` (${form.title.trim()})` : "";
 
@@ -1039,6 +1043,21 @@ function PaneCard({
           </>
         ) : null}
 
+        {pane.type === "THEATRICAL" ? (
+          <TheatricalPaneEditor
+            stageAspect={form.theatricalStageAspect ?? "16:9"}
+            stageMaxHeightPx={form.theatricalStageMaxHeightPx ?? 0}
+            stageBgHex={form.theatricalStageBgHex ?? DEFAULT_THEATRICAL_STAGE_BG_HEX}
+            elements={form.theatricalElements ?? []}
+            onStageAspectChange={(theatricalStageAspect) => setForm((f) => ({ ...f, theatricalStageAspect }))}
+            onStageMaxHeightPxChange={(theatricalStageMaxHeightPx) =>
+              setForm((f) => ({ ...f, theatricalStageMaxHeightPx }))
+            }
+            onStageBgHexChange={(theatricalStageBgHex) => setForm((f) => ({ ...f, theatricalStageBgHex }))}
+            onElementsChange={(theatricalElements) => setForm((f) => ({ ...f, theatricalElements }))}
+          />
+        ) : null}
+
         {pane.type === "SOCIAL_LINKS" ? (
           <div className="space-y-4">
             <p className="text-sm text-ink/75">
@@ -1210,6 +1229,7 @@ export function HomePanesEditor({
             <option value={PaneTypeEnum.ORDER_SHIPPING_MAP}>Shipped orders map (North America)</option>
             <option value={PaneTypeEnum.ART_SUB}>Art Sub (customer artwork upload)</option>
             <option value={PaneTypeEnum.SUGGESTION_BOX}>Suggestion box (species / design ideas)</option>
+            <option value={PaneTypeEnum.THEATRICAL}>Theatrical stage (video, images, text, links)</option>
           </select>
         </label>
         <button

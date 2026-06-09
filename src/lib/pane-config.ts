@@ -1,5 +1,14 @@
 import type { CSSProperties } from "react";
 import type { PaneType } from "@/generated/prisma/enums";
+import {
+  defaultTheatricalElements,
+  parseTheatricalElements,
+  parseTheatricalStageAspect,
+  parseTheatricalStageBgHex,
+  parseTheatricalStageMaxHeightPx,
+  type TheatricalPaneElement,
+  type TheatricalStageAspect,
+} from "@/lib/theatrical-pane";
 
 /** Default pane fill; pairs with `backgroundOpacity` */
 export const DEFAULT_PANE_COLOR_HEX = "#faf6ef";
@@ -106,6 +115,14 @@ export type HomePaneConfig = {
   suggestionBoxHeading?: string;
   /** How many recently approved suggestions to list in the pane. */
   approvedSuggestionsLimit?: number;
+
+  // THEATRICAL
+  theatricalStageAspect?: TheatricalStageAspect;
+  /** Stage canvas background (#rrggbb). */
+  theatricalStageBgHex?: string;
+  /** Cap stage height (px); 0 = scale with pane width only. */
+  theatricalStageMaxHeightPx?: number;
+  theatricalElements?: TheatricalPaneElement[];
 };
 
 const DEFAULT_BG = 92;
@@ -299,6 +316,22 @@ export function defaultPaneConfig(type: PaneType): HomePaneConfig {
       giveawayLinkHref: "",
     };
   }
+  if (type === "THEATRICAL") {
+    return {
+      backgroundOpacity: DEFAULT_BG,
+      paneColorHex: DEFAULT_PANE_COLOR_HEX,
+      paneBorderWidthPx: 4,
+      paneBorderColorHex: DEFAULT_PANE_BORDER_HEX,
+      title: "",
+      carouselTypeIds: [],
+      theatricalStageAspect: "16:9",
+      theatricalStageBgHex: parseTheatricalStageBgHex(undefined),
+      theatricalStageMaxHeightPx: parseTheatricalStageMaxHeightPx(undefined),
+      theatricalElements: defaultTheatricalElements(),
+      eventId: "",
+      giveawayLinkHref: "",
+    };
+  }
   return {
     backgroundOpacity: DEFAULT_BG,
     paneColorHex: DEFAULT_PANE_COLOR_HEX,
@@ -471,6 +504,13 @@ export function parseHomePaneConfig(raw: unknown, type: PaneType): HomePaneConfi
       typeof o.approvedSuggestionsLimit === "number" && !Number.isNaN(o.approvedSuggestionsLimit)
         ? clamp(Math.round(o.approvedSuggestionsLimit), 0, 50)
         : (defaults.approvedSuggestionsLimit ?? 8),
+
+    theatricalStageAspect: parseTheatricalStageAspect(o.theatricalStageAspect ?? defaults.theatricalStageAspect),
+    theatricalStageBgHex: parseTheatricalStageBgHex(o.theatricalStageBgHex ?? defaults.theatricalStageBgHex),
+    theatricalStageMaxHeightPx: parseTheatricalStageMaxHeightPx(
+      o.theatricalStageMaxHeightPx ?? defaults.theatricalStageMaxHeightPx,
+    ),
+    theatricalElements: parseTheatricalElements(o.theatricalElements ?? defaults.theatricalElements),
   };
 }
 

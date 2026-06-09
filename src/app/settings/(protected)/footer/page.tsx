@@ -6,7 +6,7 @@ export default async function SettingsSiteFooterPage() {
   const initial = await getSiteFooterSettings();
 
   return (
-    <div className="max-w-3xl">
+    <div>
       <h1 className="border-b-4 border-palm pb-3 text-2xl font-black text-palm">Site Footer</h1>
       <p className="mt-4 text-ink/80">
         Edit the public footer at the bottom of customer-facing pages. Preview on{" "}

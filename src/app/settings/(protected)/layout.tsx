@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { countUnreadCustomerSupportMessages } from "@/lib/support-queries";
 import { SettingsAdminSidebar } from "@/components/settings-admin-sidebar";
 import { SettingsAdminHydrateAppearance } from "@/components/settings/admin-appearance";
+import { SettingsAreaPageFrame } from "@/components/settings/settings-area-page-frame";
 
 export default async function SettingsDashboardLayout({
   children,
@@ -28,7 +29,9 @@ export default async function SettingsDashboardLayout({
           <p className="text-sm font-bold text-white dark:text-zinc-200">Admin</p>
         </div>
         <div className="min-w-0 flex-1 bg-white dark:bg-transparent">
-          <div className="admin-settings-body min-w-0 max-w-full p-4 sm:p-6">{children}</div>
+          <div className="admin-settings-body min-w-0 max-w-full p-4 sm:p-6">
+            <SettingsAreaPageFrame>{children}</SettingsAreaPageFrame>
+          </div>
         </div>
       </div>
     </div>

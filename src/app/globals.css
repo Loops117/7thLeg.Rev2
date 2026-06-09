@@ -922,6 +922,142 @@ body {
   background-color: color-mix(in srgb, var(--product-card-bg) 70%, transparent);
 }
 
+/** Home pane — theatrical stage (layered video, images, text, links). */
+.theatrical-pane__stage {
+  isolation: isolate;
+}
+
+.theatrical-pane__element {
+  position: absolute;
+  box-sizing: border-box;
+  background-color: transparent;
+}
+
+.theatrical-pane__element--text-copyable {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/** Admin — theatrical pane editor (Settings → Home panes). */
+.theatrical-pane-editor__hint {
+  color: color-mix(in srgb, var(--ink) 70%, transparent);
+}
+
+.theatrical-pane-editor__label {
+  color: var(--ink);
+}
+
+.theatrical-pane-editor__select,
+.theatrical-pane-editor__input {
+  border-color: color-mix(in srgb, var(--palm-mid) 100%, transparent);
+  background-color: #fff;
+  color: var(--ink);
+}
+
+.theatrical-pane-editor__checkbox-row {
+  color: color-mix(in srgb, var(--ink) 88%, transparent);
+}
+
+.theatrical-pane-editor__stage {
+  box-sizing: border-box;
+  background-color: #1c1917;
+  border-color: color-mix(in srgb, var(--palm-mid) 55%, transparent);
+}
+
+.theatrical-pane-editor__element {
+  position: absolute;
+  box-sizing: border-box;
+  cursor: grab;
+  outline: 1px solid color-mix(in srgb, #fafafa 40%, transparent);
+  outline-offset: -1px;
+}
+
+.theatrical-pane-editor__element:hover {
+  outline-color: color-mix(in srgb, var(--lagoon) 65%, transparent);
+}
+
+.theatrical-pane-editor__element--selected {
+  outline: 2px solid var(--lagoon);
+  outline-offset: -2px;
+}
+
+.theatrical-pane-editor__badge {
+  background-color: var(--palm);
+  color: #fff;
+}
+
+.theatrical-pane-editor__video-placeholder {
+  background-color: #292524;
+  color: #d6d3d1;
+}
+
+.theatrical-pane-editor__image-placeholder {
+  background-color: #44403c;
+  color: #d6d3d1;
+}
+
+.theatrical-pane-editor__inspector {
+  border-color: color-mix(in srgb, var(--palm-mid) 40%, transparent);
+  background-color: color-mix(in srgb, var(--surf) 50%, #fff 50%);
+}
+
+.theatrical-pane-editor__inspector-title {
+  color: var(--palm);
+}
+
+#settings-admin-shell.dark .admin-settings-body .theatrical-pane-editor__hint {
+  color: #a1a1aa;
+}
+
+#settings-admin-shell.dark .admin-settings-body .theatrical-pane-editor__label {
+  color: #e4e4e7;
+}
+
+#settings-admin-shell.dark .admin-settings-body .theatrical-pane-editor__checkbox-row {
+  color: #d4d4d8;
+}
+
+#settings-admin-shell.dark .admin-settings-body .theatrical-pane-editor__stage {
+  background-color: #09090b;
+  border-color: #52525b;
+}
+
+#settings-admin-shell.dark .admin-settings-body .theatrical-pane-editor__element {
+  outline-color: #71717a;
+}
+
+#settings-admin-shell.dark .admin-settings-body .theatrical-pane-editor__element:hover {
+  outline-color: #86efac;
+}
+
+#settings-admin-shell.dark .admin-settings-body .theatrical-pane-editor__element--selected {
+  outline-color: #4ade80;
+}
+
+#settings-admin-shell.dark .admin-settings-body .theatrical-pane-editor__badge {
+  background-color: #166534;
+  color: #ecfdf5;
+}
+
+#settings-admin-shell.dark .admin-settings-body .theatrical-pane-editor__video-placeholder {
+  background-color: #18181b;
+  color: #a1a1aa;
+}
+
+#settings-admin-shell.dark .admin-settings-body .theatrical-pane-editor__image-placeholder {
+  background-color: #27272a;
+  color: #a1a1aa;
+}
+
+#settings-admin-shell.dark .admin-settings-body .theatrical-pane-editor__inspector {
+  border-color: #52525b;
+  background-color: #18181b;
+}
+
+#settings-admin-shell.dark .admin-settings-body .theatrical-pane-editor__inspector-title {
+  color: #86efac;
+}
+
 .kit-bundle-item-hover-preview__card {
   flex-shrink: 0;
   overflow: hidden;

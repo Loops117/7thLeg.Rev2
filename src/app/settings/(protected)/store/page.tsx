@@ -8,7 +8,7 @@ export default async function SettingsStorePage() {
   const [store, nav] = await Promise.all([getStoreSettings(), getStorefrontNavSettings()]);
 
   return (
-    <div className="max-w-3xl">
+    <div>
       <StorefrontNavHeaderPanel linkId="shop" initial={nav.shop} />
       <h1 className="border-b-4 border-palm pb-3 text-2xl font-black text-palm">Store settings</h1>
       <p className="mt-4 text-ink/80">

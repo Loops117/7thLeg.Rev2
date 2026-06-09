@@ -32,7 +32,7 @@ export default async function SettingsLoyaltyPage() {
   }));
 
   return (
-    <div className="max-w-5xl">
+    <div>
       <h1 className="border-b-4 border-palm pb-3 text-2xl font-black text-palm">Loyalty</h1>
       <p className="mt-4 text-ink/80">
         Program rules and a full list of members with point balances, manual adjustments, and history. For address-only

@@ -5,7 +5,7 @@ export default async function LabelOptionsSettingsPage() {
   const options = await listLabelFinishOptionsAdmin();
 
   return (
-    <div className="max-w-4xl">
+    <div>
       <h1 className="border-b-4 border-palm pb-3 text-2xl font-black text-palm dark:text-emerald-300">
         Label options
       </h1>

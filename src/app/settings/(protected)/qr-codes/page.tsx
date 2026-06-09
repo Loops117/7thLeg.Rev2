@@ -45,7 +45,7 @@ export default async function SettingsQrCodesPage() {
   ]);
 
   return (
-    <div className="max-w-5xl">
+    <div>
       <h1 className="border-b-4 border-palm pb-3 text-2xl font-black text-palm">QR Codes</h1>
       <p className="mt-4 text-ink/80">
         Short links like <span className="font-mono text-sm">/{rows[0]?.publicCode ?? "QR1"}</span> count visits and

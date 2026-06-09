@@ -29,7 +29,7 @@ export default async function SettingsAboutPage() {
   const publicHref = storefrontPathForPageKey(PageKey.ABOUT);
 
   return (
-    <div className="max-w-3xl">
+    <div>
       <StorefrontNavHeaderPanel linkId="about" initial={nav.about} />
       <h1 className="border-b-4 border-palm pb-3 text-2xl font-black text-palm">About page</h1>
       <p className="mt-4 text-ink/80">

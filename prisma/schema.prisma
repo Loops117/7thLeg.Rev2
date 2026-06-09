@@ -49,6 +49,8 @@ enum PaneType {
   ART_SUB
   /// Species / design suggestion box with community list and approved history.
   SUGGESTION_BOX
+  /// Layered stage: video, images, rich text, and links with drag-and-drop layout.
+  THEATRICAL
 }
 
 enum SpeciesSuggestionStatus {

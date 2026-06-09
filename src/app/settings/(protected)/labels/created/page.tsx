@@ -125,7 +125,7 @@ export default async function SettingsCreatedLabelsPage({ searchParams }: Props)
   );
 
   return (
-    <div className="max-w-6xl">
+    <div>
       <h1 className="border-b-4 border-palm pb-3 text-2xl font-black text-palm dark:text-emerald-300">
         Created labels
       </h1>

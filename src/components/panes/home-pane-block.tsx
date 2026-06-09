@@ -11,6 +11,8 @@ import { StoreBannerPaneClient } from "@/components/panes/store-banner-pane-clie
 import { SocialLinksPane } from "@/components/panes/social-links-pane";
 import { ArtSubPane } from "@/components/panes/art-sub-pane";
 import { SuggestionBoxPane } from "@/components/panes/suggestion-box-pane";
+import { TheatricalPane } from "@/components/panes/theatrical-pane";
+import { DEFAULT_THEATRICAL_STAGE_BG_HEX } from "@/lib/theatrical-pane";
 import { OrderShippingMapPaneSection } from "@/components/panes/order-shipping-map-pane";
 import type { ApprovedArtGalleryItem } from "@/lib/customer-art-gallery";
 import {
@@ -327,6 +329,15 @@ export async function HomePaneBlock({
             subHeading={cfg.suggestionBoxHeading ?? ""}
             isLoggedIn={!!customerEmail}
             approvedSuggestions={approvedSuggestions ?? []}
+          />
+        ) : null}
+
+        {pane.type === "THEATRICAL" ? (
+          <TheatricalPane
+            stageAspect={cfg.theatricalStageAspect ?? "16:9"}
+            stageMaxHeightPx={cfg.theatricalStageMaxHeightPx ?? 0}
+            stageBgHex={cfg.theatricalStageBgHex ?? DEFAULT_THEATRICAL_STAGE_BG_HEX}
+            elements={cfg.theatricalElements ?? []}
           />
         ) : null}
       </div>
