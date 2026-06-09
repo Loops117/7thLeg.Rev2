@@ -4,6 +4,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
+import { syncGuestSessionAfterSignIn } from "@/app/actions/customer-auth";
 import { btnMainLg } from "@/lib/btn-theme-classes";
 
 export function CustomerLoginForm() {
@@ -31,6 +32,7 @@ export function CustomerLoginForm() {
         setPending(false);
         return;
       }
+      await syncGuestSessionAfterSignIn();
       const safe =
         callbackUrl.startsWith("/") && !callbackUrl.startsWith("//") ? callbackUrl : "/";
       router.push(safe);

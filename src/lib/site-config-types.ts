@@ -102,12 +102,15 @@ export type LoyaltyProgramState = {
   pointsPerDollar: number;
   /** Whole cents each point is worth when redeemed at checkout (e.g. 10 = $0.10 per point). */
   loyaltyRedemptionCentsPerPoint: number;
+  /** Allow product checkout without a customer account (session cart). */
+  guestCheckoutEnabled: boolean;
 };
 
 export const loyaltyProgramDefaults: LoyaltyProgramState = {
   loyaltyEnabled: false,
   pointsPerDollar: 10,
   loyaltyRedemptionCentsPerPoint: 10,
+  guestCheckoutEnabled: true,
 };
 
 export type PaymentGatewaysState = {

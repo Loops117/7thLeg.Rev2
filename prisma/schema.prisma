@@ -121,6 +121,8 @@ model SiteConfig {
 
   /// Sales tax on checkout merchandise subtotal, in basis points (825 = 8.25%). 0 disables tax line.
   checkoutTaxRateBps Int @default(0) @map("checkout_tax_rate_bps")
+  /// Allow storefront checkout without a customer account (session cart + guest order snapshot).
+  guestCheckoutEnabled Boolean @default(true) @map("guest_checkout_enabled")
 
   /// Public storefront palette, typography, pane defaults, decor image URLs (see `lib/theme-config.ts`).
   themeConfig Json?
@@ -1152,6 +1154,18 @@ model Order {
   id          String      @id @default(cuid())
   customerId  String?
   customer    Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  /// Anonymous cart session when checkout completed without an account.
+  guestSessionId String? @map("guest_session_id")
+  guestEmail         String? @map("guest_email")
+  guestDisplayName   String? @map("guest_display_name")
+  guestAddressLine1  String? @map("guest_address_line1")
+  guestAddressLine2  String? @map("guest_address_line2")
+  guestCity          String? @map("guest_city")
+  guestStateRegion   String? @map("guest_state_region")
+  guestPostalCode    String? @map("guest_postal_code")
+  guestCountry       String? @map("guest_country")
+  /// Set when purchase loyalty points from a guest order are credited to a linked customer account.
+  loyaltyEarnAwardedAt DateTime? @map("loyalty_earn_awarded_at")
   status      OrderStatus @default(PENDING)
   subtotalCents Int
   taxCents      Int       @default(0)

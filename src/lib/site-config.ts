@@ -164,6 +164,7 @@ export async function getLoyaltyProgramForAdmin(): Promise<LoyaltyProgramState> 
       loyaltyEnabled: !!row.loyaltyEnabled,
       pointsPerDollar: Math.min(1000, Math.max(0, row.pointsPerDollar)),
       loyaltyRedemptionCentsPerPoint: Math.min(10_000, Math.max(0, Math.floor(row.loyaltyRedemptionCentsPerPoint ?? 10))),
+      guestCheckoutEnabled: row.guestCheckoutEnabled ?? true,
     };
   } catch {
     return { ...loyaltyProgramDefaults };

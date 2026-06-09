@@ -36,6 +36,12 @@ type SalesOrderRow = {
     postalCode: string | null;
     country: string | null;
   } | null;
+  guestEmail: string | null;
+  guestDisplayName: string | null;
+  guestCity: string | null;
+  guestStateRegion: string | null;
+  guestPostalCode: string | null;
+  guestCountry: string | null;
   lineItemsCount: number;
   labelLinesCount: number;
   labelLinesPreview: Array<{
@@ -135,12 +141,14 @@ export function SalesAdminTable({ orders, emptyMessage }: Props) {
       if (paymentFilter !== "ALL" && paymentKind(o) !== paymentFilter.toLowerCase()) return false;
       if (!q) return true;
 
-      const address = o.customer ? [o.customer.city, o.customer.stateRegion, o.customer.country, o.customer.postalCode].filter(Boolean).join(" ").toLowerCase() : "";
+      const address = o.customer
+        ? [o.customer.city, o.customer.stateRegion, o.customer.country, o.customer.postalCode].filter(Boolean).join(" ").toLowerCase()
+        : [o.guestCity, o.guestStateRegion, o.guestCountry, o.guestPostalCode].filter(Boolean).join(" ").toLowerCase();
       const haystack = [
         o.id,
         o.status,
-        o.customer ? customerName(o.customer) : "",
-        o.customer?.email ?? "",
+        o.customer ? customerName(o.customer) : o.guestDisplayName ?? "",
+        o.customer?.email ?? o.guestEmail ?? "",
         o.customer?.id ?? "",
         o.stripeCheckoutSessionId ?? "",
         o.squarePaymentId ?? "",
@@ -412,6 +420,16 @@ export function SalesAdminTable({ orders, emptyMessage }: Props) {
                             ) : (
                               <span className="mt-0.5 block text-[11px] text-ink/50 dark:text-zinc-500">No saved location</span>
                             )}
+                          </>
+                        ) : o.guestEmail ? (
+                          <>
+                            <span className="block truncate text-[15px] font-black leading-tight text-ink dark:text-zinc-100">
+                              {o.guestDisplayName?.trim() || "Guest"}
+                            </span>
+                            <span className="mt-0.5 block truncate font-mono text-[12px] text-ink/90 dark:text-zinc-300">
+                              {o.guestEmail}
+                            </span>
+                            <span className="mt-0.5 block text-[11px] text-ink/55 dark:text-zinc-500">Guest checkout</span>
                           </>
                         ) : (
                           <span className="text-ink/60 dark:text-zinc-500">Guest / no account link</span>

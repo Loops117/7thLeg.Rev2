@@ -380,6 +380,7 @@ export async function updateLoyaltyProgramSettings(state: LoyaltyProgramState) {
     10_000,
     Math.max(0, Math.floor(Number(state.loyaltyRedemptionCentsPerPoint) || 0)),
   );
+  const guestCheckoutEnabled = !!state.guestCheckoutEnabled;
   await prisma.siteConfig.upsert({
     where: { id: 1 },
     create: {
@@ -388,9 +389,10 @@ export async function updateLoyaltyProgramSettings(state: LoyaltyProgramState) {
       loyaltyEnabled,
       pointsPerDollar,
       loyaltyRedemptionCentsPerPoint,
+      guestCheckoutEnabled,
       ...STORE_BOOTSTRAP,
     },
-    update: { loyaltyEnabled, pointsPerDollar, loyaltyRedemptionCentsPerPoint },
+    update: { loyaltyEnabled, pointsPerDollar, loyaltyRedemptionCentsPerPoint, guestCheckoutEnabled },
   });
   revalidatePath("/", "layout");
   revalidatePath("/settings/loyalty", "page");

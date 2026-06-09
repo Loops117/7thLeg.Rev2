@@ -1,4 +1,6 @@
-import { priceCartMerchandiseForCustomer, type PricedCartForCustomerRow } from "@/lib/checkout-cart-pricing";
+import { cartOwnerWhere, type CartOwner } from "@/lib/cart-owner";
+import { isGuestOwner } from "@/lib/link-guest-orders";
+import { priceCartMerchandiseForOwner, type PricedCartForCustomerRow } from "@/lib/checkout-cart-pricing";
 import { priceLabelCartForCustomer, type LabelCartPriceResult } from "@/lib/label-cart-event-pricing";
 import { prisma } from "@/lib/prisma";
 
@@ -18,10 +20,10 @@ export type CheckoutMerchandiseTotals = {
 };
 
 export async function computeCheckoutMerchandiseTotals(
-  customerId: string,
+  owner: CartOwner,
 ): Promise<{ ok: true; totals: CheckoutMerchandiseTotals } | { ok: false; error: string }> {
   const cart = await prisma.cart.findUnique({
-    where: { customerId },
+    where: cartOwnerWhere(owner),
     select: {
       id: true,
       selectedShippingOptionId: true,
@@ -34,9 +36,21 @@ export async function computeCheckoutMerchandiseTotals(
     return { ok: false, error: "Your cart is empty." };
   }
 
+  if (isGuestOwner(owner) && cart.labelItems.length > 0) {
+    return { ok: false, error: "Sign in to check out custom labels." };
+  }
+
   const [priced, labelPricing] = await Promise.all([
-    cart.items.length > 0 ? priceCartMerchandiseForCustomer(customerId) : Promise.resolve(null),
-    priceLabelCartForCustomer(customerId),
+    cart.items.length > 0 ? priceCartMerchandiseForOwner(owner) : Promise.resolve(null),
+    isGuestOwner(owner)
+      ? Promise.resolve({
+          listSubtotalCents: 0,
+          payableSubtotalCents: 0,
+          discountCents: 0,
+          timedDiscountCents: 0,
+          couponDiscountCents: 0,
+        })
+      : priceLabelCartForCustomer(owner.customerId),
   ]);
 
   if (cart.items.length > 0) {
@@ -57,7 +71,11 @@ export async function computeCheckoutMerchandiseTotals(
       cartId: cart.id,
       selectedShippingOptionId:
         priced?.ok ? priced.selectedShippingOptionId : cart.selectedShippingOptionId,
-      appliedLoyaltyPoints: priced?.ok ? priced.appliedLoyaltyPoints : cart.appliedLoyaltyPoints,
+      appliedLoyaltyPoints: isGuestOwner(owner)
+        ? 0
+        : priced?.ok
+          ? priced.appliedLoyaltyPoints
+          : cart.appliedLoyaltyPoints,
       productLines: priced?.ok ? priced.pricedLines : [],
       labelPricing,
       productPayableCents,

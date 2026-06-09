@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth as readAuthSession } from "@/auth";
 import { createFreshPendingCheckoutOrder } from "@/lib/checkout-create-pending-order";
+import { orderBelongsToOwner } from "@/lib/checkout-order-owner";
+import { requireCheckoutSession } from "@/lib/checkout-session";
+import { isGuestOwner } from "@/lib/link-guest-orders";
 import { prisma } from "@/lib/prisma";
 import { getPublicAppOrigin } from "@/lib/public-app-origin";
 import type Stripe from "stripe";
@@ -19,11 +21,8 @@ type StripeCheckoutLineItemParam = NonNullable<
 export type BeginStripeCheckoutResult = { ok: true; url: string } | { ok: false; error: string };
 
 export async function beginStripeCheckoutAction(): Promise<BeginStripeCheckoutResult> {
-  const session = await readAuthSession();
-  if (session?.user?.role !== "customer" || !session.user.id) {
-    return { ok: false, error: "Sign in to check out." };
-  }
-  const customerId = session.user.id;
+  const ctx = await requireCheckoutSession();
+  if (!ctx.ok) return ctx;
 
   const siteCfg = await prisma.siteConfig.findUnique({
     where: { id: 1 },
@@ -37,20 +36,18 @@ export async function beginStripeCheckoutAction(): Promise<BeginStripeCheckoutRe
     return { ok: false, error: "Payments are not configured (missing STRIPE_SECRET_KEY)." };
   }
 
-  const customer = await prisma.customer.findUnique({
-    where: { id: customerId },
-    select: { email: true },
+  const created = await createFreshPendingCheckoutOrder(ctx.owner, {
+    shippingContact: ctx.shippingContact,
   });
-  if (!customer) return { ok: false, error: "Account not found." };
-
-  const created = await createFreshPendingCheckoutOrder(customerId);
   if (!created.ok) return created;
 
   const orderPreview = await prisma.order.findUnique({
     where: { id: created.orderId },
-    select: { totalCents: true },
+    select: { totalCents: true, customerId: true, guestSessionId: true },
   });
-  if (!orderPreview) return { ok: false, error: "Could not verify your order." };
+  if (!orderPreview || !orderBelongsToOwner(orderPreview, ctx.owner)) {
+    return { ok: false, error: "Could not verify your order." };
+  }
   if (orderPreview.totalCents <= 0) {
     await prisma.order.delete({ where: { id: created.orderId } }).catch(() => {});
     return {
@@ -60,7 +57,7 @@ export async function beginStripeCheckoutAction(): Promise<BeginStripeCheckoutRe
   }
 
   const labelPayableCents = created.labelPayableCents;
-  let orderId = created.orderId;
+  const orderId = created.orderId;
   let orderRows;
   try {
     orderRows = await prisma.order.findUnique({
@@ -153,17 +150,24 @@ export async function beginStripeCheckoutAction(): Promise<BeginStripeCheckoutRe
       ? ([...productLineItems, ...stripeExtras] as StripeCheckoutLineItemParam[])
       : ([...productLineItems] as StripeCheckoutLineItemParam[]);
 
+  const metadata: Record<string, string> = { orderId };
+  if (ctx.owner.type === "customer") {
+    metadata.customerId = ctx.owner.customerId;
+  } else {
+    metadata.guestSessionId = ctx.owner.sessionId;
+  }
+
   let checkoutUrl: string;
   try {
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: "payment",
-      customer_email: customer.email,
+      customer_email: ctx.checkoutEmail,
       line_items: lineItemsStripe,
-      success_url: `${origin}/cart/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${origin}/cart/success?session_id={CHECKOUT_SESSION_ID}${isGuestOwner(ctx.owner) ? "&guest=1" : ""}`,
       cancel_url: `${origin}/cart?checkout=cancelled`,
-      metadata: { orderId, customerId },
+      metadata,
       payment_intent_data: {
-        metadata: { orderId, customerId },
+        metadata,
       },
     });
 

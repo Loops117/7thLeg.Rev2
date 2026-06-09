@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { btnMainLg } from "@/lib/btn-theme-classes";
-import { registerCustomer } from "@/app/actions/customer-auth";
+import { registerCustomer, syncGuestSessionAfterSignIn } from "@/app/actions/customer-auth";
 
 export function CustomerRegisterForm() {
   const router = useRouter();
@@ -31,6 +31,7 @@ export function CustomerRegisterForm() {
       }
       const signed = await signIn("customer-credentials", { email, password, redirect: false });
       if (!signed?.error) {
+        await syncGuestSessionAfterSignIn();
         router.push("/account");
         router.refresh();
         return;

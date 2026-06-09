@@ -113,6 +113,14 @@ export function LoyaltyPageContent({
           />
           Enable loyalty program
         </label>
+        <label className="mt-3 flex items-center gap-2 text-sm font-bold text-ink">
+          <input
+            type="checkbox"
+            checked={program.guestCheckoutEnabled}
+            onChange={(e) => setProgram((p) => ({ ...p, guestCheckoutEnabled: e.target.checked }))}
+          />
+          Allow guest checkout (products only — labels still require sign-in)
+        </label>
         <label className="mt-3 block text-sm font-bold text-ink">
           Points per $1.00 (eligible orders, whole points)
           <input

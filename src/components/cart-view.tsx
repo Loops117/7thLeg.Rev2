@@ -75,6 +75,8 @@ type Props = {
   loyaltyPreview: LoyaltyCartPreview | null;
   labelBuilderPublicConfig?: LabelBuilderPublicConfig | null;
   freeShippingActive?: boolean;
+  guestMode?: boolean;
+  shippingContactComplete?: boolean;
 };
 
 export function CartView({
@@ -96,6 +98,8 @@ export function CartView({
   loyaltyPreview,
   labelBuilderPublicConfig = null,
   freeShippingActive = false,
+  guestMode = false,
+  shippingContactComplete = false,
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -706,23 +710,27 @@ export function CartView({
         ) : null}
 
         <div className="mt-6 max-w-md space-y-4 sm:ml-auto">
-          {shippingRequiredButUnavailable ? (
+          {!shippingContactComplete ? (
+            <p className="text-sm font-medium text-coral">
+              Save your shipping address above before checkout.
+            </p>
+          ) : shippingRequiredButUnavailable ? (
             <p className="text-sm font-medium text-coral">
               Checkout is blocked until your cart fits an available shipping box.
             </p>
           ) : orderTotalPreview <= 0 ? (
-            <CartFreeCheckoutButton disabled={lines.length === 0 && labelLines.length === 0} />
+            <CartFreeCheckoutButton disabled={(lines.length === 0 && labelLines.length === 0) || !shippingContactComplete} />
           ) : (
             <>
               {payments.stripeEnabled ? (
                 <div className="text-left">
                   <p className="text-xs font-bold uppercase tracking-wide text-palm-mid">Stripe</p>
-                  <CartCheckoutButton />
+                  <CartCheckoutButton disabled={!shippingContactComplete} />
                 </div>
               ) : null}
               {payments.squareEnabled ? (
                 <div className="text-left">
-                  <CartSquarePayment disabled={pending} />
+                  <CartSquarePayment disabled={pending || !shippingContactComplete} />
                 </div>
               ) : null}
             </>

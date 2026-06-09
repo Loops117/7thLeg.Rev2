@@ -1,7 +1,8 @@
-import { auth as readAuthSession } from "@/auth";
+import { readCartOwner } from "@/lib/cart-owner";
 import { SiteHeaderClient, type SiteHeaderNavItem } from "@/components/site-header-client";
 import { getSiteConfig } from "@/lib/site-config";
-import { getCartHeaderPreview } from "@/lib/store-cart";
+import { getCartHeaderPreviewForOwner } from "@/lib/store-cart";
+import { auth as readAuthSession } from "@/auth";
 
 function mainNavLinks(config: {
   labelBuilderEnabled: boolean;
@@ -38,8 +39,8 @@ export async function SiteHeader() {
   const config = await getSiteConfig();
   const session = await readAuthSession().catch(() => null);
   const role = session?.user?.role === "admin" || session?.user?.role === "customer" ? session.user.role : null;
-  const customerId = role === "customer" && session?.user?.id ? session.user.id : null;
-  const cartPreview = customerId ? await getCartHeaderPreview(customerId) : null;
+  const owner = await readCartOwner();
+  const cartPreview = owner ? await getCartHeaderPreviewForOwner(owner) : null;
   const cartCount = cartPreview?.count ?? 0;
 
   return (

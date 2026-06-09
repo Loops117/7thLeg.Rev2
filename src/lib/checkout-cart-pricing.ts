@@ -1,4 +1,5 @@
 import { EventKind, EventSaleDiscountMode } from "@/generated/prisma/client";
+import { cartOwnerWhere, ownerFromCustomerId, type CartOwner } from "@/lib/cart-owner";
 import { prisma } from "@/lib/prisma";
 import { normalizeVariantSku } from "@/lib/variant-sku";
 import { effectiveEventSalePriceCents, isEventActive } from "@/lib/event-pricing";
@@ -54,7 +55,7 @@ export type PricedCartForCustomerRow = PricedCheckoutLineSnapshot & {
   productKitInstanceId: string | null;
 };
 
-export async function priceCartMerchandiseForCustomer(customerId: string): Promise<
+export async function priceCartMerchandiseForOwner(owner: CartOwner): Promise<
   | { ok: false; error: string }
   | {
       ok: true;
@@ -76,7 +77,7 @@ export async function priceCartMerchandiseForCustomer(customerId: string): Promi
     }
 > {
   const cart = await prisma.cart.findUnique({
-    where: { customerId },
+    where: cartOwnerWhere(owner),
     select: {
       id: true,
       selectedShippingOptionId: true,
@@ -326,4 +327,8 @@ export async function priceCartMerchandiseForCustomer(customerId: string): Promi
     appliedCouponEventId,
     appliedLoyaltyPoints: Math.max(0, Math.floor(Number(cart.appliedLoyaltyPoints) || 0)),
   };
+}
+
+export async function priceCartMerchandiseForCustomer(customerId: string) {
+  return priceCartMerchandiseForOwner(ownerFromCustomerId(customerId));
 }

@@ -1,20 +1,27 @@
+import { cartOwnerWhere, ownerFromCustomerId, type CartOwner } from "@/lib/cart-owner";
 import { parseCartLabelBundlePayload } from "@/lib/label-cart-bundle";
 import { priceLabelCartForCustomer } from "@/lib/label-cart-event-pricing";
-import { priceCartMerchandiseForCustomer } from "@/lib/checkout-cart-pricing";
+import { priceCartMerchandiseForOwner } from "@/lib/checkout-cart-pricing";
 import type { CartLabelBundleLineEntry, CartLabelLineView } from "@/lib/cart-label-types";
 export type { CartLabelBundleLineEntry, CartLabelLineView } from "@/lib/cart-label-types";
 import { LABEL_EDITOR_DOC_VERSION, parseLabelEditorDocument } from "@/lib/label-editor/document";
 import { labelTemplateRowToPickerOption } from "@/lib/label-editor/template-meta";
 import { prisma } from "@/lib/prisma";
-export async function getOrCreateCart(customerId: string) {
-  const existing = await prisma.cart.findUnique({ where: { customerId } });
+
+export async function getOrCreateCart(owner: CartOwner) {
+  const existing = await prisma.cart.findUnique({ where: cartOwnerWhere(owner) });
   if (existing) return existing;
-  return prisma.cart.create({ data: { customerId } });
+  return prisma.cart.create({
+    data:
+      owner.type === "customer"
+        ? { customerId: owner.customerId }
+        : { sessionId: owner.sessionId },
+  });
 }
 
-export async function getCartItemCount(customerId: string): Promise<number> {
+export async function getCartItemCount(owner: CartOwner): Promise<number> {
   const cart = await prisma.cart.findUnique({
-    where: { customerId },
+    where: cartOwnerWhere(owner),
     include: {
       items: { select: { quantity: true } },
       labelItems: { select: { id: true } },
@@ -126,7 +133,7 @@ export type CartLineView = {
 };
 
 /** Cart totals + priced lines shared with checkout (timed sale persists on cart items; coupon stored on cart). */
-export async function getCartPricingForCartPage(customerId: string): Promise<
+export async function getCartPricingForCartPage(owner: CartOwner): Promise<
   | { empty: true }
   | {
       empty: false;
@@ -144,7 +151,7 @@ export async function getCartPricingForCartPage(customerId: string): Promise<
       appliedLoyaltyPoints: number;
     }
 > {
-  const priced = await priceCartMerchandiseForCustomer(customerId);
+  const priced = await priceCartMerchandiseForOwner(owner);
   if (!priced.ok) return { empty: true };
 
   const kitLabelByInstance = new Map(priced.kitInstances.map((k) => [k.instanceId, k.label]));
@@ -185,11 +192,19 @@ export type CartHeaderPreview = {
   lines: { name: string; detail: string | null; quantity: number; lineTotalCents: number }[];
 };
 
-export async function getCartHeaderPreview(customerId: string): Promise<CartHeaderPreview> {
+export async function getCartHeaderPreviewForOwner(owner: CartOwner): Promise<CartHeaderPreview> {
   const [productPack, labelLines, labelPriced] = await Promise.all([
-    getCartPricingForCartPage(customerId),
-    getCartLabelLinesForCustomer(customerId),
-    priceLabelCartForCustomer(customerId),
+    getCartPricingForCartPage(owner),
+    owner.type === "customer" ? getCartLabelLinesForCustomer(owner.customerId) : Promise.resolve([]),
+    owner.type === "customer"
+      ? priceLabelCartForCustomer(owner.customerId)
+      : Promise.resolve({
+          listSubtotalCents: 0,
+          payableSubtotalCents: 0,
+          discountCents: 0,
+          timedDiscountCents: 0,
+          couponDiscountCents: 0,
+        }),
   ]);
 
   const lines: CartHeaderPreview["lines"] = [];
@@ -221,9 +236,13 @@ export async function getCartHeaderPreview(customerId: string): Promise<CartHead
   return { count, subtotalCents: productSub + labelSub, lines };
 }
 
+export async function getCartHeaderPreview(customerId: string): Promise<CartHeaderPreview> {
+  return getCartHeaderPreviewForOwner(ownerFromCustomerId(customerId));
+}
+
 /** @deprecated Prefer getCartPricingForCartPage. */
 export async function getCartLinesForCustomer(customerId: string): Promise<CartLineView[]> {
-  const pack = await getCartPricingForCartPage(customerId);
+  const pack = await getCartPricingForCartPage(ownerFromCustomerId(customerId));
   if (pack.empty) return [];
   return pack.lines;
 }

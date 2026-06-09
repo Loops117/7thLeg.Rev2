@@ -2,75 +2,121 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Fragment, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
+import { useEffect, useId, useState, useTransition, type CSSProperties } from "react";
 import { addProductKitToCartAction } from "@/app/actions/store-cart";
 import { btnMainMd } from "@/lib/btn-theme-classes";
+import { withProductImagePlaceholder } from "@/lib/product-images-public";
 import { formatPriceUsd } from "@/lib/product-slug";
+import { useCoarsePointer } from "@/lib/use-coarse-pointer";
 import type { StorefrontProductKit, StorefrontKitLine } from "@/lib/product-kits";
 
-/** Shared row height for item cards, operators, and pricing card. */
-const KIT_ROW_H = "h-14 sm:h-16";
-const KIT_PRICING_W = "w-[10.5rem] sm:w-[12rem]";
-const KIT_CARD_IMAGE_CLASS = "h-14 w-14 shrink-0 sm:h-16 sm:w-16";
+const KIT_HOVER_PREVIEW_SIZE_PX = 112;
 
-function KitItemCard({ item }: { item: StorefrontKitLine }) {
-  return (
-    <article
-      className={`store-product-card flex ${KIT_ROW_H} w-[13rem] shrink-0 overflow-hidden rounded sm:w-[15rem]`}
-    >
-      <Link href={`/product/${item.productSlug}`} className="flex h-full min-w-0 flex-1 items-stretch">
-        <div className={`store-product-card__image-area relative overflow-hidden ${KIT_CARD_IMAGE_CLASS}`}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={item.imageUrl} alt="" className="h-full w-full object-contain" />
-        </div>
-        <div className="flex h-full min-w-0 flex-1 flex-col justify-center gap-px overflow-hidden px-2 leading-none">
-          {item.variantLabel ? (
-            <p className="store-product-card__title line-clamp-1 text-sm font-bold">{item.variantLabel}</p>
-          ) : null}
-          <p className="store-product-card__description line-clamp-2 text-[10px] font-normal sm:text-[11px]">
-            {item.productName}
-          </p>
-          <p className="store-product-card__price line-clamp-1 text-[10px] font-bold">
-            {formatPriceUsd(item.unitPriceCents)}
-          </p>
-          {!item.inStock ? (
-            <p className="store-product-card__stock-warn line-clamp-1 text-[9px] font-medium">Out of stock</p>
-          ) : null}
-        </div>
-      </Link>
-    </article>
-  );
+type KitHoverPreviewPosition = {
+  left: number;
+  top: number;
+};
+
+function kitItemLabel(item: StorefrontKitLine) {
+  return item.variantLabel ? `${item.productName} — ${item.variantLabel}` : item.productName;
 }
 
-function KitComboOperator({ symbol }: { symbol: "+" | "=" }) {
-  return (
-    <span
-      className={`kit-combo-operator flex ${KIT_ROW_H} w-10 shrink-0 items-center justify-center self-center text-xl font-black leading-none sm:w-14 sm:text-2xl`}
-      aria-hidden
-    >
-      {symbol}
-    </span>
+function kitPreviewPositionAtCursor(clientX: number, clientY: number, size: number): KitHoverPreviewPosition {
+  const edgePad = 8;
+  const half = size / 2;
+  const left = Math.min(
+    window.innerWidth - size - edgePad,
+    Math.max(edgePad, clientX - half),
   );
+  const top = Math.min(
+    window.innerHeight - size - edgePad,
+    Math.max(edgePad, clientY - half),
+  );
+  return { left, top };
 }
 
-function KitPricingCard({ kit }: { kit: StorefrontProductKit }) {
+function KitItemListRow({
+  item,
+  isCurrentProduct,
+}: {
+  item: StorefrontKitLine;
+  isCurrentProduct: boolean;
+}) {
+  const previewId = useId();
+  const coarsePointer = useCoarsePointer();
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewPos, setPreviewPos] = useState<KitHoverPreviewPosition>({ left: 0, top: 0 });
+
+  useEffect(() => {
+    if (!previewVisible) return;
+    const onScroll = () => setPreviewVisible(false);
+    window.addEventListener("scroll", onScroll, true);
+    return () => window.removeEventListener("scroll", onScroll, true);
+  }, [previewVisible]);
+
+  const preview =
+    previewVisible && !coarsePointer && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            id={previewId}
+            role="presentation"
+            className="fixed z-[200]"
+            style={
+              {
+                left: previewPos.left,
+                top: previewPos.top,
+                width: KIT_HOVER_PREVIEW_SIZE_PX,
+                height: KIT_HOVER_PREVIEW_SIZE_PX,
+              } as CSSProperties
+            }
+            onMouseLeave={() => setPreviewVisible(false)}
+          >
+            <div className="kit-bundle-item-hover-preview__card store-product-card__image-area h-full w-full">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={withProductImagePlaceholder(item.imageUrl)}
+                alt=""
+                className="h-full w-full object-contain p-1.5"
+                draggable={false}
+              />
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
-    <aside
-      className={`kit-combo-pricing flex ${KIT_ROW_H} w-full flex-col justify-center rounded border-2 border-lagoon/30 bg-lagoon/5 px-3`}
+    <li
+      className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2.5 text-sm"
+      onMouseEnter={(e) => {
+        setPreviewPos(kitPreviewPositionAtCursor(e.clientX, e.clientY, KIT_HOVER_PREVIEW_SIZE_PX));
+        setPreviewVisible(true);
+      }}
     >
-      <div className="flex items-baseline justify-between gap-2 text-xs leading-tight">
-        <span className="text-ink/75">Separate</span>
-        <span className="text-ink/60 line-through">{formatPriceUsd(kit.listTotalCents)}</span>
+      <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <Link
+          href={`/product/${item.productSlug}`}
+          className="font-medium text-palm hover:underline"
+        >
+          {kitItemLabel(item)}
+        </Link>
+        {isCurrentProduct ? (
+          <span className="rounded bg-palm/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-palm">
+            This item
+          </span>
+        ) : null}
       </div>
-      <div className="mt-0.5 flex items-baseline justify-between gap-2 leading-tight">
-        <span className="text-xs font-bold text-palm">Kit price</span>
-        <span className="text-base font-black text-ink">{formatPriceUsd(kit.kitPriceCents)}</span>
-      </div>
-    </aside>
+      <span className="shrink-0 text-xs font-bold text-ink/80">{formatPriceUsd(item.unitPriceCents)}</span>
+      {!item.inStock ? (
+        <span className="w-full text-xs font-medium text-coral sm:w-auto">Out of stock</span>
+      ) : null}
+      {preview}
+    </li>
   );
 }
 
-function KitPricingColumn({
+function KitBundleFooter({
   kit,
   pending,
   allInStock,
@@ -84,20 +130,33 @@ function KitPricingColumn({
   onAddKit: () => void;
 }) {
   return (
-    <div className={`flex shrink-0 flex-col items-stretch gap-1.5 ${KIT_PRICING_W}`}>
-      <KitPricingCard kit={kit} />
-      <button
-        type="button"
-        disabled={pending || !allInStock}
-        onClick={onAddKit}
-        className={`w-full ${btnMainMd} !py-2 text-sm disabled:opacity-50`}
-      >
-        {pending ? "Adding…" : "Add kit to cart"}
-      </button>
-      {!allInStock ? (
-        <p className="text-center text-[11px] font-medium text-coral">One or more items are out of stock.</p>
-      ) : null}
-      {error ? <p className="text-center text-[11px] font-medium text-coral">{error}</p> : null}
+    <div className="kit-bundle__footer flex flex-col gap-3 border-t-2 border-palm/25 bg-lagoon/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5">
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+        <p className="text-xs text-ink/75">
+          Separate{" "}
+          <span className="font-medium text-ink/60 line-through">{formatPriceUsd(kit.listTotalCents)}</span>
+        </p>
+        <p>
+          <span className="text-xs font-bold text-palm">Bundle price </span>
+          <span className="text-lg font-black text-ink">{formatPriceUsd(kit.kitPriceCents)}</span>
+        </p>
+        <p className="text-xs font-bold text-palm">Save {formatPriceUsd(kit.discountCents)}</p>
+      </div>
+
+      <div className="flex w-full flex-col gap-1 sm:w-auto sm:min-w-[12rem]">
+        <button
+          type="button"
+          disabled={pending || !allInStock}
+          onClick={onAddKit}
+          className={`w-full ${btnMainMd} !py-2 text-sm disabled:opacity-50`}
+        >
+          {pending ? "Adding…" : "Add kit to cart"}
+        </button>
+        {!allInStock ? (
+          <p className="text-center text-[11px] font-medium text-coral">One or more items are out of stock.</p>
+        ) : null}
+        {error ? <p className="text-center text-[11px] font-medium text-coral">{error}</p> : null}
+      </div>
     </div>
   );
 }
@@ -142,19 +201,21 @@ export function ProductKitSection({
         </p>
       </div>
 
-      <div
-        className="mt-3 flex items-start justify-center gap-3 overflow-x-auto px-2 pb-0.5 sm:gap-4 md:justify-evenly md:gap-5 md:overflow-visible"
-        role="list"
-        aria-label="Kit combo"
-      >
-        {kit.items.map((item, index) => (
-          <Fragment key={`${item.productId}:${item.variantId ?? ""}`}>
-            {index > 0 ? <KitComboOperator symbol="+" /> : null}
-            <KitItemCard item={item} />
-          </Fragment>
-        ))}
-        <KitComboOperator symbol="=" />
-        <KitPricingColumn
+      <div className="kit-bundle mt-3 overflow-hidden rounded-lg" aria-label="Kit bundle">
+        <div className="kit-bundle__contents px-4 py-3 sm:px-5">
+          <p className="text-xs font-bold uppercase tracking-wide text-palm/80">Includes</p>
+          <ul className="mt-1.5 divide-y divide-palm/15" aria-label="Items in this kit">
+            {kit.items.map((item) => (
+              <KitItemListRow
+                key={`${item.productId}:${item.variantId ?? ""}`}
+                item={item}
+                isCurrentProduct={item.productId === kit.hostProductId}
+              />
+            ))}
+          </ul>
+        </div>
+
+        <KitBundleFooter
           kit={kit}
           pending={pending}
           allInStock={allInStock}

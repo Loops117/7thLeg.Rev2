@@ -1,19 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth as readAuthSession } from "@/auth";
 import { EventKind } from "@/generated/prisma/client";
+import { cartOwnerWhere, requireCartOwner } from "@/lib/cart-owner";
 import { isEventActive } from "@/lib/event-pricing";
 import { prisma } from "@/lib/prisma";
-import { priceCartMerchandiseForCustomer } from "@/lib/checkout-cart-pricing";
+import { priceCartMerchandiseForOwner } from "@/lib/checkout-cart-pricing";
 import { priceLabelCartForCustomer } from "@/lib/label-cart-event-pricing";
+import { isGuestOwner } from "@/lib/link-guest-orders";
 import { getOrCreateCart } from "@/lib/store-cart";
-
-async function customerId(): Promise<string | null> {
-  const session = await readAuthSession();
-  if (session?.user?.role !== "customer" || !session.user.id) return null;
-  return session.user.id;
-}
 
 function normalizeCouponCode(raw: string): string {
   return raw.trim().toUpperCase().replace(/\s+/g, "");
@@ -25,8 +20,9 @@ export type CouponCartActionResult =
 
 /** Apply checkout coupon stored on Cart (pricing runs in checkout + cart display). */
 export async function applyCartCouponAction(codeRaw: string): Promise<CouponCartActionResult> {
-  const cid = await customerId();
-  if (!cid) return { ok: false, error: "Sign in to apply a code." };
+  const ownerResult = await requireCartOwner();
+  if (!ownerResult.ok) return { ok: false, error: ownerResult.error };
+  const owner = ownerResult.owner;
 
   const code = normalizeCouponCode(codeRaw);
   if (code.length < 2) return { ok: false, error: "Enter a valid promo code." };
@@ -48,16 +44,18 @@ export async function applyCartCouponAction(codeRaw: string): Promise<CouponCart
   if (!isEventActive(ev.startAt, ev.endAt)) return { ok: false, error: "This promo code isn’t active right now." };
   if (ev.saleDiscountMode === "NONE") return { ok: false, error: "This promo code has no discount configured." };
 
-  await getOrCreateCart(cid);
+  await getOrCreateCart(owner);
 
   await prisma.cart.update({
-    where: { customerId: cid },
+    where: cartOwnerWhere(owner),
     data: { appliedCouponEventId: ev.id },
   });
 
   const [priced, labelPricing] = await Promise.all([
-    priceCartMerchandiseForCustomer(cid),
-    priceLabelCartForCustomer(cid),
+    priceCartMerchandiseForOwner(owner),
+    isGuestOwner(owner)
+      ? Promise.resolve({ couponDiscountCents: 0 })
+      : priceLabelCartForCustomer(owner.customerId),
   ]);
   const discountCents =
     (priced.ok ? priced.couponDiscountCents : 0) + labelPricing.couponDiscountCents;
@@ -67,10 +65,10 @@ export async function applyCartCouponAction(codeRaw: string): Promise<CouponCart
 }
 
 export async function clearCartCouponAction(): Promise<{ ok: true } | { ok: false; error: string }> {
-  const cid = await customerId();
-  if (!cid) return { ok: false, error: "Sign in required." };
+  const ownerResult = await requireCartOwner();
+  if (!ownerResult.ok) return { ok: false, error: ownerResult.error };
   await prisma.cart.updateMany({
-    where: { customerId: cid },
+    where: cartOwnerWhere(ownerResult.owner),
     data: { appliedCouponEventId: null },
   });
   revalidatePath("/cart");

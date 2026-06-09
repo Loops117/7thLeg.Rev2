@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { beginStripeCheckoutAction } from "@/app/actions/checkout-stripe";
 import { btnMainLg } from "@/lib/btn-theme-classes";
 
-export function CartCheckoutButton({ disabled }: { disabled?: boolean }) {
+export function CartCheckoutButton({ disabled = false }: { disabled?: boolean }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
 

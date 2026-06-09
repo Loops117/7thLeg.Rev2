@@ -1,7 +1,16 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { cookies } from "next/headers";
+import { auth as readAuthSession } from "@/auth";
+import { clearGuestCheckoutContactCookie } from "@/lib/guest-checkout-contact";
+import {
+  linkGuestOrdersAndAwardLoyalty,
+  mergeGuestCartIntoCustomer,
+} from "@/lib/link-guest-orders";
 import { prisma } from "@/lib/prisma";
+
+const GUEST_CART_COOKIE = "7thleg_guest_cart";
 
 export type RegisterCustomerResult =
   | { ok: true }
@@ -49,6 +58,27 @@ export async function registerCustomer(formData: FormData): Promise<RegisterCust
     },
   });
   return { ok: true };
+}
+
+/** Merge guest cart and award retroactive loyalty after sign-in or registration. */
+export async function syncGuestSessionAfterSignIn(): Promise<void> {
+  const session = await readAuthSession();
+  if (session?.user?.role !== "customer" || !session.user.id) return;
+
+  const customer = await prisma.customer.findUnique({
+    where: { id: session.user.id },
+    select: { email: true },
+  });
+  if (!customer) return;
+
+  const jar = await cookies();
+  const guestSessionId = jar.get(GUEST_CART_COOKIE)?.value?.trim();
+  if (guestSessionId && guestSessionId.length >= 8) {
+    await mergeGuestCartIntoCustomer(guestSessionId, session.user.id);
+  }
+
+  await linkGuestOrdersAndAwardLoyalty(session.user.id, customer.email);
+  await clearGuestCheckoutContactCookie();
 }
 
 function emptyToNull(s: string): string | null {

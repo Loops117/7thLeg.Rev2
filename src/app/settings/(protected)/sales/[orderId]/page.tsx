@@ -103,12 +103,39 @@ export default async function AdminOrderDetailPage({ params }: Props) {
     template: row.template,
   }));
 
+  const checkoutShipName = order.guestDisplayName?.trim() || null;
+  const checkoutShipAddress = order.guestAddressLine1?.trim()
+    ? customerAddressLines({
+        addressLine1: order.guestAddressLine1,
+        addressLine2: order.guestAddressLine2,
+        city: order.guestCity,
+        stateRegion: order.guestStateRegion,
+        postalCode: order.guestPostalCode,
+        country: order.guestCountry,
+      })
+    : [];
+
   const name =
+    checkoutShipName ||
     order.customer?.displayName?.trim() ||
     [order.customer?.firstName, order.customer?.lastName].filter(Boolean).join(" ").trim() ||
     null;
-  const customerAddress = order.customer ? customerAddressLines(order.customer) : [];
-  const customerHeading = name || order.customer?.email || "Guest";
+  const customerAddress =
+    checkoutShipAddress.length > 0
+      ? checkoutShipAddress
+      : order.customer
+        ? customerAddressLines(order.customer)
+        : order.guestEmail
+          ? customerAddressLines({
+              addressLine1: order.guestAddressLine1,
+              addressLine2: order.guestAddressLine2,
+              city: order.guestCity,
+              stateRegion: order.guestStateRegion,
+              postalCode: order.guestPostalCode,
+              country: order.guestCountry,
+            })
+          : [];
+  const customerHeading = name || order.customer?.email || order.guestEmail || "Guest";
   const productLineTotalCents = order.lineItems.reduce((s, li) => s + li.lineTotalCents, 0);
   const pickChecks = parseAdminPickChecks(order.adminPickChecksJson);
   const pickLines = [
@@ -158,6 +185,11 @@ export default async function AdminOrderDetailPage({ params }: Props) {
               ) : null}
               {customerAddress.length > 0 ? (
                 <div className="mt-2 space-y-0.5">
+                  {checkoutShipAddress.length > 0 ? (
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-ink/55 dark:text-zinc-500">
+                      Ship-to at checkout
+                    </p>
+                  ) : null}
                   {customerAddress.map((line) => (
                     <p key={`${order.id}-${line}`} className="text-sm text-ink/80 dark:text-zinc-300">
                       {line}
@@ -173,6 +205,21 @@ export default async function AdminOrderDetailPage({ params }: Props) {
                 </Link>
               </p>
               <p className="mt-3 text-[11px] text-ink/55 dark:text-zinc-500">{order.customer.id}</p>
+            </>
+          ) : order.guestEmail ? (
+            <>
+              <p className="mt-2 text-lg font-black leading-tight text-ink dark:text-zinc-100">{customerHeading}</p>
+              <p className="mt-1 font-mono text-sm text-ink/90 dark:text-zinc-300">{order.guestEmail}</p>
+              {customerAddress.length > 0 ? (
+                <div className="mt-2 space-y-0.5">
+                  {customerAddress.map((line) => (
+                    <p key={`${order.id}-guest-${line}`} className="text-sm text-ink/80 dark:text-zinc-300">
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
+              <p className="mt-2 text-xs text-ink/55 dark:text-zinc-500">Guest checkout — no linked account yet.</p>
             </>
           ) : (
             <p className="mt-2 text-sm text-ink/65 dark:text-zinc-400">No linked customer record (checkout guest).</p>

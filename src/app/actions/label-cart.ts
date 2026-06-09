@@ -21,6 +21,7 @@ import {
   type BatchFinishSelection,
 } from "@/lib/label-finish-options";
 import { listTemplateFinishOptionsMap } from "@/lib/label-finish-server";
+import { ownerFromCustomerId } from "@/lib/cart-owner";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateCart } from "@/lib/store-cart";
 import type { LabelFulfillmentSheetFormat } from "@/lib/site-config-types";
@@ -63,7 +64,7 @@ export async function addLabelsToCartAction(
     const sheetMarginMm = site?.labelFulfillmentSheetMarginMm ?? 12.7;
     const labelGapMm = site?.labelFulfillmentLabelGapMm ?? 2;
 
-    const cart = await getOrCreateCart(customerId);
+    const cart = await getOrCreateCart(ownerFromCustomerId(customerId));
     const templateCache = new Map<string, Awaited<ReturnType<typeof prisma.labelTemplate.findFirst>>>();
     const bundleEntries: CartLabelBundleEntry[] = [];
     const qtyByTemplate = quantityByTemplateId(

@@ -23,6 +23,7 @@ export type StorefrontKitLine = {
 
 export type StorefrontProductKit = {
   id: string;
+  hostProductId: string;
   label: string;
   discountCents: number;
   items: StorefrontKitLine[];
@@ -214,6 +215,7 @@ export async function getProductKitForStorefront(
 
   return {
     id: kit.id,
+    hostProductId,
     label: kit.label.trim() || "Kit deal",
     discountCents,
     items: lines,

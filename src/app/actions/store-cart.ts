@@ -2,20 +2,15 @@
 
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
-import { auth as readAuthSession } from "@/auth";
 import { EventKind } from "@/generated/prisma/client";
+import { cartOwnerWhere, isGuestCheckoutEnabled, requireCartOwner } from "@/lib/cart-owner";
+import { isGuestOwner } from "@/lib/link-guest-orders";
 import { pricingScopeKeyFromTimedSaleEventId } from "@/lib/checkout-cart-pricing";
 import { prisma } from "@/lib/prisma";
 import { reconcileCartShippingSelection } from "@/lib/shipping-options-public";
-import { isShippingOptionEligibleForCustomer } from "@/lib/shipping-eligibility";
+import { isShippingOptionEligibleForOwner } from "@/lib/shipping-eligibility";
 import { getOrCreateCart } from "@/lib/store-cart";
 import { productAppearsInStock, variantIsPurchasable } from "@/lib/product-stock";
-
-async function requireCustomerId(): Promise<string | null> {
-  const session = await readAuthSession();
-  if (session?.user?.role !== "customer" || !session.user.id) return null;
-  return session.user.id;
-}
 
 export type CartActionResult = { ok: true } | { ok: false; error: string };
 
@@ -26,10 +21,10 @@ export async function addToCartAction(input: {
   /** When adding from a TIMED event page / ?event= URL, persists sale pricing rules on this cart row. */
   timedSaleEventId?: string | null;
 }): Promise<CartActionResult> {
-  const customerId = await requireCustomerId();
-  if (!customerId) {
-    return { ok: false, error: "Sign in to add items to your cart." };
-  }
+  const ownerResult = await requireCartOwner();
+  if (!ownerResult.ok) return { ok: false, error: ownerResult.error };
+  const owner = ownerResult.owner;
+
   const qty = Math.min(99, Math.max(1, Math.floor(input.quantity || 1)));
 
   const product = await prisma.product.findUnique({
@@ -62,7 +57,7 @@ export async function addToCartAction(input: {
     }
   }
 
-  const cart = await getOrCreateCart(customerId);
+  const cart = await getOrCreateCart(owner);
 
   let timedRef = input.timedSaleEventId?.trim() || null;
   if (timedRef) {
@@ -114,7 +109,7 @@ export async function addToCartAction(input: {
     });
   }
 
-  await reconcileCartShippingSelection(customerId);
+  await reconcileCartShippingSelection(owner);
 
   revalidatePath("/cart");
   revalidatePath("/");
@@ -125,10 +120,12 @@ export async function addProductKitToCartAction(input: {
   kitId: string;
   timedSaleEventId?: string | null;
 }): Promise<CartActionResult> {
-  const customerId = await requireCustomerId();
-  if (!customerId) {
-    return { ok: false, error: "Sign in to add this kit to your cart." };
+  const ownerResult = await requireCartOwner();
+  if (!ownerResult.ok) return { ok: false, error: ownerResult.error };
+  if (isGuestOwner(ownerResult.owner)) {
+    return { ok: false, error: "Sign in to add product kits to your cart." };
   }
+  const owner = ownerResult.owner;
 
   const kit = await prisma.productKit.findUnique({
     where: { id: input.kitId },
@@ -153,7 +150,7 @@ export async function addProductKitToCartAction(input: {
   const pricingScopeKey = pricingScopeKeyFromTimedSaleEventId(timedRef);
   const instanceId = randomUUID();
 
-  const cart = await getOrCreateCart(customerId);
+  const cart = await getOrCreateCart(owner);
 
   for (const row of kit.items) {
     const product = row.product;
@@ -208,31 +205,35 @@ export async function addProductKitToCartAction(input: {
     }
   }
 
-  await reconcileCartShippingSelection(customerId);
+  await reconcileCartShippingSelection(owner);
   revalidatePath("/cart");
   revalidatePath("/");
   return { ok: true };
 }
 
 export async function setCartItemQuantityAction(lineId: string, quantity: number): Promise<CartActionResult> {
-  const customerId = await requireCustomerId();
-  if (!customerId) return { ok: false, error: "Sign in required." };
+  const ownerResult = await requireCartOwner();
+  if (!ownerResult.ok) return { ok: false, error: ownerResult.error };
+  const owner = ownerResult.owner;
 
   const qty = Math.min(99, Math.max(0, Math.floor(quantity)));
   const line = await prisma.cartItem.findFirst({
-    where: { id: lineId, cart: { customerId } },
+    where: { id: lineId, cart: cartOwnerWhere(owner) },
   });
   if (!line) return { ok: false, error: "Line not found." };
 
   if (qty === 0) {
     await prisma.cartItem.delete({ where: { id: lineId } });
-    const remaining = await prisma.cartItem.count({ where: { cart: { customerId } } });
+    const remaining = await prisma.cartItem.count({ where: { cart: cartOwnerWhere(owner) } });
     if (remaining === 0) {
-      await prisma.cart.update({ where: { customerId }, data: { appliedLoyaltyPoints: 0 } });
+      await prisma.cart.update({
+        where: cartOwnerWhere(owner),
+        data: { appliedLoyaltyPoints: 0 },
+      });
     }
   } else {
     const lineFull = await prisma.cartItem.findFirst({
-      where: { id: lineId, cart: { customerId } },
+      where: { id: lineId, cart: cartOwnerWhere(owner) },
       include: { product: { include: { variants: true } } },
     });
     if (!lineFull) return { ok: false, error: "Line not found." };
@@ -250,7 +251,7 @@ export async function setCartItemQuantityAction(lineId: string, quantity: number
     await prisma.cartItem.update({ where: { id: lineId }, data: { quantity: qty } });
   }
 
-  await reconcileCartShippingSelection(customerId);
+  await reconcileCartShippingSelection(owner);
 
   revalidatePath("/cart");
   revalidatePath("/");
@@ -258,20 +259,24 @@ export async function setCartItemQuantityAction(lineId: string, quantity: number
 }
 
 export async function removeCartLineAction(lineId: string): Promise<CartActionResult> {
-  const customerId = await requireCustomerId();
-  if (!customerId) return { ok: false, error: "Sign in required." };
+  const ownerResult = await requireCartOwner();
+  if (!ownerResult.ok) return { ok: false, error: ownerResult.error };
+  const owner = ownerResult.owner;
 
   const line = await prisma.cartItem.findFirst({
-    where: { id: lineId, cart: { customerId } },
+    where: { id: lineId, cart: cartOwnerWhere(owner) },
   });
   if (!line) return { ok: false, error: "Line not found." };
 
   await prisma.cartItem.delete({ where: { id: lineId } });
-  const remaining = await prisma.cartItem.count({ where: { cart: { customerId } } });
+  const remaining = await prisma.cartItem.count({ where: { cart: cartOwnerWhere(owner) } });
   if (remaining === 0) {
-    await prisma.cart.update({ where: { customerId }, data: { appliedLoyaltyPoints: 0 } });
+    await prisma.cart.update({
+      where: cartOwnerWhere(owner),
+      data: { appliedLoyaltyPoints: 0 },
+    });
   }
-  await reconcileCartShippingSelection(customerId);
+  await reconcileCartShippingSelection(owner);
 
   revalidatePath("/cart");
   revalidatePath("/");
@@ -279,20 +284,21 @@ export async function removeCartLineAction(lineId: string): Promise<CartActionRe
 }
 
 export async function setCartShippingOptionAction(shippingOptionId: string): Promise<CartActionResult> {
-  const customerId = await requireCustomerId();
-  if (!customerId) return { ok: false, error: "Sign in required." };
+  const ownerResult = await requireCartOwner();
+  if (!ownerResult.ok) return { ok: false, error: ownerResult.error };
+  const owner = ownerResult.owner;
 
   const id = shippingOptionId.trim();
   if (!id) return { ok: false, error: "Invalid shipping option." };
 
-  const eligible = await isShippingOptionEligibleForCustomer(customerId, id);
+  const eligible = await isShippingOptionEligibleForOwner(owner, id);
   if (!eligible) {
     return { ok: false, error: "That shipping option doesn’t fit this cart." };
   }
 
-  await getOrCreateCart(customerId);
+  await getOrCreateCart(owner);
   await prisma.cart.update({
-    where: { customerId },
+    where: cartOwnerWhere(owner),
     data: { selectedShippingOptionId: id },
   });
 
@@ -302,17 +308,26 @@ export async function setCartShippingOptionAction(shippingOptionId: string): Pro
 }
 
 export async function setCartAppliedLoyaltyPointsAction(points: number): Promise<CartActionResult> {
-  const customerId = await requireCustomerId();
-  if (!customerId) return { ok: false, error: "Sign in required." };
+  const ownerResult = await requireCartOwner();
+  if (!ownerResult.ok) return { ok: false, error: ownerResult.error };
+  if (isGuestOwner(ownerResult.owner)) {
+    return { ok: false, error: "Sign in to redeem loyalty points." };
+  }
+  const owner = ownerResult.owner;
 
   const n = Math.max(0, Math.min(10_000_000, Math.floor(Number(points) || 0)));
-  await getOrCreateCart(customerId);
+  await getOrCreateCart(owner);
   await prisma.cart.update({
-    where: { customerId },
+    where: cartOwnerWhere(owner),
     data: { appliedLoyaltyPoints: n },
   });
 
   revalidatePath("/cart");
   revalidatePath("/");
   return { ok: true };
+}
+
+/** Whether anonymous shoppers can use the cart without signing in. */
+export async function getGuestCheckoutEnabledAction(): Promise<boolean> {
+  return isGuestCheckoutEnabled();
 }

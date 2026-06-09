@@ -1,12 +1,13 @@
 import { EventKind } from "@/generated/prisma/client";
+import { cartOwnerWhere, ownerFromCustomerId, type CartOwner } from "@/lib/cart-owner";
 import { isEventActive } from "@/lib/event-pricing";
 import { prisma } from "@/lib/prisma";
 
 /** True when an active timed event or applied coupon grants free shipping. */
-export async function checkoutHasActiveFreeShipping(customerId: string): Promise<boolean> {
+export async function checkoutHasActiveFreeShipping(owner: CartOwner): Promise<boolean> {
   const now = new Date();
   const cart = await prisma.cart.findUnique({
-    where: { customerId },
+    where: cartOwnerWhere(owner),
     select: { appliedCouponEventId: true },
   });
 
@@ -36,3 +37,6 @@ export async function checkoutHasActiveFreeShipping(customerId: string): Promise
   return timedRows.some((ev) => isEventActive(ev.startAt, ev.endAt, now));
 }
 
+export async function checkoutHasActiveFreeShippingForCustomer(customerId: string): Promise<boolean> {
+  return checkoutHasActiveFreeShipping(ownerFromCustomerId(customerId));
+}

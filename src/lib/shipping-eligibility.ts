@@ -1,3 +1,4 @@
+import { cartOwnerWhere, ownerFromCustomerId, type CartOwner } from "@/lib/cart-owner";
 import { prisma } from "@/lib/prisma";
 import type { StorefrontShippingOption } from "@/lib/shipping-options-public";
 import { clampShippingUnits } from "@/lib/shipping-units";
@@ -46,9 +47,9 @@ function shippingUnitsForCartItem(item: {
   return fallback ? clampShippingUnits(fallback.shippingUnits) : 1;
 }
 
-export async function loadCartShippingLines(customerId: string): Promise<CartShippingLine[]> {
+export async function loadCartShippingLines(owner: CartOwner): Promise<CartShippingLine[]> {
   const cart = await prisma.cart.findUnique({
-    where: { customerId },
+    where: cartOwnerWhere(owner),
     select: {
       items: {
         select: {
@@ -81,8 +82,8 @@ export async function loadCartShippingLines(customerId: string): Promise<CartShi
   }));
 }
 
-export async function getEligibleShippingOptionsForCustomer(
-  customerId: string,
+export async function getEligibleShippingOptionsForOwner(
+  owner: CartOwner,
 ): Promise<StorefrontShippingOption[]> {
   const [activeOptions, lines] = await Promise.all([
     prisma.shippingOption.findMany({
@@ -96,14 +97,20 @@ export async function getEligibleShippingOptionsForCustomer(
         maxShippingUnits: true,
       },
     }),
-    loadCartShippingLines(customerId),
+    loadCartShippingLines(owner),
   ]);
 
   return filterEligibleShippingOptions(activeOptions, lines);
 }
 
-export async function isShippingOptionEligibleForCustomer(
+export async function getEligibleShippingOptionsForCustomer(
   customerId: string,
+): Promise<StorefrontShippingOption[]> {
+  return getEligibleShippingOptionsForOwner(ownerFromCustomerId(customerId));
+}
+
+export async function isShippingOptionEligibleForOwner(
+  owner: CartOwner,
   shippingOptionId: string,
 ): Promise<boolean> {
   const [option, lines] = await Promise.all([
@@ -111,8 +118,15 @@ export async function isShippingOptionEligibleForCustomer(
       where: { id: shippingOptionId, active: true },
       select: { id: true, maxShippingUnits: true },
     }),
-    loadCartShippingLines(customerId),
+    loadCartShippingLines(owner),
   ]);
   if (!option) return false;
   return isShippingOptionEligible(option, lines);
+}
+
+export async function isShippingOptionEligibleForCustomer(
+  customerId: string,
+  shippingOptionId: string,
+): Promise<boolean> {
+  return isShippingOptionEligibleForOwner(ownerFromCustomerId(customerId), shippingOptionId);
 }

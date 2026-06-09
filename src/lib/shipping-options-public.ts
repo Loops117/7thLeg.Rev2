@@ -1,5 +1,6 @@
+import { cartOwnerWhere, ownerFromCustomerId, type CartOwner } from "@/lib/cart-owner";
 import {
-  getEligibleShippingOptionsForCustomer,
+  getEligibleShippingOptionsForOwner,
   loadCartShippingLines,
   totalShippingUnitsForCart,
 } from "@/lib/shipping-eligibility";
@@ -21,15 +22,21 @@ export async function getActiveShippingOptionsForStorefront(): Promise<Storefron
   return rows;
 }
 
-/** Active shipping options that fit the customer's current cart (units + per-product exclusions). */
+/** Active shipping options that fit the cart (units + per-product exclusions). */
+export async function getCartEligibleShippingOptionsForOwner(
+  owner: CartOwner,
+): Promise<StorefrontShippingOption[]> {
+  return getEligibleShippingOptionsForOwner(owner);
+}
+
 export async function getCartEligibleShippingOptionsForCustomer(
   customerId: string,
 ): Promise<StorefrontShippingOption[]> {
-  return getEligibleShippingOptionsForCustomer(customerId);
+  return getCartEligibleShippingOptionsForOwner(ownerFromCustomerId(customerId));
 }
 
-export async function getCartShippingUnitsTotal(customerId: string): Promise<number> {
-  const lines = await loadCartShippingLines(customerId);
+export async function getCartShippingUnitsTotal(owner: CartOwner): Promise<number> {
+  const lines = await loadCartShippingLines(owner);
   return totalShippingUnitsForCart(lines);
 }
 
@@ -38,11 +45,11 @@ export async function getCartShippingUnitsTotal(customerId: string): Promise<num
  * picks the first option when any exist and none is selected.
  */
 export async function ensureCartShippingSelection(
-  customerId: string,
+  owner: CartOwner,
   eligibleOptions: StorefrontShippingOption[],
 ): Promise<string | null> {
   const cart = await prisma.cart.findUnique({
-    where: { customerId },
+    where: cartOwnerWhere(owner),
     select: { id: true, selectedShippingOptionId: true },
   });
   if (!cart) return null;
@@ -73,7 +80,7 @@ export async function ensureCartShippingSelection(
 }
 
 /** Recompute eligible options after cart changes and fix the selected shipping method. */
-export async function reconcileCartShippingSelection(customerId: string): Promise<void> {
-  const eligible = await getEligibleShippingOptionsForCustomer(customerId);
-  await ensureCartShippingSelection(customerId, eligible);
+export async function reconcileCartShippingSelection(owner: CartOwner): Promise<void> {
+  const eligible = await getEligibleShippingOptionsForOwner(owner);
+  await ensureCartShippingSelection(owner, eligible);
 }

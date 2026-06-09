@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth as readAuthSession } from "@/auth";
 import { OrderStatus } from "@/generated/prisma/client";
 import { createFreshPendingCheckoutOrder } from "@/lib/checkout-create-pending-order";
+import { orderBelongsToOwner } from "@/lib/checkout-order-owner";
+import { requireCheckoutSession } from "@/lib/checkout-session";
+import { isGuestOwner } from "@/lib/link-guest-orders";
 import { fulfillPaidOrder } from "@/lib/fulfill-paid-order";
 import { prisma } from "@/lib/prisma";
 import { getSquareClient, getSquarePublicApplicationId, isSquareSandbox } from "@/lib/square-server";
@@ -14,11 +16,8 @@ export type PrepareSquareCheckoutResult =
   | { ok: false; error: string };
 
 export async function prepareSquareCheckoutAction(): Promise<PrepareSquareCheckoutResult> {
-  const session = await readAuthSession();
-  if (session?.user?.role !== "customer" || !session.user.id) {
-    return { ok: false, error: "Sign in to check out." };
-  }
-  const customerId = session.user.id;
+  const ctx = await requireCheckoutSession();
+  if (!ctx.ok) return ctx;
 
   const row = await prisma.siteConfig.findUnique({
     where: { id: 1 },
@@ -35,14 +34,16 @@ export async function prepareSquareCheckoutAction(): Promise<PrepareSquareChecko
     return { ok: false, error: "Square is not fully configured on the server (env vars)." };
   }
 
-  const created = await createFreshPendingCheckoutOrder(customerId);
+  const created = await createFreshPendingCheckoutOrder(ctx.owner, {
+    shippingContact: ctx.shippingContact,
+  });
   if (!created.ok) return created;
 
   const ord = await prisma.order.findUnique({
     where: { id: created.orderId },
-    select: { id: true, totalCents: true, customerId: true },
+    select: { id: true, totalCents: true, customerId: true, guestSessionId: true },
   });
-  if (!ord || ord.customerId !== customerId) {
+  if (!ord || !orderBelongsToOwner(ord, ctx.owner)) {
     return { ok: false, error: "Could not verify your cart order." };
   }
   if (ord.totalCents <= 0) {
@@ -74,11 +75,8 @@ export async function completeSquarePaymentAction(
   orderId: string,
   sourceIdRaw: string,
 ): Promise<CompleteSquarePaymentResult> {
-  const session = await readAuthSession();
-  if (session?.user?.role !== "customer" || !session.user.id) {
-    return { ok: false, error: "Sign in required." };
-  }
-  const customerId = session.user.id;
+  const ctx = await requireCheckoutSession();
+  if (!ctx.ok) return ctx;
 
   const siteCfg = await prisma.siteConfig.findUnique({
     where: { id: 1 },
@@ -99,11 +97,12 @@ export async function completeSquarePaymentAction(
       id: true,
       status: true,
       customerId: true,
+      guestSessionId: true,
       totalCents: true,
       stripeCheckoutSessionId: true,
     },
   });
-  if (!order || order.customerId !== customerId) {
+  if (!order || !orderBelongsToOwner(order, ctx.owner)) {
     return { ok: false, error: "Order not found." };
   }
 
@@ -180,5 +179,6 @@ export async function completeSquarePaymentAction(
   revalidatePath("/cart");
   revalidatePath("/store");
 
-  return { ok: true, redirectUrl: "/cart/success?square=1" };
+  const guestQs = isGuestOwner(ctx.owner) ? "&guest=1" : "";
+  return { ok: true, redirectUrl: `/cart/success?square=1${guestQs}` };
 }

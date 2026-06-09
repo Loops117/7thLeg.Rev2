@@ -909,9 +909,29 @@ body {
   color: var(--product-card-sale);
 }
 
-/** Kit combo row: + and = between cards — matches product card border tone. */
-.kit-combo-operator {
-  color: color-mix(in srgb, var(--product-card-border) 35%, transparent);
+/** Product page — kit bundle (fused item panes + pricing footer). */
+.kit-bundle {
+  background-color: color-mix(in srgb, var(--product-card-bg) 92%, transparent);
+  border: 2px solid color-mix(in srgb, var(--product-card-border) 35%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--product-card-border) 10%, transparent),
+    0 8px 24px color-mix(in srgb, var(--product-card-border) 14%, transparent);
+}
+
+.kit-bundle__contents {
+  background-color: color-mix(in srgb, var(--product-card-bg) 70%, transparent);
+}
+
+.kit-bundle-item-hover-preview__card {
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 0.25rem;
+  background-color: var(--product-card-bg, #fff);
+  border: 2px solid color-mix(in srgb, var(--product-card-border) 35%, transparent);
+  box-shadow:
+    0 0 0 3px var(--product-card-hover-glow),
+    0 0 0 6px color-mix(in srgb, var(--product-card-hover-glow) 35%, transparent),
+    0 10px 28px color-mix(in srgb, var(--product-card-border) 22%, transparent);
 }
 
 [data-store-card-hover="zoom"] .store-product-card {

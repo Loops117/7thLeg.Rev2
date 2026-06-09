@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import type Stripe from "stripe";
 import { OrderStatus } from "@/generated/prisma/client";
 import { snapshotCartLabelsToOrder } from "@/lib/order-label-snapshot";
+import { computePurchaseRewardPoints } from "@/lib/purchase-loyalty-earn";
 import { prisma } from "@/lib/prisma";
 
 export type FulfillmentContext = {
@@ -93,13 +94,13 @@ export async function fulfillPaidOrder(orderId: string, ctx: FulfillmentContext)
 
     const site = await tx.siteConfig.findUnique({ where: { id: 1 } });
     if (site?.loyaltyEnabled && site.pointsPerDollar > 0 && order.customerId) {
-      let earned = 0;
-      for (const li of order.lineItems) {
-        const multRaw = li.product?.pointsMultiplier != null ? Number(li.product.pointsMultiplier) : 1;
-        const mult = Number.isFinite(multRaw) && multRaw > 0 ? multRaw : 1;
-        const dollars = li.lineTotalCents / 100;
-        earned += Math.floor(dollars * site.pointsPerDollar * mult);
-      }
+      const earned = computePurchaseRewardPoints(
+        order.lineItems.map((li) => ({
+          lineTotalCents: li.lineTotalCents,
+          pointsMultiplier: li.product?.pointsMultiplier,
+        })),
+        site.pointsPerDollar,
+      );
       if (earned > 0) {
         const { applyCustomerPointsDelta } = await import("@/lib/loyalty-points");
         await applyCustomerPointsDelta(
@@ -112,6 +113,15 @@ export async function fulfillPaidOrder(orderId: string, ctx: FulfillmentContext)
           tx,
         );
       }
+      await tx.order.update({
+        where: { id: order.id },
+        data: { loyaltyEarnAwardedAt: new Date() },
+      });
+    } else if (order.customerId) {
+      await tx.order.update({
+        where: { id: order.id },
+        data: { loyaltyEarnAwardedAt: new Date() },
+      });
     }
 
     if (order.customerId) {
@@ -122,7 +132,16 @@ export async function fulfillPaidOrder(orderId: string, ctx: FulfillmentContext)
         await tx.cartLabelItem.deleteMany({ where: { cartId: cartRow.id } });
         await tx.cart.update({
           where: { id: cartRow.id },
-          data: { appliedCouponEventId: null, appliedLoyaltyPoints: 0 },
+          data: { appliedCouponEventId: null, appliedLoyaltyPoints: 0, selectedShippingOptionId: null },
+        });
+      }
+    } else if (order.guestSessionId) {
+      const cartRow = await tx.cart.findUnique({ where: { sessionId: order.guestSessionId } });
+      if (cartRow) {
+        await tx.cartItem.deleteMany({ where: { cartId: cartRow.id } });
+        await tx.cart.update({
+          where: { id: cartRow.id },
+          data: { appliedCouponEventId: null, appliedLoyaltyPoints: 0, selectedShippingOptionId: null },
         });
       }
     }
