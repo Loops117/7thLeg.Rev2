@@ -19,6 +19,7 @@ export function StoreProductCard({
   mini,
   recommendationStrip,
   catalogGrid,
+  fillImage = false,
   eventId,
   showQuickAdd = false,
   productDiagonalBrandName,
@@ -35,6 +36,8 @@ export function StoreProductCard({
   recommendationStrip?: boolean;
   /** Main /store grid: square image (cover) and uniform card height. */
   catalogGrid?: boolean;
+  /** Fill the image frame (cover/crop) instead of letterboxing — home carousel strips. */
+  fillImage?: boolean;
   eventId?: string | null;
   /** Quick add is for the store catalog grid only, not product detail or featured strips. */
   showQuickAdd?: boolean;
@@ -52,6 +55,7 @@ export function StoreProductCard({
   const isMini = mini && compact;
   const isRecStrip = recommendationStrip && isMini;
   const isCatalogGrid = catalogGrid && !compact && !mini;
+  const imageFillsFrame = isCatalogGrid || fillImage;
 
   return (
     <div
@@ -77,7 +81,7 @@ export function StoreProductCard({
           <img
             src={img}
             alt={p.name}
-            className={`h-full w-full ${isCatalogGrid ? "object-cover object-center" : "object-contain"}`}
+            className={`h-full w-full ${imageFillsFrame ? "object-cover object-center" : "object-contain"}`}
           />
           {!isMini ? <ProductVariantBadge count={variantCount} /> : null}
           {productDiagonalBrandName?.trim() ? (

@@ -82,6 +82,7 @@ export function ProductCarouselStrip({
               product={p}
               hover="zoom"
               compact
+              fillImage
               eventId={eventId}
               productDiagonalBrandName={productDiagonalBrandName}
               productDiagonalNameGapPx={productDiagonalNameGapPx}

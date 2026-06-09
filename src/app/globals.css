@@ -892,6 +892,14 @@ body {
   background-color: color-mix(in srgb, var(--product-card-image-bg) 50%, transparent);
 }
 
+.store-product-card__image-area img {
+  transition: transform 180ms ease;
+}
+
+[data-store-card-hover="zoom"] .store-product-card:hover .store-product-card__image-area img {
+  transform: scale(1.06);
+}
+
 .store-product-card__title {
   color: var(--product-card-title);
 }
