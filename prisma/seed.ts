@@ -29,8 +29,8 @@ async function main() {
 
   await prisma.siteConfig.upsert({
     where: { id: 1 },
-    create: { id: 1, companyName: "Inverts Oasis" },
-    update: { companyName: "Inverts Oasis" },
+    create: { id: 1, companyName: "7th Leg" },
+    update: { companyName: "7th Leg" },
   });
 
   console.log(`Seeded admin: ${email} (password from ADMIN_PASSWORD or default "admin-change-me")`);

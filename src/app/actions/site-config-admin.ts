@@ -104,7 +104,7 @@ export async function updateGlobalSettings(state: GlobalSettingsState): Promise<
   const companyName =
     typeof state.companyName === "string" && state.companyName.trim().length > 0
       ? state.companyName.trim().slice(0, 120)
-      : "Inverts Oasis";
+      : "7th Leg";
   const wRaw = state.watermarkImageUrl?.trim() ?? "";
   const watermarkImageUrl = safePublicPath(wRaw, 500);
   const logoRaw = state.companyLogoUrl?.trim() ?? "";
@@ -227,7 +227,7 @@ async function persistSiteBrandingAssets(
     where: { id: 1 },
     create: {
       id: 1,
-      companyName: "Inverts Oasis",
+      companyName: "7th Leg",
       loyaltyEnabled: false,
       pointsPerDollar: 10,
       ...STORE_BOOTSTRAP,
@@ -385,7 +385,7 @@ export async function updateLoyaltyProgramSettings(state: LoyaltyProgramState) {
     where: { id: 1 },
     create: {
       id: 1,
-      companyName: "Inverts Oasis",
+      companyName: "7th Leg",
       loyaltyEnabled,
       pointsPerDollar,
       loyaltyRedemptionCentsPerPoint,
@@ -418,7 +418,7 @@ export async function updateLabelCartSettings(state: LabelCartAdminState): Promi
       where: { id: 1 },
       create: {
         id: 1,
-        companyName: "Inverts Oasis",
+        companyName: "7th Leg",
         loyaltyEnabled: false,
         pointsPerDollar: 10,
         loyaltyRedemptionCentsPerPoint: 10,
@@ -479,7 +479,7 @@ export async function updateLabelPreviewSettings(
       where: { id: 1 },
       create: {
         id: 1,
-        companyName: "Inverts Oasis",
+        companyName: "7th Leg",
         loyaltyEnabled: false,
         pointsPerDollar: 10,
         loyaltyRedemptionCentsPerPoint: 10,
@@ -553,7 +553,7 @@ export async function uploadLabelPreviewWatermark(
       where: { id: 1 },
       create: {
         id: 1,
-        companyName: "Inverts Oasis",
+        companyName: "7th Leg",
         loyaltyEnabled: false,
         pointsPerDollar: 10,
         ...STORE_BOOTSTRAP,
@@ -604,7 +604,7 @@ export async function updateLabelFulfillmentSettings(
       where: { id: 1 },
       create: {
         id: 1,
-        companyName: "Inverts Oasis",
+        companyName: "7th Leg",
         loyaltyEnabled: false,
         pointsPerDollar: 10,
         loyaltyRedemptionCentsPerPoint: 10,
@@ -662,7 +662,7 @@ export async function updateLabelBuilderSettings(state: LabelBuilderAdminState):
       where: { id: 1 },
       create: {
         id: 1,
-        companyName: "Inverts Oasis",
+        companyName: "7th Leg",
         loyaltyEnabled: false,
         pointsPerDollar: 10,
         loyaltyRedemptionCentsPerPoint: 10,
@@ -720,7 +720,7 @@ export async function uploadSiteWatermark(formData: FormData): Promise<UploadWat
       where: { id: 1 },
       create: {
         id: 1,
-        companyName: "Inverts Oasis",
+        companyName: "7th Leg",
         loyaltyEnabled: false,
         pointsPerDollar: 10,
         watermarkImageUrl: url,
@@ -767,7 +767,7 @@ export async function uploadCompanyLogo(formData: FormData): Promise<UploadCompa
       where: { id: 1 },
       create: {
         id: 1,
-        companyName: "Inverts Oasis",
+        companyName: "7th Leg",
         loyaltyEnabled: false,
         pointsPerDollar: 10,
         ...STORE_BOOTSTRAP,

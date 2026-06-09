@@ -3,7 +3,7 @@
 /* Class-based dark variant (Tailwind v4 — used under #settings-admin-shell.dark) */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Inverts Oasis — tropical: sand, palm, lagoon, coral */
+/* 7th Leg — tropical: sand, palm, lagoon, coral */
 :root {
   --site-bg: #faf6ef;
   --sand: #faf6ef;

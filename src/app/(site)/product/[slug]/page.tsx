@@ -1,8 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth as readAuthSession } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { getSiteConfig } from "@/lib/site-config";
+import { ProductJsonLd } from "@/components/product/product-json-ld";
+import { getSeoPublicConfig } from "@/lib/site-config";
+import { buildProductMetadata } from "@/lib/seo-metadata";
+import { getSiteBrandingForMetadata } from "@/lib/site-branding";
 import { ProductVariantShop } from "@/components/product-variant-shop";
 import { getFootersForProduct } from "@/lib/product-page-footers";
 import { productCanPurchase } from "@/lib/product-stock";
@@ -30,6 +34,55 @@ type Props = {
   searchParams: Promise<{ event?: string; variant?: string }>;
 };
 
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const { event: eventParam } = await searchParams;
+  const eventId = eventParam?.trim() || null;
+  const [product, config, branding] = await Promise.all([
+    prisma.product.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        active: true,
+        name: true,
+        shortDescription: true,
+        description: true,
+        slug: true,
+        basePriceCents: true,
+        onSale: true,
+        images: { orderBy: { sortOrder: "asc" }, take: 1, select: { url: true } },
+      },
+    }),
+    getSeoPublicConfig(),
+    getSiteBrandingForMetadata(),
+  ]);
+  if (!product?.active) {
+    return { title: "Product", robots: { index: false, follow: false } };
+  }
+  let priceCents = product.basePriceCents;
+  if (eventId) {
+    const overlay = await getEventPriceOverlayForProduct(
+      eventId,
+      product.id,
+      product.basePriceCents,
+      product.onSale,
+    );
+    if (overlay) priceCents = overlay.displayPriceCents;
+  }
+  return buildProductMetadata(
+    {
+      name: product.name,
+      shortDescription: product.shortDescription,
+      description: product.description,
+      slug: product.slug,
+      imageUrl: product.images[0]?.url ?? null,
+      priceCents,
+    },
+    config,
+    branding,
+  );
+}
+
 export default async function ProductPage({ params, searchParams }: Props) {
   const { slug } = await params;
   const { event: eventParam, variant: variantParam } = await searchParams;
@@ -44,7 +97,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
         types: { include: { type: true } },
       },
     }),
-    getSiteConfig(),
+    getSeoPublicConfig(),
     loadResolvedPublicThemeFromDb(),
     getStoreSettings(),
   ]);
@@ -103,8 +156,21 @@ export default async function ProductPage({ params, searchParams }: Props) {
       : null;
   const initialInWishlist = Boolean(wishlistRow);
 
+  const primaryImageUrl = product.images[0]?.url ?? null;
+
   return (
     <div className="p-6 sm:p-10">
+      <ProductJsonLd
+        product={{
+          name: product.name,
+          slug: product.slug,
+          description: product.description,
+          shortDescription: product.shortDescription,
+          basePriceCents: priceCents,
+          imageUrl: primaryImageUrl,
+        }}
+        siteName={sitePub.companyName}
+      />
       <p className="text-sm font-medium text-lagoon-dark">
         <Link href="/store" className="underline">
           ← Store

@@ -52,7 +52,7 @@ export async function updateStoreSettings(state: StoreSettingsState) {
     where: { id: 1 },
     create: {
       id: 1,
-      companyName: "Inverts Oasis",
+      companyName: "7th Leg",
       ...data,
     },
     update: data,

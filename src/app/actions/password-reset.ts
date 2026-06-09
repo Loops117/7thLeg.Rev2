@@ -59,7 +59,7 @@ export async function requestCustomerPasswordReset(formData: FormData): Promise<
   const safeUrl = escapeHtml(resetUrl);
   const result = await sendHtmlEmail({
     to: email,
-    subject: "Reset your Inverts Oasis password",
+    subject: "Reset your 7th Leg password",
     html: `<p>Hi,</p><p><a href="${safeUrl}">Click here to choose a new password</a>.</p><p>This link expires in one hour. If you didn’t ask for this, you can ignore this email.</p>`,
     text: `Reset your password: ${resetUrl}\n\nThis link expires in one hour.`,
   });

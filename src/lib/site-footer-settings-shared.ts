@@ -45,7 +45,7 @@ export const BUILTIN_SITE_FOOTER: SiteFooterSettings = {
   enabled: true,
   alignment: "center",
   layout: "split",
-  taglineHtml: "<p>Inverts Oasis — insects, stickers &amp; more.</p>",
+  taglineHtml: "<p>7th Leg — invertebrates &amp; supplies.</p>",
   showTagline: true,
   copyrightHtml:
     "<p>© {year} {companyName}. All artwork on this site is copyrighted unless otherwise indicated. All rights reserved.</p>",

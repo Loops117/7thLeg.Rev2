@@ -5,7 +5,9 @@ import { Providers } from "@/components/providers";
 import { UrgentHomeNotificationClient } from "@/components/urgent-home-notification";
 import { getPublicAppOrigin } from "@/lib/public-app-origin";
 import { getSiteBrandingForMetadata } from "@/lib/site-branding";
-import { getSiteConfig, getUrgentHomeNotificationPayload, resolveSiteLinkPreviewText } from "@/lib/site-config";
+import { DEFAULT_COMPANY_NAME } from "@/lib/site-config-types";
+import { getSeoPublicConfig, getUrgentHomeNotificationPayload, resolveSiteLinkPreviewText } from "@/lib/site-config";
+import { robotsDirective } from "@/lib/seo";
 import { getRootLayoutThemePayload } from "@/lib/theme-config-server";
 import "./globals.css";
 
@@ -23,14 +25,17 @@ const geistMono = Geist_Mono({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [config, branding] = await Promise.all([getSiteConfig(), getSiteBrandingForMetadata()]);
-  const siteName = config.companyName?.trim() || "Inverts Oasis";
+  const [config, branding] = await Promise.all([getSeoPublicConfig(), getSiteBrandingForMetadata()]);
+  const siteName = config.companyName?.trim() || DEFAULT_COMPANY_NAME;
   const { title: linkPreviewTitle, description } = resolveSiteLinkPreviewText(config);
+  const verification = config.googleSiteVerification?.trim();
 
   return {
     metadataBase: new URL(getPublicAppOrigin()),
     title: { default: siteName, template: `%s · ${siteName}` },
     description,
+    robots: robotsDirective(config.seoIndexingEnabled),
+    ...(verification ? { verification: { google: verification } } : {}),
     icons: {
       icon: [
         { url: branding.icon16, sizes: "16x16", type: "image/png" },

@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { uploadThemeDecorImage, uploadThemeDecorVideo } from "@/app/actions/theme-admin";
+import { uploadThemeDecorImage } from "@/app/actions/theme-admin";
+import { uploadTheatricalPaneVideo } from "@/lib/theatrical-video-upload-client";
 import { TheatricalElementView } from "@/components/panes/theatrical-pane";
 import { TheatricalStageFrame } from "@/components/panes/theatrical-stage-frame";
 import { RichTextEditor } from "@/components/rich-text-editor";
@@ -189,6 +190,7 @@ export function TheatricalPaneEditor({
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(elements[0]?.id ?? null);
+  const [videoUploadError, setVideoUploadError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const dragRef = useRef<{
     id: string;
@@ -281,11 +283,14 @@ export function TheatricalPaneEditor({
 
   function uploadVideoForSelected(file: File) {
     if (!selected || selected.kind !== "video") return;
-    const fd = new FormData();
-    fd.set("file", file);
+    setVideoUploadError(null);
     startTransition(async () => {
-      const r = await uploadThemeDecorVideo(fd);
-      if (r.ok) updateElement(selected.id, { videoUrl: r.url });
+      const r = await uploadTheatricalPaneVideo(file);
+      if (r.ok) {
+        updateElement(selected.id, { videoUrl: r.url });
+        return;
+      }
+      setVideoUploadError(r.error);
     });
   }
 
@@ -451,6 +456,11 @@ export function TheatricalPaneEditor({
               >
                 {pending ? "Uploading…" : "Upload video"}
               </button>
+              {videoUploadError ? (
+                <p className="text-sm font-bold text-red-700" role="alert">
+                  {videoUploadError}
+                </p>
+              ) : null}
               <div className="theatrical-pane-editor__checkbox-row flex flex-wrap gap-4 text-sm">
                 <label className="flex items-center gap-2">
                   <input

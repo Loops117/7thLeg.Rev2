@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import {
-  DEFAULT_SITE_LINK_PREVIEW_DESCRIPTION,
+  DEFAULT_COMPANY_NAME,
   type GlobalSettingsState,
   type HomePageUrgentState,
   type LabelBuilderAdminState,
@@ -15,7 +15,10 @@ import {
   parseLabelPreviewWatermarkKind,
   type LoyaltyProgramState,
   type PaymentGatewaysState,
+  type SeoPublicConfig,
+  type SeoSettingsState,
   type SiteConfigPublic,
+  resolveSiteLinkPreviewText,
   globalSettingsDefaults,
   homePageUrgentDefaults,
   labelBuilderAdminDefaults,
@@ -27,6 +30,7 @@ import {
 import { PUBLIC_DEFAULT_BRAND_LOGO_PATH } from "@/lib/brand-assets";
 import { parseSiteBrandingAssets, parseSiteBrandingSource } from "@/lib/site-branding";
 import { normalizeStorefrontNavSettings } from "@/lib/storefront-nav-settings";
+import { seoSettingsDefaults, type SeoAuditSnapshot } from "@/lib/seo";
 
 export type UrgentHomeNotificationPayload = {
   enabled: boolean;
@@ -36,7 +40,7 @@ export type UrgentHomeNotificationPayload = {
 };
 
 const fallback: SiteConfigPublic = {
-  companyName: "Inverts Oasis",
+  companyName: DEFAULT_COMPANY_NAME,
   linkPreviewTitle: "",
   linkPreviewDescription: "",
   companyLogoUrl: PUBLIC_DEFAULT_BRAND_LOGO_PATH,
@@ -144,17 +148,79 @@ export async function getGoogleMapsApiKeyForClient(): Promise<string> {
   }
 }
 
-/** Resolved Open Graph / Twitter title and description for root layout metadata. */
-export function resolveSiteLinkPreviewText(config: Pick<SiteConfigPublic, "companyName" | "linkPreviewTitle" | "linkPreviewDescription">): {
-  title: string;
-  description: string;
-} {
-  const siteName = config.companyName?.trim() || "Inverts Oasis";
-  const title = config.linkPreviewTitle?.trim() || siteName;
-  const description =
-    config.linkPreviewDescription?.trim() || DEFAULT_SITE_LINK_PREVIEW_DESCRIPTION;
-  return { title, description };
+export const getSeoPublicConfig = cache(async function getSeoPublicConfig(): Promise<SeoPublicConfig> {
+  const base = await getSiteConfig();
+  try {
+    const row = await prisma.siteConfig.findUnique({
+      where: { id: 1 },
+      select: {
+        seoIndexingEnabled: true,
+        googleSiteVerification: true,
+        seoStoreMetaTitle: true,
+        seoStoreMetaDescription: true,
+      },
+    });
+    return {
+      ...base,
+      seoIndexingEnabled: row?.seoIndexingEnabled ?? true,
+      googleSiteVerification:
+        typeof row?.googleSiteVerification === "string" ? row.googleSiteVerification.trim() : "",
+      seoStoreMetaTitle: typeof row?.seoStoreMetaTitle === "string" ? row.seoStoreMetaTitle : "",
+      seoStoreMetaDescription:
+        typeof row?.seoStoreMetaDescription === "string" ? row.seoStoreMetaDescription : "",
+    };
+  } catch {
+    const defaults = seoSettingsDefaults(base.companyName);
+    return {
+      ...base,
+      seoIndexingEnabled: defaults.seoIndexingEnabled,
+      googleSiteVerification: defaults.googleSiteVerification,
+      seoStoreMetaTitle: defaults.seoStoreMetaTitle,
+      seoStoreMetaDescription: defaults.seoStoreMetaDescription,
+    };
+  }
+});
+
+export async function getSeoSettingsForAdmin(): Promise<SeoSettingsState> {
+  try {
+    const row = await prisma.siteConfig.findUnique({ where: { id: 1 } });
+    if (!row) return seoSettingsDefaults();
+    return {
+      companyName: row.companyName?.trim() || DEFAULT_COMPANY_NAME,
+      linkPreviewTitle: typeof row.siteLinkPreviewTitle === "string" ? row.siteLinkPreviewTitle : "",
+      linkPreviewDescription:
+        typeof row.siteLinkPreviewDescription === "string" ? row.siteLinkPreviewDescription : "",
+      seoIndexingEnabled: row.seoIndexingEnabled ?? true,
+      googleSiteVerification:
+        typeof row.googleSiteVerification === "string" ? row.googleSiteVerification.trim() : "",
+      seoStoreMetaTitle: typeof row.seoStoreMetaTitle === "string" ? row.seoStoreMetaTitle : "",
+      seoStoreMetaDescription:
+        typeof row.seoStoreMetaDescription === "string" ? row.seoStoreMetaDescription : "",
+    };
+  } catch {
+    return seoSettingsDefaults();
+  }
 }
+
+export async function getSeoAuditSnapshot(): Promise<SeoAuditSnapshot> {
+  try {
+    const [activeProductCount, activeProductsMissingShortDescription, inactiveProductCount] = await Promise.all([
+      prisma.product.count({ where: { active: true } }),
+      prisma.product.count({
+        where: {
+          active: true,
+          OR: [{ shortDescription: null }, { shortDescription: "" }],
+        },
+      }),
+      prisma.product.count({ where: { active: false } }),
+    ]);
+    return { activeProductCount, activeProductsMissingShortDescription, inactiveProductCount };
+  } catch {
+    return { activeProductCount: 0, activeProductsMissingShortDescription: 0, inactiveProductCount: 0 };
+  }
+}
+
+export { resolveSiteLinkPreviewText };
 
 export async function getLoyaltyProgramForAdmin(): Promise<LoyaltyProgramState> {
   try {

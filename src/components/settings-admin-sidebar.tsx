@@ -40,6 +40,7 @@ const SETTINGS_LINKS: { href: string; label: string }[] = [
   { href: "/settings/theme", label: "Theme" },
   { href: "/settings/footer", label: "Site Footer" },
   { href: "/settings/global", label: "Global" },
+  { href: "/settings/seo", label: "SEO" },
   { href: "/settings/loyalty", label: "Loyalty" },
   { href: "/settings/payments", label: "Payments" },
   { href: "/settings/email", label: "Email" },

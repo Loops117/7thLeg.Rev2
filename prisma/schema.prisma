@@ -1,4 +1,4 @@
-// Inverts Oasis — Postgres (Supabase) + Prisma
+// 7th Leg — Postgres (Supabase) + Prisma
 
 generator client {
   provider = "prisma-client"
@@ -62,7 +62,7 @@ enum SpeciesSuggestionStatus {
 model SiteConfig {
   id Int @id @default(1)
 
-  companyName String @default("Inverts Oasis")
+  companyName String @default("7th Leg")
   /// Show company name link/text in public header (desktop + mobile layouts).
   headerShowCompanyName Boolean @default(true) @map("header_show_company_name")
   /// Show uploaded company logo in public header when a logo URL exists.
@@ -248,6 +248,15 @@ model SiteConfig {
   homeUrgentNotificationBody     String  @default("") @db.Text
   /// Bumped when enabled/title/body change so customers see a new notice after a previous dismiss.
   homeUrgentNotificationRevision Int     @default(0)
+
+  /// When false, robots.txt disallows crawlers and pages get noindex.
+  seoIndexingEnabled Boolean @default(true) @map("seo_indexing_enabled")
+  /// Google Search Console HTML tag verification content value (not the full meta tag).
+  googleSiteVerification String @default("") @map("google_site_verification")
+  /// Optional HTML title for /store (empty = nav shop label + site name).
+  seoStoreMetaTitle String @default("") @map("seo_store_meta_title")
+  /// Optional meta description for /store.
+  seoStoreMetaDescription String @default("") @map("seo_store_meta_description")
 
   updatedAt DateTime @updatedAt
 

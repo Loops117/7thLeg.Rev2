@@ -26,7 +26,7 @@ export async function updateSiteFooterSettings(
       where: { id: 1 },
       create: {
         id: 1,
-        companyName: "Inverts Oasis",
+        companyName: "7th Leg",
         siteFooterConfig: config as object,
       },
       update: { siteFooterConfig: config as object },

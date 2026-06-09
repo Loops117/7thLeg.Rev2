@@ -83,7 +83,7 @@ export async function updateImageSubmissionApprovalPoints(
       where: { id: 1 },
       create: {
         id: 1,
-        companyName: "Inverts Oasis",
+        companyName: "7th Leg",
         imageSubmissionApprovalPoints: pts,
         ...pinAppearancePrismaDefaults(),
       },
@@ -126,7 +126,7 @@ export async function updateImageSubmissionPinAppearance(
       await prisma.siteConfig.create({
         data: {
           id: 1,
-          companyName: "Inverts Oasis",
+          companyName: "7th Leg",
           imageSubmissionApprovalPoints: 0,
           imageSubmissionPinSizePx: normalized.sizePx,
           imageSubmissionPinFillColor: normalized.fillColor,
@@ -179,7 +179,7 @@ export async function uploadImageSubmissionPinCustomImage(
       where: { id: 1 },
       create: {
         id: 1,
-        companyName: "Inverts Oasis",
+        companyName: "7th Leg",
         imageSubmissionPinSizePx: current.sizePx,
         imageSubmissionPinFillColor: current.fillColor,
         imageSubmissionPinBorderWidthPx: current.borderWidthPx,

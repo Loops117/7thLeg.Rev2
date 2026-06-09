@@ -13,7 +13,6 @@ import { PUBLIC_DEFAULT_BRAND_LOGO_PATH } from "@/lib/brand-assets";
 import { btnSecondaryMd } from "@/lib/btn-theme-classes";
 import type { SiteBrandingSource } from "@/lib/site-branding";
 import {
-  DEFAULT_SITE_LINK_PREVIEW_DESCRIPTION,
   LOGO_PLACEMENTS,
   WATERMARK_PLACEMENTS,
   type CompanyLogoPlacement,
@@ -302,41 +301,13 @@ export function GlobalSettingsEditor({ initial }: { initial: GlobalSettingsState
       </fieldset>
 
       <fieldset className="rounded border-2 border-palm/25 bg-white p-4">
-        <legend className="text-sm font-bold text-palm">Link preview text</legend>
+        <legend className="text-sm font-bold text-palm">Search &amp; link preview text</legend>
         <p className="mt-0 text-xs text-ink/65">
-          Title and description shown when someone shares your site link in iMessage, Facebook, Discord, X, and similar
-          apps. The preview <strong>image</strong> comes from &ldquo;Browser icon &amp; link previews&rdquo; above.
-        </p>
-
-        <label className="mt-4 block text-sm font-bold text-ink">
-          Share title
-          <input
-            type="text"
-            value={form.linkPreviewTitle}
-            onChange={(e) => setForm((f) => ({ ...f, linkPreviewTitle: e.target.value }))}
-            placeholder={form.companyName.trim() || "Uses company name when blank"}
-            className="mt-1 w-full max-w-md border-2 border-palm-mid px-2 py-2 text-sm"
-            maxLength={120}
-          />
-        </label>
-        <p className="mt-1 text-xs text-ink/55">
-          Leave blank to use the company name ({form.companyName.trim() || "Inverts Oasis"}).
-        </p>
-
-        <label className="mt-4 block text-sm font-bold text-ink">
-          Share description
-          <textarea
-            value={form.linkPreviewDescription}
-            onChange={(e) => setForm((f) => ({ ...f, linkPreviewDescription: e.target.value }))}
-            placeholder={DEFAULT_SITE_LINK_PREVIEW_DESCRIPTION}
-            rows={3}
-            className="mt-1 w-full max-w-lg border-2 border-palm-mid px-2 py-2 text-sm"
-            maxLength={300}
-          />
-        </label>
-        <p className="mt-1 text-xs text-ink/55">
-          Short summary under the title in link cards. Leave blank for &ldquo;{DEFAULT_SITE_LINK_PREVIEW_DESCRIPTION}
-          &rdquo;.
+          Default site title and meta description for Google and social sharing are managed on the{" "}
+          <a href="/settings/seo" className="font-medium text-lagoon-dark underline">
+            SEO
+          </a>{" "}
+          page. The preview <strong>image</strong> still comes from &ldquo;Browser icon &amp; link previews&rdquo; above.
         </p>
       </fieldset>
 

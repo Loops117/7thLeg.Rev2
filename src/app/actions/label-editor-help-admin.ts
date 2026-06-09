@@ -37,7 +37,7 @@ export async function updateLabelEditorHelpConfig(
       where: { id: 1 },
       create: {
         id: 1,
-        companyName: "Inverts Oasis",
+        companyName: "7th Leg",
         loyaltyEnabled: false,
         pointsPerDollar: 10,
         loyaltyRedemptionCentsPerPoint: 10,

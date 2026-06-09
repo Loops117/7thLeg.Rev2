@@ -33,8 +33,23 @@ export function parseWatermarkPlacement(s: string | null | undefined): Watermark
   return "bottomRight";
 }
 
+export const DEFAULT_COMPANY_NAME = "7th Leg";
+
 /** Default OG/Twitter description when admin leaves the field blank. */
-export const DEFAULT_SITE_LINK_PREVIEW_DESCRIPTION = "Insects, stickers, and more";
+export const DEFAULT_SITE_LINK_PREVIEW_DESCRIPTION = "Invertebrates and supplies from 7th Leg.";
+
+/** Resolved Open Graph / Twitter title and description for root layout metadata. */
+export function resolveSiteLinkPreviewText(config: {
+  companyName: string;
+  linkPreviewTitle: string;
+  linkPreviewDescription: string;
+}): { title: string; description: string } {
+  const siteName = config.companyName?.trim() || DEFAULT_COMPANY_NAME;
+  const title = config.linkPreviewTitle?.trim() || siteName;
+  const description =
+    config.linkPreviewDescription?.trim() || DEFAULT_SITE_LINK_PREVIEW_DESCRIPTION;
+  return { title, description };
+}
 
 export type GlobalSettingsState = {
   companyName: string;
@@ -62,7 +77,7 @@ export type GlobalSettingsState = {
 };
 
 export const globalSettingsDefaults: GlobalSettingsState = {
-  companyName: "Inverts Oasis",
+  companyName: DEFAULT_COMPANY_NAME,
   headerShowCompanyName: true,
   headerShowCompanyLogo: true,
   productDiagonalBrandOverlay: false,
@@ -123,6 +138,25 @@ export type PaymentGatewaysState = {
 export const paymentGatewaysDefaults: PaymentGatewaysState = {
   stripeEnabled: true,
   squareEnabled: false,
+};
+
+export type SeoSettingsState = {
+  companyName: string;
+  /** Default site title for home + social cards. Empty uses company name. */
+  linkPreviewTitle: string;
+  /** Default meta description site-wide. */
+  linkPreviewDescription: string;
+  seoIndexingEnabled: boolean;
+  googleSiteVerification: string;
+  seoStoreMetaTitle: string;
+  seoStoreMetaDescription: string;
+};
+
+export type SeoPublicConfig = SiteConfigPublic & {
+  seoIndexingEnabled: boolean;
+  googleSiteVerification: string;
+  seoStoreMetaTitle: string;
+  seoStoreMetaDescription: string;
 };
 
 export type SiteConfigPublic = {

@@ -1,6 +1,6 @@
 # 7th Leg Rev2
 
-Inverts Oasis storefront and admin (Next.js, Prisma, Postgres).
+7th Leg storefront and admin (Next.js, Prisma, Postgres).
 
 **Repository:** [github.com/Loops117/7thLeg.Rev2](https://github.com/Loops117/7thLeg.Rev2)
 
@@ -37,7 +37,7 @@ Check deployment: open `/api/health` — `hasAuthSecret`, `hasDatabaseUrl`, and 
 
 ### Branding, theme colors, and site name
 
-Those are stored in **Postgres** (`site_config`, theme JSON), not in git. Local admin changes only appear on production if Vercel’s **`DATABASE_URL`** is the **same Supabase project** you use locally. If production still shows “Inverts Oasis”, either the DB is different or you haven’t saved settings against the production database yet.
+Those are stored in **Postgres** (`site_config`, theme JSON), not in git. Local admin changes only appear on production if Vercel’s **`DATABASE_URL`** is the **same Supabase project** you use locally. If production still shows “7th Leg”, either the DB is different or you haven’t saved settings against the production database yet.
 
 ## Deploy (7th Leg Vercel project only)
 

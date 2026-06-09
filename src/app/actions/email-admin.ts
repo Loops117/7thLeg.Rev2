@@ -78,7 +78,7 @@ export async function updateEmailSettings(state: EmailSettingsState): Promise<Up
       where: { id: 1 },
       create: {
         id: 1,
-        companyName: "Inverts Oasis",
+        companyName: "7th Leg",
         smtpHost,
         smtpPort,
         smtpUser,
@@ -130,7 +130,7 @@ export async function sendAdminTestEmail(to: string): Promise<SendTestEmailResul
 
   const recipient = to.trim().toLowerCase();
   const from = status.fromAddress;
-  const subject = "Inverts Oasis — test email";
+  const subject = "7th Leg — test email";
   const sentAt = new Date().toUTCString();
 
   const html = `
@@ -146,7 +146,7 @@ export async function sendAdminTestEmail(to: string): Promise<SendTestEmailResul
     </div>
   `.trim();
 
-  const text = `Test email from Inverts Oasis.\n\nFrom: ${from}\nSMTP: ${status.smtpHost}\nSent at (UTC): ${sentAt}\n\nIf you received this, email is working.`;
+  const text = `Test email from 7th Leg.\n\nFrom: ${from}\nSMTP: ${status.smtpHost}\nSent at (UTC): ${sentAt}\n\nIf you received this, email is working.`;
 
   const result = await sendHtmlEmail({ to: recipient, subject, html, text });
   if (!result.ok) return result;

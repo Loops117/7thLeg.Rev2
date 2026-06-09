@@ -16,6 +16,12 @@ import {
   type SiteThemeConfigBlob,
   type ThemeDecorImageEntry,
 } from "@/lib/theme-config";
+import {
+  safeTheatricalVideoBasename,
+  theatricalVideoExtForMime,
+  THEATRICAL_VIDEO_ALLOWED_TYPES,
+  THEATRICAL_VIDEO_MAX_BYTES,
+} from "@/lib/theatrical-video-upload";
 
 async function requireAdmin() {
   const session = await auth();
@@ -24,18 +30,10 @@ async function requireAdmin() {
 
 const MAX_DECOR = 300;
 const MAX_BYTES = 6 * 1024 * 1024;
-const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/gif", "image/webp", "image/avif"]);
-const ALLOWED_VIDEO = new Set(["video/mp4", "video/webm", "video/quicktime"]);
 
 function safeBasename(name: string): string {
   return path.basename(name).replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 120) || "file";
-}
-
-function videoExtForMime(mime: string): string {
-  if (mime === "video/webm") return "webm";
-  if (mime === "video/quicktime") return "mov";
-  return "mp4";
 }
 
 export type ThemeSavePayload = {
@@ -151,7 +149,7 @@ export async function saveFullThemeSettings(payload: ThemeSavePayload) {
     where: { id: 1 },
     create: {
       id: 1,
-      companyName: "Inverts Oasis",
+      companyName: "7th Leg",
       themeConfig: blob as object,
       bgEnabled,
       bgMaxImages,
@@ -242,15 +240,15 @@ export async function uploadThemeDecorVideo(formData: FormData): Promise<UploadT
     if (!file || !(file instanceof File)) {
       return { ok: false, error: "Choose a video file." };
     }
-    if (file.size > MAX_VIDEO_BYTES) {
-      return { ok: false, error: "Video must be 25MB or smaller." };
+    if (file.size > THEATRICAL_VIDEO_MAX_BYTES) {
+      return { ok: false, error: "Video must be 75MB or smaller." };
     }
-    if (!ALLOWED_VIDEO.has(file.type)) {
+    if (!THEATRICAL_VIDEO_ALLOWED_TYPES.has(file.type)) {
       return { ok: false, error: "Use MP4, WebM, or MOV." };
     }
     const raw = Buffer.from(await file.arrayBuffer());
-    const baseLeaf = safeBasename(file.name).replace(/\.[^.]+$/, "") || "video";
-    const ext = videoExtForMime(file.type);
+    const baseLeaf = safeTheatricalVideoBasename(file.name).replace(/\.[^.]+$/, "") || "video";
+    const ext = theatricalVideoExtForMime(file.type);
     const storedName = `${randomUUID()}-${baseLeaf}.${ext}`;
     const key = `uploads/theme/${storedName}`;
     const url = await putUploadObject(key, raw, file.type);

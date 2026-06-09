@@ -44,7 +44,7 @@ export async function updateStorefrontNavLink(
       where: { id: 1 },
       create: {
         id: 1,
-        companyName: "Inverts Oasis",
+        companyName: "7th Leg",
         ...storefrontNavPrismaData(merged),
       },
       update: storefrontNavPrismaData(merged),

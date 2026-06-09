@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { FeaturedStripScroll } from "@/components/store/featured-strip-scroll";
 import { StoreAllProductsSection } from "@/components/store/store-all-products-section";
 import { StoreProductCard } from "@/components/store/store-product-card";
-import { getSiteConfig } from "@/lib/site-config";
+import { getSeoPublicConfig } from "@/lib/site-config";
+import { buildStoreMetadata } from "@/lib/seo-metadata";
+import { getSiteBrandingForMetadata } from "@/lib/site-branding";
 import { getStoreSettings } from "@/lib/store-settings";
 import {
   countStorefrontEventProducts,
@@ -16,6 +19,11 @@ import {
 } from "@/lib/products-storefront";
 
 type ProductRow = StorefrontProductCard;
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [config, branding] = await Promise.all([getSeoPublicConfig(), getSiteBrandingForMetadata()]);
+  return buildStoreMetadata(config, branding);
+}
 
 export default async function StorePage({
   searchParams,
@@ -31,7 +39,7 @@ export default async function StorePage({
     getStoreSettings(),
     getStorefrontTypeFilterNav(activeSlug),
     countStorefrontProducts(null, null),
-    getSiteConfig(),
+    getSeoPublicConfig(),
   ]);
   const productDiagonalBrandName = sitePub.productDiagonalBrandOverlay ? sitePub.companyName : null;
 

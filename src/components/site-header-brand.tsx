@@ -42,14 +42,14 @@ export function SiteHeaderBrand({
     return (
       <Link href="/" className="flex justify-center text-header-brand-fg no-underline hover:opacity-95 md:justify-start">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={logoUrl} alt={name.trim() || "Inverts Oasis"} className={imgClass} />
+        <img src={logoUrl} alt={name.trim() || "7th Leg"} className={imgClass} />
       </Link>
     );
   }
 
   const img = (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={logoUrl} alt={name.trim() || "Inverts Oasis"} className={imgClass} />
+    <img src={logoUrl} alt={name.trim() || "7th Leg"} className={imgClass} />
   );
 
   if (placement === "above") {
