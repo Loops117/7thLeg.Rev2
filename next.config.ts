@@ -3,10 +3,10 @@ import type { NextConfig } from "next";
 /** @see https://nextjs.org/docs */
 const nextConfig: NextConfig = {
   serverExternalPackages: ["@napi-rs/canvas", "sharp"],
-  /** Match product image uploads (see `product-images-admin` MAX_BYTES). Default ~1MB breaks larger files with opaque client errors. */
+  /** Product images (8MB) and theatrical pane videos (25MB). Default ~1MB breaks larger uploads. */
   experimental: {
     serverActions: {
-      bodySizeLimit: "8mb",
+      bodySizeLimit: "30mb",
     },
   },
 };

@@ -946,6 +946,10 @@ body {
   -webkit-user-select: text;
 }
 
+.theatrical-pane__video--stabilize {
+  transform: scale(1.08);
+}
+
 /** Admin — theatrical pane editor (Settings → Home panes). */
 .theatrical-pane-editor__hint {
   color: color-mix(in srgb, var(--ink) 70%, transparent);

@@ -1,15 +1,54 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { TheatricalStageFrame } from "@/components/panes/theatrical-stage-frame";
 import {
+  resolveTheatricalVideoSrc,
   theatricalElementStyle,
   theatricalTextBoxStyle,
-  theatricalVideoEmbed,
   type TheatricalPaneElement,
   type TheatricalStageAspect,
 } from "@/lib/theatrical-pane";
 import { btnMainMd } from "@/lib/btn-theme-classes";
+
+function TheatricalNativeVideo({
+  src,
+  autoplay,
+  muted,
+  loop,
+  stabilize,
+}: {
+  src: string;
+  autoplay: boolean;
+  muted: boolean;
+  loop: boolean;
+  stabilize: boolean;
+}) {
+  const ref = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = ref.current;
+    if (!video || !autoplay) return;
+    void video.play().catch(() => {});
+  }, [src, autoplay]);
+
+  return (
+    // eslint-disable-next-line jsx-a11y/media-has-caption
+    <video
+      ref={ref}
+      src={src}
+      className={`theatrical-pane__video h-full w-full object-cover${stabilize ? " theatrical-pane__video--stabilize" : ""}`}
+      playsInline
+      autoPlay={autoplay}
+      muted={muted}
+      loop={loop}
+      preload="auto"
+      disablePictureInPicture
+      controls={false}
+    />
+  );
+}
 
 export function TheatricalElementView({
   el,
@@ -26,34 +65,15 @@ export function TheatricalElementView({
     : { width: "100%", height: "100%" };
 
   if (el.kind === "video") {
-    const embed = theatricalVideoEmbed(el.videoUrl ?? "");
-    if (!embed) {
+    const src = resolveTheatricalVideoSrc(el.videoUrl ?? "");
+    if (!src) {
       if (positioned) return null;
       return (
         <div
-          className="theatrical-pane__element theatrical-pane__element--video flex h-full w-full items-center justify-center bg-transparent text-xs text-white/50"
+          className="theatrical-pane-editor__video-placeholder theatrical-pane__element theatrical-pane__element--video flex h-full w-full items-center justify-center text-xs"
           style={boxStyle}
         >
-          Video (set URL)
-        </div>
-      );
-    }
-    if (embed.kind === "video") {
-      return (
-        <div
-          className="theatrical-pane__element theatrical-pane__element--video h-full w-full overflow-hidden"
-          style={boxStyle}
-        >
-          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-          <video
-            src={embed.src}
-            className="h-full w-full object-cover"
-            controls
-            playsInline
-            autoPlay={el.videoAutoplay}
-            muted={el.videoMuted ?? true}
-            loop={el.videoLoop}
-          />
+          Video (upload or paste .mp4 / .webm URL)
         </div>
       );
     }
@@ -62,12 +82,12 @@ export function TheatricalElementView({
         className="theatrical-pane__element theatrical-pane__element--video h-full w-full overflow-hidden"
         style={boxStyle}
       >
-        <iframe
-          src={embed.src}
-          title="Theatrical video"
-          className="h-full w-full border-0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
+        <TheatricalNativeVideo
+          src={src}
+          autoplay={!!el.videoAutoplay}
+          muted={el.videoMuted !== false}
+          loop={!!el.videoLoop}
+          stabilize={!!el.videoStabilize}
         />
       </div>
     );

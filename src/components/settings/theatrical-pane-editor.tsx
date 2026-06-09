@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { uploadThemeDecorImage } from "@/app/actions/theme-admin";
+import { uploadThemeDecorImage, uploadThemeDecorVideo } from "@/app/actions/theme-admin";
 import { TheatricalElementView } from "@/components/panes/theatrical-pane";
 import { TheatricalStageFrame } from "@/components/panes/theatrical-stage-frame";
 import { RichTextEditor } from "@/components/rich-text-editor";
@@ -109,9 +109,10 @@ function newElement(kind: TheatricalElementKind, zIndex: number): TheatricalPane
         widthPct: 100,
         heightPct: 100,
         videoUrl: "",
-        videoAutoplay: false,
+        videoAutoplay: true,
         videoMuted: true,
         videoLoop: true,
+        videoStabilize: false,
       };
     case "image":
       return { ...base, imageUrl: "" };
@@ -186,6 +187,7 @@ export function TheatricalPaneEditor({
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(elements[0]?.id ?? null);
   const [pending, startTransition] = useTransition();
   const dragRef = useRef<{
@@ -277,6 +279,16 @@ export function TheatricalPaneEditor({
     });
   }
 
+  function uploadVideoForSelected(file: File) {
+    if (!selected || selected.kind !== "video") return;
+    const fd = new FormData();
+    fd.set("file", file);
+    startTransition(async () => {
+      const r = await uploadThemeDecorVideo(fd);
+      if (r.ok) updateElement(selected.id, { videoUrl: r.url });
+    });
+  }
+
   const sorted = [...elements].sort((a, b) => a.zIndex - b.zIndex);
 
   return (
@@ -285,7 +297,7 @@ export function TheatricalPaneEditor({
         Drag elements on the stage. Layout is rendered on a fixed {THEATRICAL_STAGE_REF_WIDTH_PX}px-wide canvas and
         scaled to fit — the same
         positions and text wrapping you see here appear on the storefront (text stays selectable, not an image).
-        YouTube, Vimeo, and direct .mp4 URLs work for video.
+        Upload an .mp4 or .webm, or paste a direct video file URL — no YouTube/Vimeo player chrome.
       </p>
 
       <div className="flex flex-wrap items-end gap-3">
@@ -411,15 +423,34 @@ export function TheatricalPaneEditor({
           {selected.kind === "video" ? (
             <div className="mt-4 space-y-3">
               <label className="theatrical-pane-editor__label block text-sm font-bold">
-                Video URL (YouTube, Vimeo, or .mp4)
+                Video URL (.mp4, .webm, or uploaded file)
                 <input
                   type="url"
                   value={selected.videoUrl ?? ""}
                   onChange={(e) => updateElement(selected.id, { videoUrl: e.target.value })}
                   className="theatrical-pane-editor__input mt-1 w-full border-2 px-2 py-2 text-sm"
-                  placeholder="https://www.youtube.com/watch?v=…"
+                  placeholder="https://…/clip.mp4"
                 />
               </label>
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (f) uploadVideoForSelected(f);
+                }}
+              />
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => videoInputRef.current?.click()}
+                className={btnSecondaryMd}
+              >
+                {pending ? "Uploading…" : "Upload video"}
+              </button>
               <div className="theatrical-pane-editor__checkbox-row flex flex-wrap gap-4 text-sm">
                 <label className="flex items-center gap-2">
                   <input
@@ -427,7 +458,7 @@ export function TheatricalPaneEditor({
                     checked={!!selected.videoAutoplay}
                     onChange={(e) => updateElement(selected.id, { videoAutoplay: e.target.checked })}
                   />
-                  Autoplay (muted)
+                  Autoplay
                 </label>
                 <label className="flex items-center gap-2">
                   <input
@@ -445,7 +476,19 @@ export function TheatricalPaneEditor({
                   />
                   Loop
                 </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={!!selected.videoStabilize}
+                    onChange={(e) => updateElement(selected.id, { videoStabilize: e.target.checked })}
+                  />
+                  Stabilize
+                </label>
               </div>
+              <p className="theatrical-pane-editor__hint text-xs">
+                Stabilize slightly scales and crops the video to reduce visible shake and letterboxing. Autoplay
+                requires muted in most browsers.
+              </p>
             </div>
           ) : null}
 

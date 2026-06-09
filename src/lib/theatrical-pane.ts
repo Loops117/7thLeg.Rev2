@@ -19,6 +19,8 @@ export type TheatricalPaneElement = {
   videoAutoplay?: boolean;
   videoMuted?: boolean;
   videoLoop?: boolean;
+  /** Slight scale-up + crop to reduce visible shake and letterboxing in background video. */
+  videoStabilize?: boolean;
   imageUrl?: string;
   html?: string;
   /** Text layer: box background (#rrggbb). Empty = transparent. */
@@ -125,9 +127,10 @@ export function defaultTheatricalElements(): TheatricalPaneElement[] {
       heightPct: 100,
       zIndex: 1,
       videoUrl: "",
-      videoAutoplay: false,
+      videoAutoplay: true,
       videoMuted: true,
       videoLoop: true,
+      videoStabilize: false,
     },
     {
       id: newTheatricalElementId(),
@@ -163,9 +166,10 @@ export function parseTheatricalElements(raw: unknown): TheatricalPaneElement[] {
       heightPct: num(o.heightPct, 20, 4, 100),
       zIndex: num(o.zIndex, 1, 0, 999),
       videoUrl: str(o.videoUrl, 2000),
-      videoAutoplay: bool(o.videoAutoplay, false),
+      videoAutoplay: bool(o.videoAutoplay, true),
       videoMuted: bool(o.videoMuted, true),
       videoLoop: bool(o.videoLoop, true),
+      videoStabilize: bool(o.videoStabilize, false),
       imageUrl: str(o.imageUrl, 2000),
       html: str(o.html, 120_000),
       textBgHex: normalizeTheatricalColorHex(str(o.textBgHex, 16)) ?? "",
@@ -237,37 +241,21 @@ export function computeTheatricalStageLayout(
   };
 }
 
-export type TheatricalVideoEmbed =
-  | { kind: "iframe"; src: string }
-  | { kind: "video"; src: string };
+const EMBED_HOST_RE =
+  /(?:youtube\.com|youtu\.be|vimeo\.com|player\.vimeo\.com)/i;
 
-/** Resolve YouTube/Vimeo/direct file URLs for storefront embed. */
-export function theatricalVideoEmbed(url: string): TheatricalVideoEmbed | null {
+/** Direct playable video URL — no YouTube/Vimeo player embeds. */
+export function resolveTheatricalVideoSrc(url: string): string | null {
   const t = url.trim();
   if (!t) return null;
 
-  const ytMatch =
-    t.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,})/i) ??
-    t.match(/youtube\.com\/shorts\/([\w-]{6,})/i);
-  if (ytMatch?.[1]) {
-    return { kind: "iframe", src: `https://www.youtube.com/embed/${ytMatch[1]}` };
-  }
+  if (EMBED_HOST_RE.test(t)) return null;
 
-  const vimeoMatch = t.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
-  if (vimeoMatch?.[1]) {
-    return { kind: "iframe", src: `https://player.vimeo.com/video/${vimeoMatch[1]}` };
-  }
-
-  if (/^https?:\/\//i.test(t) && /\.(mp4|webm|ogg)(\?|$)/i.test(t)) {
-    return { kind: "video", src: t };
-  }
-
-  if (/^https?:\/\//i.test(t) && (t.includes("blob.vercel-storage.com") || t.includes("/uploads/"))) {
-    return { kind: "video", src: t };
-  }
+  if (/^\/uploads\//i.test(t)) return t;
 
   if (/^https?:\/\//i.test(t)) {
-    return { kind: "iframe", src: t };
+    if (/\.(mp4|webm|ogg|mov)(\?|$)/i.test(t)) return t;
+    if (t.includes("blob.vercel-storage.com") || t.includes("/uploads/")) return t;
   }
 
   return null;

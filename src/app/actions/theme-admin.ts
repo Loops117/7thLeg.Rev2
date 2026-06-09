@@ -24,10 +24,18 @@ async function requireAdmin() {
 
 const MAX_DECOR = 300;
 const MAX_BYTES = 6 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/gif", "image/webp", "image/avif"]);
+const ALLOWED_VIDEO = new Set(["video/mp4", "video/webm", "video/quicktime"]);
 
 function safeBasename(name: string): string {
-  return path.basename(name).replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 120) || "image";
+  return path.basename(name).replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 120) || "file";
+}
+
+function videoExtForMime(mime: string): string {
+  if (mime === "video/webm") return "webm";
+  if (mime === "video/quicktime") return "mov";
+  return "mp4";
 }
 
 export type ThemeSavePayload = {
@@ -220,6 +228,36 @@ export async function uploadThemeDecorImage(formData: FormData): Promise<UploadT
     return { ok: true, url };
   } catch (e) {
     console.error("uploadThemeDecorImage", e);
+    if (e instanceof Error && e.message === "Unauthorized") {
+      return { ok: false, error: "You must be signed in as admin to upload." };
+    }
+    return { ok: false, error: e instanceof Error ? e.message : "Upload failed." };
+  }
+}
+
+export async function uploadThemeDecorVideo(formData: FormData): Promise<UploadThemeDecorResult> {
+  try {
+    await requireAdmin();
+    const file = formData.get("file");
+    if (!file || !(file instanceof File)) {
+      return { ok: false, error: "Choose a video file." };
+    }
+    if (file.size > MAX_VIDEO_BYTES) {
+      return { ok: false, error: "Video must be 25MB or smaller." };
+    }
+    if (!ALLOWED_VIDEO.has(file.type)) {
+      return { ok: false, error: "Use MP4, WebM, or MOV." };
+    }
+    const raw = Buffer.from(await file.arrayBuffer());
+    const baseLeaf = safeBasename(file.name).replace(/\.[^.]+$/, "") || "video";
+    const ext = videoExtForMime(file.type);
+    const storedName = `${randomUUID()}-${baseLeaf}.${ext}`;
+    const key = `uploads/theme/${storedName}`;
+    const url = await putUploadObject(key, raw, file.type);
+    revalidatePath("/", "layout");
+    return { ok: true, url };
+  } catch (e) {
+    console.error("uploadThemeDecorVideo", e);
     if (e instanceof Error && e.message === "Unauthorized") {
       return { ok: false, error: "You must be signed in as admin to upload." };
     }
