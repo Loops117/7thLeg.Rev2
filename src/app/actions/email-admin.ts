@@ -10,6 +10,14 @@ import {
   type EmailConfigStatus,
   type EmailSettingsState,
 } from "@/lib/email-settings-types";
+import {
+  DEFAULT_ORDER_CONFIRMATION_BODY,
+  DEFAULT_ORDER_CONFIRMATION_SUBJECT,
+  DEFAULT_ORDER_SHIPPED_BODY,
+  DEFAULT_ORDER_SHIPPED_SUBJECT,
+  type OrderEmailSettingsState,
+  orderEmailSettingsDefaults,
+} from "@/lib/order-transactional-email";
 import { prisma } from "@/lib/prisma";
 import { escapeHtml, sendHtmlEmail } from "@/lib/send-email";
 
@@ -23,6 +31,7 @@ async function requireAdmin() {
 export type EmailAdminPanelData = {
   status: EmailConfigStatus;
   settings: EmailSettingsState;
+  orderEmails: OrderEmailSettingsState;
   kinds: typeof CUSTOMER_EMAIL_KINDS;
   envOverrides: {
     smtp: boolean;
@@ -30,13 +39,32 @@ export type EmailAdminPanelData = {
   };
 };
 
+export async function getOrderEmailSettingsForAdmin(): Promise<OrderEmailSettingsState> {
+  const row = await prisma.siteConfig.findUnique({ where: { id: 1 } });
+  if (!row) return { ...orderEmailSettingsDefaults };
+  return {
+    orderConfirmationEmailEnabled: row.orderConfirmationEmailEnabled ?? true,
+    orderConfirmationEmailSubject:
+      row.orderConfirmationEmailSubject ?? DEFAULT_ORDER_CONFIRMATION_SUBJECT,
+    orderConfirmationEmailBody: row.orderConfirmationEmailBody ?? DEFAULT_ORDER_CONFIRMATION_BODY,
+    orderShippedEmailEnabled: row.orderShippedEmailEnabled ?? true,
+    orderShippedEmailSubject: row.orderShippedEmailSubject ?? DEFAULT_ORDER_SHIPPED_SUBJECT,
+    orderShippedEmailBody: row.orderShippedEmailBody ?? DEFAULT_ORDER_SHIPPED_BODY,
+  };
+}
+
 export async function getEmailAdminPanelData(): Promise<EmailAdminPanelData> {
   await requireAdmin();
-  const [status, settings] = await Promise.all([getEmailConfigStatus(), getEmailSettingsForAdmin()]);
+  const [status, settings, orderEmails] = await Promise.all([
+    getEmailConfigStatus(),
+    getEmailSettingsForAdmin(),
+    getOrderEmailSettingsForAdmin(),
+  ]);
   const env = process.env;
   return {
     status,
     settings,
+    orderEmails,
     kinds: CUSTOMER_EMAIL_KINDS,
     envOverrides: {
       smtp: Boolean(
@@ -108,6 +136,42 @@ export async function updateEmailSettings(state: EmailSettingsState): Promise<Up
           "Could not save — this database is missing newer columns (run `npx prisma migrate deploy`, then try again).",
       };
     }
+    return { ok: false, error: msg.length > 500 ? `${msg.slice(0, 497)}…` : msg };
+  }
+}
+
+export type UpdateOrderEmailSettingsResult = { ok: true } | { ok: false; error: string };
+
+export async function updateOrderEmailSettings(
+  state: OrderEmailSettingsState,
+): Promise<UpdateOrderEmailSettingsResult> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { ok: false, error: "Unauthorized. Open Settings → Login and sign in again." };
+  }
+
+  try {
+    await prisma.siteConfig.update({
+      where: { id: 1 },
+      data: {
+        orderConfirmationEmailEnabled: !!state.orderConfirmationEmailEnabled,
+        orderConfirmationEmailSubject:
+          state.orderConfirmationEmailSubject.trim().slice(0, 300) || DEFAULT_ORDER_CONFIRMATION_SUBJECT,
+        orderConfirmationEmailBody:
+          state.orderConfirmationEmailBody.trim().slice(0, 8000) || DEFAULT_ORDER_CONFIRMATION_BODY,
+        orderShippedEmailEnabled: !!state.orderShippedEmailEnabled,
+        orderShippedEmailSubject:
+          state.orderShippedEmailSubject.trim().slice(0, 300) || DEFAULT_ORDER_SHIPPED_SUBJECT,
+        orderShippedEmailBody:
+          state.orderShippedEmailBody.trim().slice(0, 8000) || DEFAULT_ORDER_SHIPPED_BODY,
+      },
+    });
+    revalidatePath("/settings/email", "page");
+    return { ok: true };
+  } catch (e) {
+    console.error("updateOrderEmailSettings", e);
+    const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, error: msg.length > 500 ? `${msg.slice(0, 497)}…` : msg };
   }
 }

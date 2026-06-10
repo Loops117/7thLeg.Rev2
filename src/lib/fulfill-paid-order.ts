@@ -157,6 +157,12 @@ export async function fulfillPaidOrder(orderId: string, ctx: FulfillmentContext)
     revalidatePath("/settings/sales");
     revalidatePath(`/settings/sales/${orderId}`);
     try {
+      const { sendOrderConfirmationEmailIfEnabled } = await import("@/lib/send-order-confirmation-email");
+      await sendOrderConfirmationEmailIfEnabled(orderId);
+    } catch (e) {
+      console.warn("Order confirmation email hook failed:", orderId, e);
+    }
+    try {
       const { sendOrderReviewRequestIfEnabled } = await import("@/lib/send-order-review-request");
       await sendOrderReviewRequestIfEnabled(orderId);
     } catch (e) {

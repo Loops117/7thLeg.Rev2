@@ -12,6 +12,9 @@ export type SendEmailResult =
 
 function formatSmtpError(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e);
+  if (/smtpclientauthentication is disabled|smtp_auth_disabled/i.test(msg)) {
+    return `${msg} — SMTP AUTH is turned off for this mailbox in GoDaddy/Microsoft. Enable it under Email & Office → Manage mailbox → Advanced Settings → SMTP Authentication (ON), then retry. See https://www.godaddy.com/help/enable-smtp-authentication-40981`;
+  }
   if (/535|authentication|invalid login|auth/i.test(msg)) {
     return `${msg} — Check the mailbox email and password in Settings → Email. For Microsoft 365 with MFA, use an app password.`;
   }

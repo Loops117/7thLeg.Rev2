@@ -120,6 +120,14 @@ model SiteConfig {
   reviewRequestEmailEnabled Boolean @default(false) @map("review_request_email_enabled")
   reviewRequestEmailSubject String @default("How was your order?") @map("review_request_email_subject")
   reviewRequestEmailBody String @default("Hi {{customerName}},\n\nThanks for your order! We'd love to hear what you think.\n\nLeave a review: {{reviewUrl}}\n\n— {{companyName}}") @db.Text @map("review_request_email_body")
+
+  orderConfirmationEmailEnabled Boolean @default(true) @map("order_confirmation_email_enabled")
+  orderConfirmationEmailSubject String @default("Order confirmed — {{companyName}}") @map("order_confirmation_email_subject")
+  orderConfirmationEmailBody String @default("Hi {{customerName}},\n\nThanks for your order! We've received your payment.\n\nOrder {{orderShortId}}\n{{orderItems}}\n\nTotal: {{orderTotal}}\n\nView your order: {{orderUrl}}\n\n— {{companyName}}") @db.Text @map("order_confirmation_email_body")
+
+  orderShippedEmailEnabled Boolean @default(true) @map("order_shipped_email_enabled")
+  orderShippedEmailSubject String @default("Your order is on its way — {{companyName}}") @map("order_shipped_email_subject")
+  orderShippedEmailBody String @default("Hi {{customerName}},\n\nGood news — your order {{orderShortId}} has shipped!\n\n{{orderItems}}\n\n{{trackingLine}}\n\nView your order: {{orderUrl}}\n\n— {{companyName}}") @db.Text @map("order_shipped_email_body")
   /// Gallery / submission map pin marker (global for all submissions).
   imageSubmissionPinSizePx Int @default(20) @map("image_submission_pin_size_px")
   imageSubmissionPinFillColor String @default("#2d6a4f") @map("image_submission_pin_fill_color")
@@ -1277,6 +1285,8 @@ model Order {
   productReviews ProductReview[]
 
   reviewRequestEmailSentAt DateTime? @map("review_request_email_sent_at")
+  orderConfirmationEmailSentAt DateTime? @map("order_confirmation_email_sent_at")
+  orderShippedEmailSentAt DateTime? @map("order_shipped_email_sent_at")
 
   @@index([archivedAt])
   @@map("orders")

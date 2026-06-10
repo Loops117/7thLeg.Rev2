@@ -62,6 +62,18 @@ export const CUSTOMER_EMAIL_KINDS: CustomerEmailKind[] = [
       "Sent after a paid order is fulfilled when “Send review request email” is enabled in Settings → Reviews.",
     requiresEmail: true,
   },
+  {
+    id: "order-confirmation",
+    name: "Order confirmation",
+    description: "Sent automatically when a customer’s payment is received and the order is fulfilled.",
+    requiresEmail: true,
+  },
+  {
+    id: "order-shipped",
+    name: "Order shipped",
+    description: "Sent automatically when an admin sets the order status to Shipped in Settings → Sales.",
+    requiresEmail: true,
+  },
 ];
 
 export type ResolvedSmtpConfig = {

@@ -40,6 +40,11 @@ export async function adminUpdateOrder(
 
   const tracking = input.trackingNumber.trim().slice(0, 512);
 
+  const prev = await prisma.order.findUnique({
+    where: { id },
+    select: { status: true },
+  });
+
   const order = await prisma.order.update({
     where: { id },
     data: {
@@ -49,6 +54,15 @@ export async function adminUpdateOrder(
     },
     select: { customerId: true },
   });
+
+  if (input.status === "SHIPPED" && prev?.status !== "SHIPPED") {
+    try {
+      const { sendOrderShippedEmailIfEnabled } = await import("@/lib/send-order-shipped-email");
+      await sendOrderShippedEmailIfEnabled(id);
+    } catch (e) {
+      console.warn("Order shipped email hook failed:", id, e);
+    }
+  }
 
   revalidatePath("/settings/sales");
   revalidatePath(`/settings/sales/${id}`);
@@ -67,10 +81,29 @@ export async function adminBulkUpdateOrderStatus(
     const ids = [...new Set(orderIds.map((id) => id.trim()).filter(Boolean))];
     if (ids.length === 0) return { ok: false, error: "Select at least one order." };
 
+    const toShip =
+      status === "SHIPPED"
+        ? await prisma.order.findMany({
+            where: { id: { in: ids }, status: { not: "SHIPPED" } },
+            select: { id: true },
+          })
+        : [];
+
     const result = await prisma.order.updateMany({
       where: { id: { in: ids } },
       data: { status },
     });
+
+    if (status === "SHIPPED" && toShip.length > 0) {
+      const { sendOrderShippedEmailIfEnabled } = await import("@/lib/send-order-shipped-email");
+      for (const row of toShip) {
+        try {
+          await sendOrderShippedEmailIfEnabled(row.id);
+        } catch (e) {
+          console.warn("Order shipped email hook failed:", row.id, e);
+        }
+      }
+    }
 
     revalidatePath("/settings/sales");
     for (const id of ids) {

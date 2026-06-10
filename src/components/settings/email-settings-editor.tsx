@@ -5,10 +5,12 @@ import { useState, useTransition } from "react";
 import {
   sendAdminTestEmail,
   updateEmailSettings,
+  updateOrderEmailSettings,
   type EmailAdminPanelData,
 } from "@/app/actions/email-admin";
-import { btnSecondaryMd } from "@/lib/btn-theme-classes";
+import { btnMainMd, btnSecondaryMd } from "@/lib/btn-theme-classes";
 import { DEFAULT_SMTP_HOST, DEFAULT_SMTP_PORT, type EmailSettingsState } from "@/lib/email-settings-types";
+import type { OrderEmailSettingsState } from "@/lib/order-transactional-email";
 
 export function EmailSettingsEditor({ initial }: { initial: EmailAdminPanelData }) {
   const router = useRouter();
@@ -18,10 +20,37 @@ export function EmailSettingsEditor({ initial }: { initial: EmailAdminPanelData 
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [saveErr, setSaveErr] = useState<string | null>(null);
   const [form, setForm] = useState<EmailSettingsState>(initial.settings);
+  const [orderEmails, setOrderEmails] = useState<OrderEmailSettingsState>(initial.orderEmails);
+  const [orderSaveMsg, setOrderSaveMsg] = useState<string | null>(null);
+  const [orderSaveErr, setOrderSaveErr] = useState<string | null>(null);
   const [pendingTest, startTestTransition] = useTransition();
   const [pendingSave, startSaveTransition] = useTransition();
+  const [pendingOrderSave, startOrderSaveTransition] = useTransition();
 
   const { status, envOverrides } = initial;
+
+  const orderPlaceholders = (
+    <p className="text-xs text-ink/60 dark:text-zinc-400">
+      Placeholders: <code>{"{{customerName}}"}</code>, <code>{"{{companyName}}"}</code>,{" "}
+      <code>{"{{orderShortId}}"}</code>, <code>{"{{orderItems}}"}</code>, <code>{"{{orderTotal}}"}</code>,{" "}
+      <code>{"{{orderUrl}}"}</code>, <code>{"{{trackingLine}}"}</code>, <code>{"{{trackingNumber}}"}</code>,{" "}
+      <code>{"{{trackingUrl}}"}</code>, <code>{"{{shippingLabel}}"}</code>
+    </p>
+  );
+
+  function saveOrderEmailSettings() {
+    setOrderSaveMsg(null);
+    setOrderSaveErr(null);
+    startOrderSaveTransition(async () => {
+      const res = await updateOrderEmailSettings(orderEmails);
+      if (!res.ok) {
+        setOrderSaveErr(res.error);
+        return;
+      }
+      setOrderSaveMsg("Order email settings saved.");
+      router.refresh();
+    });
+  }
 
   function saveSettings() {
     setSaveMsg(null);
@@ -242,6 +271,90 @@ export function EmailSettingsEditor({ initial }: { initial: EmailAdminPanelData 
         {err ? <p className="mt-3 text-sm font-bold text-coral">{err}</p> : null}
       </section>
 
+      <section className="space-y-6 rounded border-2 border-palm/25 bg-white p-4 dark:border-zinc-600 dark:bg-zinc-900/30">
+        <div>
+          <h2 className="text-lg font-black text-palm dark:text-emerald-300">Order emails</h2>
+          <p className="mt-1 text-sm text-ink/70 dark:text-zinc-400">
+            Confirmation sends when payment is received. Shipped sends when you set status to{" "}
+            <strong>Shipped</strong> in Sales.
+          </p>
+        </div>
+
+        <div className="space-y-4 rounded border border-palm/15 p-4 dark:border-zinc-700">
+          <label className="flex cursor-pointer items-start gap-2 text-sm font-bold text-ink dark:text-zinc-200">
+            <input
+              type="checkbox"
+              checked={orderEmails.orderConfirmationEmailEnabled}
+              onChange={(e) =>
+                setOrderEmails((s) => ({ ...s, orderConfirmationEmailEnabled: e.target.checked }))
+              }
+            />
+            Send order confirmation email after payment
+          </label>
+          <label className="block text-sm font-bold text-ink dark:text-zinc-200">
+            Confirmation subject
+            <input
+              type="text"
+              value={orderEmails.orderConfirmationEmailSubject}
+              onChange={(e) =>
+                setOrderEmails((s) => ({ ...s, orderConfirmationEmailSubject: e.target.value }))
+              }
+              className="mt-1 w-full border-2 border-palm-mid px-2 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
+            />
+          </label>
+          <label className="block text-sm font-bold text-ink dark:text-zinc-200">
+            Confirmation body
+            <textarea
+              value={orderEmails.orderConfirmationEmailBody}
+              onChange={(e) =>
+                setOrderEmails((s) => ({ ...s, orderConfirmationEmailBody: e.target.value }))
+              }
+              rows={10}
+              className="mt-1 w-full border-2 border-palm-mid px-2 py-2 font-mono text-sm dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
+            />
+          </label>
+        </div>
+
+        <div className="space-y-4 rounded border border-palm/15 p-4 dark:border-zinc-700">
+          <label className="flex cursor-pointer items-start gap-2 text-sm font-bold text-ink dark:text-zinc-200">
+            <input
+              type="checkbox"
+              checked={orderEmails.orderShippedEmailEnabled}
+              onChange={(e) => setOrderEmails((s) => ({ ...s, orderShippedEmailEnabled: e.target.checked }))}
+            />
+            Send &quot;order is on its way&quot; email when status is Shipped
+          </label>
+          <label className="block text-sm font-bold text-ink dark:text-zinc-200">
+            Shipped subject
+            <input
+              type="text"
+              value={orderEmails.orderShippedEmailSubject}
+              onChange={(e) => setOrderEmails((s) => ({ ...s, orderShippedEmailSubject: e.target.value }))}
+              className="mt-1 w-full border-2 border-palm-mid px-2 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
+            />
+          </label>
+          <label className="block text-sm font-bold text-ink dark:text-zinc-200">
+            Shipped body
+            <textarea
+              value={orderEmails.orderShippedEmailBody}
+              onChange={(e) => setOrderEmails((s) => ({ ...s, orderShippedEmailBody: e.target.value }))}
+              rows={10}
+              className="mt-1 w-full border-2 border-palm-mid px-2 py-2 font-mono text-sm dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
+            />
+          </label>
+        </div>
+
+        {orderPlaceholders}
+
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" disabled={pendingOrderSave} className={btnMainMd} onClick={saveOrderEmailSettings}>
+            {pendingOrderSave ? "Saving…" : "Save order emails"}
+          </button>
+          {orderSaveMsg ? <span className="text-sm font-bold text-lagoon-dark">{orderSaveMsg}</span> : null}
+          {orderSaveErr ? <span className="text-sm font-bold text-coral">{orderSaveErr}</span> : null}
+        </div>
+      </section>
+
       <section className="rounded border border-palm/20 p-4 dark:border-zinc-600">
         <h2 className="text-lg font-black text-palm dark:text-emerald-300">Emails customers may receive</h2>
         <ul className="mt-3 space-y-3">
@@ -252,9 +365,6 @@ export function EmailSettingsEditor({ initial }: { initial: EmailAdminPanelData 
             </li>
           ))}
         </ul>
-        <p className="mt-4 text-xs text-ink/60 dark:text-zinc-500">
-          Order confirmation emails are not sent yet — customers see order details in their account after checkout.
-        </p>
       </section>
 
       <section className="rounded border border-palm/15 bg-surf/20 p-4 text-sm dark:bg-zinc-900/20">
