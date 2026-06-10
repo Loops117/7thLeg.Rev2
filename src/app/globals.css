@@ -832,13 +832,16 @@ body {
 /** Product page — related / you-may-also-want strips */
 .product-recommendation-strip-scroll {
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: visible;
   overscroll-behavior-x: contain;
 }
 
 .product-recommendation-strip__item {
   width: var(--product-recommendation-card-width, 5.5rem);
-  height: var(--product-recommendation-card-height, calc(var(--product-recommendation-card-width, 5.5rem) + 3.125rem));
+  min-height: var(
+    --product-recommendation-card-height,
+    calc(var(--product-recommendation-card-width, 5.5rem) + 4.375rem)
+  );
   max-width: 100%;
 }
 
@@ -856,9 +859,13 @@ body {
 
 .product-recommendation-hover-preview__card {
   flex-shrink: 0;
+  overflow: visible;
+}
+
+/** Customer-supplied gallery thumbs — uniform scale on hover preview. */
+.product-recommendation-hover-preview__card--uniform-scale {
   transform: scale(var(--rec-hover-zoom-scale, 1.25));
   transform-origin: center center;
-  overflow: visible;
 }
 
 .product-recommendation-hover-preview__card .store-product-card {
@@ -906,6 +913,10 @@ body {
 
 .store-product-card__description {
   color: color-mix(in srgb, var(--product-card-description) 70%, transparent);
+}
+
+.store-product-card__variant {
+  color: color-mix(in srgb, var(--product-card-description) 85%, transparent);
 }
 
 .store-product-card__price {

@@ -143,7 +143,7 @@ export function CustomerSuppliedGalleryThumb({
             }
           >
             <div
-              className="product-recommendation-hover-preview__card"
+              className="product-recommendation-hover-preview__card product-recommendation-hover-preview__card--uniform-scale"
               style={
                 {
                   width: cardWidthPx,

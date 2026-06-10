@@ -40,7 +40,7 @@ function RecommendationColumn({
         {title}
       </h2>
       <div
-        className="product-recommendation-strip-scroll mt-2 -mx-0.5 px-0.5"
+        className="product-recommendation-strip-scroll mt-2 -mx-0.5 px-0.5 pb-1"
         style={
           {
             "--product-recommendation-card-width": `${cardWidthPx}px`,

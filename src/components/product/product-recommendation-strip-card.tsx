@@ -6,6 +6,7 @@ import { StoreProductCard } from "@/components/store/store-product-card";
 import {
   recommendationStripCardHeightPx,
   recommendationStripGlowBleedPx,
+  recommendationStripPreviewHeightPx,
 } from "@/lib/recommendation-strip-layout";
 import type { StorefrontProductCard } from "@/lib/products-storefront";
 
@@ -18,12 +19,13 @@ type PreviewAnchor = {
 
 function anchorFromCardRect(
   rect: DOMRect,
+  cardWidthPx: number,
   hoverScale: number,
   glowThicknessPx: number,
 ): PreviewAnchor {
   const glowPad = recommendationStripGlowBleedPx(glowThicknessPx);
-  const scaledW = rect.width * hoverScale;
-  const scaledH = rect.height * hoverScale;
+  const scaledW = Math.round(cardWidthPx * hoverScale);
+  const scaledH = recommendationStripPreviewHeightPx(cardWidthPx, hoverScale);
   const outerWidth = scaledW + glowPad * 2;
   const outerHeight = scaledH + glowPad * 2;
   let cx = rect.left + rect.width / 2;
@@ -67,6 +69,8 @@ export function ProductRecommendationStripCard({
 
   const hoverScale = hoverZoomPercent / 100;
   const baseHeightPx = recommendationStripCardHeightPx(cardWidthPx);
+  const previewWidthPx = Math.round(cardWidthPx * hoverScale);
+  const previewHeightPx = recommendationStripPreviewHeightPx(cardWidthPx, hoverScale);
 
   const cardProps = {
     product,
@@ -83,8 +87,8 @@ export function ProductRecommendationStripCard({
   const measureAnchor = useCallback(() => {
     const el = itemRef.current;
     if (!el) return;
-    setAnchor(anchorFromCardRect(el.getBoundingClientRect(), hoverScale, hoverGlowThicknessPx));
-  }, [hoverScale, hoverGlowThicknessPx]);
+    setAnchor(anchorFromCardRect(el.getBoundingClientRect(), cardWidthPx, hoverScale, hoverGlowThicknessPx));
+  }, [cardWidthPx, hoverScale, hoverGlowThicknessPx]);
 
   useEffect(() => {
     if (!hovering) return;
@@ -109,7 +113,6 @@ export function ProductRecommendationStripCard({
                 transform: "translate(-50%, -50%)",
                 "--rec-hover-glow": hoverGlowHex,
                 "--rec-glow-ring-px": `${hoverGlowThicknessPx}px`,
-                "--rec-hover-zoom-scale": hoverScale,
               } as CSSProperties
             }
           >
@@ -117,8 +120,8 @@ export function ProductRecommendationStripCard({
               className="product-recommendation-hover-preview__card"
               style={
                 {
-                  width: cardWidthPx,
-                  height: baseHeightPx,
+                  width: previewWidthPx,
+                  height: previewHeightPx,
                 } as CSSProperties
               }
             >

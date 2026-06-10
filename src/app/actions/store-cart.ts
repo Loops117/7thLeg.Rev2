@@ -10,7 +10,12 @@ import { prisma } from "@/lib/prisma";
 import { reconcileCartShippingSelection } from "@/lib/shipping-options-public";
 import { isShippingOptionEligibleForOwner } from "@/lib/shipping-eligibility";
 import { getOrCreateCart } from "@/lib/store-cart";
-import { productAppearsInStock, variantIsPurchasable } from "@/lib/product-stock";
+import {
+  PRODUCT_UNAVAILABLE_LABEL,
+  productAppearsInStock,
+  productUnavailableError,
+  variantIsPurchasable,
+} from "@/lib/product-stock";
 
 export type CartActionResult = { ok: true } | { ok: false; error: string };
 
@@ -35,7 +40,7 @@ export async function addToCartAction(input: {
     return { ok: false, error: "Product not available." };
   }
   if (product.variants.length === 0 && !productAppearsInStock(product)) {
-    return { ok: false, error: "This product is out of stock." };
+    return { ok: false, error: `This product: ${PRODUCT_UNAVAILABLE_LABEL}.` };
   }
 
   let variantId: string | null = input.variantId;
@@ -45,7 +50,7 @@ export async function addToCartAction(input: {
     const v0 = product.variants[0];
     variantId = v0.id;
     if (!variantIsPurchasable(v0)) {
-      return { ok: false, error: "That option is unavailable or out of stock." };
+      return { ok: false, error: `That option: ${PRODUCT_UNAVAILABLE_LABEL}.` };
     }
   } else {
     if (!variantId || !product.variants.some((v) => v.id === variantId)) {
@@ -53,7 +58,7 @@ export async function addToCartAction(input: {
     }
     const v = product.variants.find((x) => x.id === variantId)!;
     if (!variantIsPurchasable(v)) {
-      return { ok: false, error: "That option is unavailable or out of stock." };
+      return { ok: false, error: `That option: ${PRODUCT_UNAVAILABLE_LABEL}.` };
     }
   }
 
@@ -162,7 +167,7 @@ export async function addProductKitToCartAction(input: {
     if (product.variants.length === 0) {
       variantId = null;
       if (!productAppearsInStock(product)) {
-        return { ok: false, error: `${product.name} is out of stock.` };
+        return { ok: false, error: productUnavailableError(product.name) };
       }
     } else {
       if (!variantId || !product.variants.some((v) => v.id === variantId)) {
@@ -170,7 +175,7 @@ export async function addProductKitToCartAction(input: {
       }
       const v = product.variants.find((x) => x.id === variantId)!;
       if (!variantIsPurchasable(v)) {
-        return { ok: false, error: `${product.name} (${v.label}) is out of stock.` };
+        return { ok: false, error: productUnavailableError(product.name, v.label) };
       }
     }
 

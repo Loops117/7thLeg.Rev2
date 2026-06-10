@@ -16,3 +16,11 @@ export function productListPriceCents(
   );
   return basePriceCents + (ordered[0]?.priceDeltaCents ?? 0);
 }
+
+/** First variation by sort order (storefront queries already order variants). */
+export function storefrontDefaultVariantLabel(
+  variants: { label: string }[] | null | undefined,
+): string | null {
+  const label = variants?.[0]?.label?.trim();
+  return label || null;
+}

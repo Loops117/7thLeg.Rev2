@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useRef } from "react";
 import { ProductQuickAddButton } from "@/components/product-quick-add-button";
+import { StoreProductCardPriceRow } from "@/components/store/store-product-card-price-row";
 import { ProductDiagonalBrandOverlay } from "@/components/store/product-diagonal-brand-overlay";
 import { ProductVariantBadge, storefrontVariantCount } from "@/components/store/product-variant-badge";
 import { storefrontDisplayImageUrl } from "@/lib/product-images-public";
-import { productCardAppearsInStock } from "@/lib/product-stock";
+import { PRODUCT_UNAVAILABLE_LABEL, productCardAppearsInStock } from "@/lib/product-stock";
 import { parseVariantPriceDisplay } from "@/lib/product-variant-price-display";
-import { productListPriceCents } from "@/lib/product-list-price-cents";
-import { formatPriceUsd } from "@/lib/product-slug";
+import { productListPriceCents, storefrontDefaultVariantLabel } from "@/lib/product-list-price-cents";
 import type { StorefrontProductCard } from "@/lib/products-storefront";
 
 export function StoreProductCard({
@@ -52,10 +52,16 @@ export function StoreProductCard({
   const priceCents = p.displayPriceCents ?? listPriceCents;
   const cardRef = useRef<HTMLDivElement>(null);
   const variantCount = storefrontVariantCount(p.variants);
+  const defaultVariantLabel = !mini ? storefrontDefaultVariantLabel(p.variants) : null;
   const isMini = mini && compact;
   const isRecStrip = recommendationStrip && isMini;
   const isCatalogGrid = catalogGrid && !compact && !mini;
   const imageFillsFrame = isCatalogGrid || fillImage;
+  const showCart = showQuickAdd && inStock;
+  const padX = isRecStrip || isMini ? "px-1" : compact ? "px-2.5" : "px-3.5";
+  const padTop = isRecStrip || isMini ? "pt-1" : compact ? "pt-2.5" : "pt-3.5";
+  const padBottom = isRecStrip || isMini ? "pb-1" : compact ? "pb-2.5" : "pb-3.5";
+  const footerTop = isRecStrip || isMini ? "pt-0.5" : "pt-2";
 
   return (
     <div
@@ -92,17 +98,7 @@ export function StoreProductCard({
             />
           ) : null}
         </div>
-        <div
-          className={`flex flex-col ${
-            isRecStrip
-              ? "min-h-0 flex-1 p-1"
-              : isMini
-                ? "p-1"
-                : compact
-                  ? "min-h-0 flex-1 p-2"
-                  : "min-h-0 flex-1 p-3"
-          }`}
-        >
+        <div className={`flex min-h-0 flex-1 flex-col ${padX} ${padTop} pb-0`}>
           <p
             className={`store-product-card__title shrink-0 font-bold ${
               isRecStrip
@@ -110,29 +106,38 @@ export function StoreProductCard({
                 : isMini
                   ? "line-clamp-2 text-[10px] leading-tight"
                   : compact
-                    ? "line-clamp-2 min-h-[2.25rem] text-xs"
-                    : "line-clamp-2 min-h-[2.5rem] text-sm"
+                    ? "line-clamp-2 min-h-[2.5rem] text-xs"
+                    : "line-clamp-2 min-h-[2.75rem] text-sm"
             }`}
           >
             {p.name}
           </p>
           {!compact ? (
-            <p className="store-product-card__description mt-1 min-h-[2.5rem] shrink-0 line-clamp-2 text-xs">
+            <p className="store-product-card__description mt-1 min-h-[3rem] shrink-0 line-clamp-2 text-xs">
               {p.shortDescription?.trim() ? p.shortDescription : "\u00a0"}
             </p>
           ) : null}
-          <div className={`shrink-0 ${isRecStrip || isMini ? "mt-auto pt-0.5" : "mt-auto pt-2"}`}>
-            <p className={`store-product-card__price font-bold ${isMini ? "text-[10px]" : compact ? "text-xs" : "text-sm"}`}>
-              {formatPriceUsd(priceCents)}
-              {p.displaySale || p.onSale ? <span className="store-product-card__sale ml-1">Sale</span> : null}
-            </p>
-            {!inStock ? (
-              <p className="store-product-card__stock-warn mt-1 text-xs font-medium">Out of stock</p>
-            ) : null}
-          </div>
         </div>
       </Link>
-      {showQuickAdd && inStock ? (
+      <div className={`mt-auto shrink-0 ${padX} ${padBottom} ${footerTop} ${showCart ? "pr-14" : ""}`}>
+        <StoreProductCardPriceRow
+          priceCents={priceCents}
+          showSale={!!(p.displaySale || p.onSale)}
+          variantLabel={defaultVariantLabel}
+          compact={compact}
+          mini={isMini}
+        />
+        {!inStock ? (
+          <p
+            className={`store-product-card__stock-warn mt-1 font-medium ${
+              isRecStrip ? "line-clamp-2 text-[10px] leading-tight" : "text-xs"
+            }`}
+          >
+            {PRODUCT_UNAVAILABLE_LABEL}
+          </p>
+        ) : null}
+      </div>
+      {showCart ? (
         <ProductQuickAddButton
           productId={p.id}
           productName={p.name}

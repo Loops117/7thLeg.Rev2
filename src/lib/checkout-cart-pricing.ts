@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { normalizeVariantSku } from "@/lib/variant-sku";
 import { effectiveEventSalePriceCents, isEventActive } from "@/lib/event-pricing";
 import { unitCentsForVariantQuantity } from "@/lib/product-price-tiers";
-import { productAppearsInStock, variantIsPurchasable } from "@/lib/product-stock";
+import { productAppearsInStock, productUnavailableError, variantIsPurchasable } from "@/lib/product-stock";
 import { productInEventLinkedCatalog } from "@/lib/event-catalog-scope";
 import { computeKitDiscountForCartItems } from "@/lib/product-kits";
 import { storefrontDisplayImageUrl } from "@/lib/product-images-public";
@@ -184,19 +184,19 @@ export async function priceCartMerchandiseForOwner(owner: CartOwner): Promise<
     let variantId: string | null = line.variantId;
 
     if (variants.length === 0) {
-      if (!productAppearsInStock(p)) return { ok: false, error: `${p.name} is out of stock.` };
+      if (!productAppearsInStock(p)) return { ok: false, error: productUnavailableError(p.name) };
       variantId = null;
     } else if (variants.length === 1) {
       const v0 = variants[0];
       variantId = v0.id;
-      if (!variantIsPurchasable(v0)) return { ok: false, error: `${p.name} is out of stock.` };
+      if (!variantIsPurchasable(v0)) return { ok: false, error: productUnavailableError(p.name) };
     } else {
       const v = line.variant;
       if (!variantId || !v || !variants.some((x) => x.id === variantId)) {
         return { ok: false, error: `Please update your cart: ${p.name} needs a valid option.` };
       }
       if (!variantIsPurchasable(v)) {
-        return { ok: false, error: `${p.name} (${v.label}) is out of stock.` };
+        return { ok: false, error: productUnavailableError(p.name, v.label) };
       }
     }
 

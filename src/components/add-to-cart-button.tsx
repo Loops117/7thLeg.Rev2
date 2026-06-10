@@ -11,6 +11,10 @@ import {
   productTierBreakdownAtQuantity,
   productUnitCentsDisplay,
 } from "@/lib/product-price-tiers-storefront";
+import {
+  PRODUCT_UNAVAILABLE_HINT,
+  PRODUCT_UNAVAILABLE_OPTION_SUFFIX,
+} from "@/lib/product-stock";
 import { formatPriceUsd } from "@/lib/product-slug";
 
 type VariantOpt = {
@@ -89,7 +93,7 @@ export function AddToCartButton({
 
   if (!canPurchase) {
     return (
-      <p className="mt-6 text-sm font-medium text-coral">Out of stock — check back later.</p>
+      <p className="mt-6 text-sm font-medium text-coral">{PRODUCT_UNAVAILABLE_HINT}</p>
     );
   }
 
@@ -153,7 +157,7 @@ export function AddToCartButton({
             {selectable.map((v) => (
               <option key={v.id} value={v.id}>
                 {v.label}
-                {!v.unlimitedStock && v.stock <= 0 ? " (out of stock)" : ""}
+                {!v.unlimitedStock && v.stock <= 0 ? PRODUCT_UNAVAILABLE_OPTION_SUFFIX : ""}
               </option>
             ))}
           </select>

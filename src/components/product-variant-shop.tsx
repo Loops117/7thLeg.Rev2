@@ -11,7 +11,7 @@ import {
   storefrontImageUrl,
   type ProductGalleryImageRow,
 } from "@/lib/product-images-public";
-import { variantIsPurchasable } from "@/lib/product-stock";
+import { PRODUCT_UNAVAILABLE_LABEL, variantIsPurchasable } from "@/lib/product-stock";
 import {
   unitCentsForVariantQuantity,
   type ProductPriceTier,
@@ -172,11 +172,12 @@ export function ProductVariantShop({
 
   const stockLine = (() => {
     if (variants.length === 0) {
-      if (!productUnlimited && productQuantity <= 0) return "Out of stock";
+      if (!productUnlimited && productQuantity <= 0) return PRODUCT_UNAVAILABLE_LABEL;
       return productUnlimited ? "Made to order — always available" : `${productQuantity} in stock`;
     }
     if (!selectedVar || !selectedVar.active) return "This option is unavailable.";
     if (selectedVar.unlimitedStock) return "In stock for this option";
+    if (selectedVar.stock <= 0) return PRODUCT_UNAVAILABLE_LABEL;
     return `${selectedVar.stock} in stock for this option`;
   })();
 

@@ -4,8 +4,9 @@ import { EventKind } from "@/generated/prisma/client";
 import { auth as readAuthSession } from "@/auth";
 import { EventGiveawayEntryForm } from "@/components/event-giveaway-entry-form";
 import { storefrontDisplayImageUrl } from "@/lib/product-images-public";
-import { productCardAppearsInStock } from "@/lib/product-stock";
-import { formatPriceUsd } from "@/lib/product-slug";
+import { StoreProductCardPriceRow } from "@/components/store/store-product-card-price-row";
+import { storefrontDefaultVariantLabel } from "@/lib/product-list-price-cents";
+import { PRODUCT_UNAVAILABLE_LABEL, productCardAppearsInStock } from "@/lib/product-stock";
 import { getStorefrontEventListing } from "@/lib/products-storefront";
 import { isEventActive } from "@/lib/event-pricing";
 import type { StorefrontProductCard } from "@/lib/products-storefront";
@@ -88,6 +89,7 @@ export default async function PublicEventPage({ params }: Props) {
             {products.map((p) => {
               const { price, sale } = cardPrice(p);
               const img = storefrontDisplayImageUrl(p.images);
+              const defaultVariantLabel = storefrontDefaultVariantLabel(p.variants);
               const qs =
                 event.kind === EventKind.TIMED ? `?${new URLSearchParams({ event: event.id }).toString()}` : "";
               return (
@@ -100,14 +102,17 @@ export default async function PublicEventPage({ params }: Props) {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={img} alt={p.name} className="h-full w-full object-contain" />
                     </div>
-                    <div className="p-3">
-                      <p className="store-product-card__title line-clamp-2 text-sm font-bold">{p.name}</p>
-                      <p className="store-product-card__price mt-2 text-sm font-bold">
-                        {formatPriceUsd(price)}
-                        {sale ? <span className="store-product-card__sale ml-1">Sale</span> : null}
-                      </p>
+                    <div className="p-3.5">
+                      <p className="store-product-card__title line-clamp-2 min-h-[2.75rem] text-sm font-bold">{p.name}</p>
+                      <div className="mt-2">
+                        <StoreProductCardPriceRow
+                          priceCents={price}
+                          showSale={sale}
+                          variantLabel={defaultVariantLabel}
+                        />
+                      </div>
                       {!productCardAppearsInStock(p) ? (
-                        <p className="mt-1 text-xs text-coral">Out of stock</p>
+                        <p className="mt-1 text-xs text-coral">{PRODUCT_UNAVAILABLE_LABEL}</p>
                       ) : null}
                     </div>
                   </Link>
