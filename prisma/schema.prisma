@@ -51,6 +51,14 @@ enum PaneType {
   SUGGESTION_BOX
   /// Layered stage: video, images, rich text, and links with drag-and-drop layout.
   THEATRICAL
+  /// Customer product reviews (approved rows shown on home/about panes).
+  REVIEWS
+}
+
+enum ProductReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum SpeciesSuggestionStatus {
@@ -105,6 +113,13 @@ model SiteConfig {
   pointsPerDollar Int     @default(10) // whole points earned per $1.00 (applied to eligible subtotal)
   /// Whole points awarded once when an image submission is first approved for the gallery.
   imageSubmissionApprovalPoints Int @default(0) @map("image_submission_approval_points")
+
+  /// Product reviews on storefront and in REVIEWS panes.
+  productReviewsEnabled Boolean @default(true) @map("product_reviews_enabled")
+  /// Send post-purchase review request email after order fulfillment.
+  reviewRequestEmailEnabled Boolean @default(false) @map("review_request_email_enabled")
+  reviewRequestEmailSubject String @default("How was your order?") @map("review_request_email_subject")
+  reviewRequestEmailBody String @default("Hi {{customerName}},\n\nThanks for your order! We'd love to hear what you think.\n\nLeave a review: {{reviewUrl}}\n\n— {{companyName}}") @db.Text @map("review_request_email_body")
   /// Gallery / submission map pin marker (global for all submissions).
   imageSubmissionPinSizePx Int @default(20) @map("image_submission_pin_size_px")
   imageSubmissionPinFillColor String @default("#2d6a4f") @map("image_submission_pin_fill_color")
@@ -366,6 +381,7 @@ model Customer {
   artSubmissions           CustomerArtSubmission[]
   speciesSuggestionVotes   SpeciesSuggestionVote[]
   speciesEntries           CustomerSpeciesEntry[]
+  productReviews           ProductReview[]
 
   /// Opaque token for public species list URL (`/species/[token]`).
   speciesListShareToken    String?  @unique @map("species_list_share_token")
@@ -619,8 +635,43 @@ model Product {
   typeDefaultRecommendationsLinked ProductTypeDefaultRecommendation[] @relation("ProductTypeDefaultRecommendationsTo")
   kitHost             ProductKit?             @relation("ProductKitHost")
   kitItems            ProductKitItem[]
+  reviews             ProductReview[]
 
   @@map("products")
+}
+
+model ProductReview {
+  id        String              @id @default(cuid())
+  /// Optional — omit for general store/company reviews (home/about panes).
+  productId String?             @map("product_id")
+  product   Product?            @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  customerId String?            @map("customer_id")
+  customer   Customer?           @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  /// Display name when no customer account (admin-imported legacy reviews).
+  authorDisplayName String       @default("") @map("author_display_name")
+
+  orderId   String?               @map("order_id")
+  order     Order?                @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  rating    Int
+  title     String                @default("")
+  body      String                @db.Text
+  status    ProductReviewStatus   @default(PENDING)
+
+  isImported Boolean              @default(false) @map("is_imported")
+
+  approvedAt DateTime?            @map("approved_at")
+  rejectedAt DateTime?            @map("rejected_at")
+
+  createdAt DateTime              @default(now()) @map("created_at")
+  updatedAt DateTime              @updatedAt @map("updated_at")
+
+  @@unique([productId, customerId])
+  @@index([productId, status, approvedAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("product_reviews")
 }
 
 /// Combo deal on a product page: fixed variants at a bundle discount (per host product, not per variation).
@@ -1223,6 +1274,9 @@ model Order {
   lineItems     OrderLineItem[]
   labelLines    OrderLabelLine[]
   pointsLedgers PointsLedger[]
+  productReviews ProductReview[]
+
+  reviewRequestEmailSentAt DateTime? @map("review_request_email_sent_at")
 
   @@index([archivedAt])
   @@map("orders")

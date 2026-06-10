@@ -55,6 +55,13 @@ export const CUSTOMER_EMAIL_KINDS: CustomerEmailKind[] = [
       "Sent when an admin draws giveaway winners and “Send email on draw” is enabled on that event (Events settings).",
     requiresEmail: true,
   },
+  {
+    id: "review-request",
+    name: "Review request",
+    description:
+      "Sent after a paid order is fulfilled when “Send review request email” is enabled in Settings → Reviews.",
+    requiresEmail: true,
+  },
 ];
 
 export type ResolvedSmtpConfig = {

@@ -11,6 +11,7 @@ import { StoreBannerPaneClient } from "@/components/panes/store-banner-pane-clie
 import { SocialLinksPane } from "@/components/panes/social-links-pane";
 import { ArtSubPane } from "@/components/panes/art-sub-pane";
 import { SuggestionBoxPane } from "@/components/panes/suggestion-box-pane";
+import { ReviewsPane } from "@/components/panes/reviews-pane";
 import { TheatricalPane } from "@/components/panes/theatrical-pane";
 import { DEFAULT_THEATRICAL_STAGE_BG_HEX, type TheatricalPaneElement } from "@/lib/theatrical-pane";
 import type { TheatricalPaneMobileConfig } from "@/components/panes/theatrical-pane";
@@ -22,7 +23,13 @@ import {
 } from "@/lib/image-submission-pin-appearance-shared";
 import type { StorefrontImagePin } from "@/lib/image-submission-pins-storefront";
 import type { SpeciesSuggestionApprovedRow } from "@/lib/species-suggestions";
-import { normalizeArtGroupKey, parseHomePaneConfig, paneSectionSurfaceStyle } from "@/lib/pane-config";
+import type { ProductReviewPublicRow } from "@/lib/product-reviews";
+import {
+  DEFAULT_REVIEWS_TEXT_HEX,
+  normalizeArtGroupKey,
+  parseHomePaneConfig,
+  paneSectionSurfaceStyle,
+} from "@/lib/pane-config";
 import type { StorefrontProductCard } from "@/lib/products-storefront";
 import type { SiteConfigPublic } from "@/lib/site-config-types";
 import { btnMainMd } from "@/lib/btn-theme-classes";
@@ -61,6 +68,7 @@ export async function HomePaneBlock({
   artGalleryPinsBySubmissionId,
   artGalleryPinAppearance,
   approvedSuggestions,
+  approvedReviews,
 }: {
   pane: PaneRow;
   carouselProducts?: StorefrontProductCard[] | null;
@@ -70,6 +78,7 @@ export async function HomePaneBlock({
   artGalleryPinsBySubmissionId?: Record<string, StorefrontImagePin[]>;
   artGalleryPinAppearance?: ImageSubmissionPinAppearance;
   approvedSuggestions?: SpeciesSuggestionApprovedRow[];
+  approvedReviews?: ProductReviewPublicRow[];
 }) {
   const cfg = parseHomePaneConfig(pane.config, pane.type);
   const surface = paneSectionSurfaceStyle(cfg);
@@ -345,6 +354,21 @@ export async function HomePaneBlock({
             subHeading={cfg.suggestionBoxHeading ?? ""}
             isLoggedIn={!!customerEmail}
             approvedSuggestions={approvedSuggestions ?? []}
+          />
+        ) : null}
+
+        {pane.type === "REVIEWS" ? (
+          <ReviewsPane
+            subHeading={cfg.reviewsHeading ?? ""}
+            reviews={approvedReviews ?? []}
+            autoScroll={cfg.reviewsAutoScroll !== false}
+            direction={cfg.reviewsScrollDirection === "right" ? "right" : "left"}
+            speed1to10={cfg.reviewsScrollSpeed ?? 5}
+            cardBgHex={cfg.reviewsCardBgHex ?? cfg.paneColorHex}
+            cardBorderHex={cfg.reviewsCardBorderHex ?? cfg.paneBorderColorHex}
+            cardBorderWidthPx={cfg.reviewsCardBorderWidthPx ?? 2}
+            textColorHex={cfg.reviewsTextColorHex ?? DEFAULT_REVIEWS_TEXT_HEX}
+            fontSizePx={cfg.reviewsFontSizePx ?? 14}
           />
         ) : null}
 

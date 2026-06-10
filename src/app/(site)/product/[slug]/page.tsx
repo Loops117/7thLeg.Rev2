@@ -23,6 +23,11 @@ import {
 import { getImageSubmissionPinAppearance } from "@/lib/image-submission-pin-appearance";
 import { ProductKitSection } from "@/components/product/product-kit-section";
 import { ProductRecommendationSections } from "@/components/product/product-recommendation-sections";
+import { ProductReviewsSection } from "@/components/product/product-reviews-section";
+import {
+  getCustomerReviewForProduct,
+  listApprovedReviewsForProduct,
+} from "@/app/actions/product-reviews";
 import { getProductKitForStorefront } from "@/lib/product-kits";
 import { getProductRecommendationsForStorefront } from "@/lib/product-recommendations";
 import { productFooterCssVariables } from "@/lib/theme-config";
@@ -31,7 +36,7 @@ import { loadResolvedPublicThemeFromDb } from "@/lib/theme-config-server";
 
 type Props = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ event?: string; variant?: string }>;
+  searchParams: Promise<{ event?: string; variant?: string; review?: string }>;
 };
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
@@ -85,7 +90,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 
 export default async function ProductPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const { event: eventParam, variant: variantParam } = await searchParams;
+  const { event: eventParam, variant: variantParam, review: reviewParam } = await searchParams;
   const eventId = eventParam?.trim() || null;
   const initialVariantId = variantParam?.trim() || null;
   const [product, sitePub, publicTheme, storeSettings] = await Promise.all([
@@ -109,14 +114,27 @@ export default async function ProductPage({ params, searchParams }: Props) {
 
   const productDiagonalBrandName = sitePub.productDiagonalBrandOverlay ? sitePub.companyName : null;
 
+  const session = await readAuthSession().catch(() => null);
+  const sessionCustomerId = session?.user?.role === "customer" && session.user.id ? session.user.id : null;
+
   const typeIds = product.types.map((t) => t.typeId);
-  const [footerBlocks, customerSuppliedImages, pinAppearance, recommendations, kit] = await Promise.all([
-    getFootersForProduct(product.id, typeIds),
-    listCustomerSuppliedImagesForProduct(product.id),
-    getImageSubmissionPinAppearance(),
-    getProductRecommendationsForStorefront(product.id, eventId),
-    getProductKitForStorefront(product.id, eventId),
-  ]);
+  const siteReviewRow = await prisma.siteConfig.findUnique({
+    where: { id: 1 },
+    select: { productReviewsEnabled: true },
+  });
+  const reviewsEnabled = siteReviewRow?.productReviewsEnabled ?? true;
+  const [footerBlocks, customerSuppliedImages, pinAppearance, recommendations, kit, approvedReviews, existingReview] =
+    await Promise.all([
+      getFootersForProduct(product.id, typeIds),
+      listCustomerSuppliedImagesForProduct(product.id),
+      getImageSubmissionPinAppearance(),
+      getProductRecommendationsForStorefront(product.id, eventId),
+      getProductKitForStorefront(product.id, eventId),
+      reviewsEnabled ? listApprovedReviewsForProduct(product.id) : Promise.resolve([]),
+      reviewsEnabled && sessionCustomerId
+        ? getCustomerReviewForProduct(product.id)
+        : Promise.resolve(null),
+    ]);
   const customerSuppliedPinsBySubmissionId = await listHotspotsBySubmissionIds(
     customerSuppliedImages.map((img) => img.submissionId),
   );
@@ -145,8 +163,6 @@ export default async function ProductPage({ params, searchParams }: Props) {
     .map((t) => t.typeId);
   const typesLine = formatTypeBreadcrumb(typeIndex, visibleTypeIds);
 
-  const session = await readAuthSession().catch(() => null);
-  const sessionCustomerId = session?.user?.role === "customer" && session.user.id ? session.user.id : null;
   const wishlistRow =
     sessionCustomerId != null
       ? await prisma.customerWishlistItem.findUnique({
@@ -238,6 +254,17 @@ export default async function ProductPage({ params, searchParams }: Props) {
         productDiagonalBrandName={productDiagonalBrandName}
         productDiagonalNameGapPx={sitePub.productDiagonalNameGapPx}
         watermarkOpacityPercent={sitePub.watermarkOpacityPercent}
+      />
+
+      <ProductReviewsSection
+        productId={product.id}
+        productSlug={product.slug}
+        productName={product.name}
+        reviews={approvedReviews}
+        reviewsEnabled={reviewsEnabled}
+        isLoggedIn={!!sessionCustomerId}
+        existingReview={existingReview}
+        focusForm={reviewParam === "1"}
       />
 
       {footerBlocks.length > 0 ? (

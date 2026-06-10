@@ -2,6 +2,7 @@ import type { Pane } from "@/generated/prisma/client";
 import { HomePaneBlock } from "./home-pane-block";
 import type { EventBlockPayload } from "@/lib/event-block";
 import { listApprovedSpeciesSuggestionsForPane } from "@/app/actions/species-suggestions";
+import { listApprovedReviewsForPane } from "@/app/actions/product-reviews";
 import {
   listApprovedArtForGallery,
   resolveArtGalleryFilter,
@@ -12,6 +13,7 @@ import { getImageSubmissionPinAppearance } from "@/lib/image-submission-pin-appe
 import { getCarouselProducts, getStorefrontEventListing } from "@/lib/products-storefront";
 import { normalizeArtGroupKey, parseHomePaneConfig } from "@/lib/pane-config";
 import type { SpeciesSuggestionApprovedRow } from "@/lib/species-suggestions";
+import type { ProductReviewPublicRow } from "@/lib/product-reviews";
 
 type PaneRow = Pick<Pane, "id" | "type" | "sortOrder" | "config">;
 
@@ -85,6 +87,17 @@ export async function HomePaneStack({
       }),
   );
 
+  const approvedReviewsByPaneId = new Map<string, ProductReviewPublicRow[]>();
+  await Promise.all(
+    panes
+      .filter((p) => p.type === "REVIEWS")
+      .map(async (pane) => {
+        const cfg = parseHomePaneConfig(pane.config, pane.type);
+        const items = await listApprovedReviewsForPane(cfg.reviewsLimit ?? 6);
+        approvedReviewsByPaneId.set(pane.id, items);
+      }),
+  );
+
   if (panes.length === 0) {
     return (
       <div className="p-6 sm:p-10">
@@ -116,6 +129,7 @@ export async function HomePaneStack({
           approvedSuggestions={
             pane.type === "SUGGESTION_BOX" ? (approvedSuggestionsByPaneId.get(pane.id) ?? []) : undefined
           }
+          approvedReviews={pane.type === "REVIEWS" ? (approvedReviewsByPaneId.get(pane.id) ?? []) : undefined}
         />
       ))}
     </div>

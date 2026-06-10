@@ -15,9 +15,11 @@ import { btnImportantSm, btnSecondaryMd } from "@/lib/btn-theme-classes";
 import {
   DEFAULT_PANE_BORDER_HEX,
   DEFAULT_PANE_COLOR_HEX,
+  DEFAULT_REVIEWS_TEXT_HEX,
   normalizeArtGroupKey,
   normalizePaneColorHex,
   paneSectionSurfaceStyle,
+  reviewCardSurfaceStyle,
   parseHomePaneConfig,
   type HomePaneConfig,
 } from "@/lib/pane-config";
@@ -201,9 +203,11 @@ function PaneCard({
                 ? "Art Sub"
                 : pane.type === "SUGGESTION_BOX"
                   ? "Suggestion box"
-                  : pane.type === "THEATRICAL"
-                    ? "Theatrical stage"
-                    : "Event block";
+                  : pane.type === "REVIEWS"
+                    ? "Reviews"
+                    : pane.type === "THEATRICAL"
+                      ? "Theatrical stage"
+                      : "Event block";
 
   const paneTitleInSummary = form.title?.trim() ? ` (${form.title.trim()})` : "";
 
@@ -1048,6 +1052,192 @@ function PaneCard({
           </>
         ) : null}
 
+        {pane.type === "REVIEWS" ? (
+          <>
+            <label className="block text-sm font-bold text-ink">
+              Sub heading
+              <input
+                type="text"
+                value={form.reviewsHeading ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, reviewsHeading: e.target.value }))}
+                className="mt-1 w-full border-2 border-palm-mid px-2 py-2 text-sm"
+                placeholder="Short line under the pane title on the storefront"
+              />
+            </label>
+            <label className="block text-sm font-bold text-ink">
+              Number of reviews to show
+              <input
+                type="number"
+                min={1}
+                max={48}
+                value={form.reviewsLimit ?? 6}
+                onChange={(e) => setForm((f) => ({ ...f, reviewsLimit: Number(e.target.value) }))}
+                className="mt-1 w-full max-w-[8rem] border-2 border-palm-mid px-2 py-2 text-sm"
+              />
+            </label>
+
+            <div className="space-y-3 rounded border-2 border-palm/20 bg-palm/5 p-4">
+              <p className="text-sm font-black text-palm">Review card style</p>
+              <div>
+                <span className="block text-sm font-bold text-ink">Card background</span>
+                <div className="mt-1 flex flex-wrap items-center gap-3">
+                  <input
+                    type="color"
+                    aria-label="Review card background"
+                    value={safeHexForColorInput(form.reviewsCardBgHex, DEFAULT_PANE_COLOR_HEX)}
+                    onChange={(e) => setForm((f) => ({ ...f, reviewsCardBgHex: e.target.value }))}
+                    className="h-11 w-14 cursor-pointer rounded border-2 border-palm-mid bg-white p-1"
+                  />
+                  <input
+                    type="text"
+                    value={form.reviewsCardBgHex ?? DEFAULT_PANE_COLOR_HEX}
+                    onChange={(e) => setForm((f) => ({ ...f, reviewsCardBgHex: e.target.value }))}
+                    spellCheck={false}
+                    className="min-w-[7rem] flex-1 border-2 border-palm-mid px-2 py-2 font-mono text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-ink">
+                  Card border weight ({form.reviewsCardBorderWidthPx ?? 2}px)
+                </label>
+                <input
+                  type="range"
+                  min={0}
+                  max={12}
+                  value={form.reviewsCardBorderWidthPx ?? 2}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, reviewsCardBorderWidthPx: Number(e.target.value) }))
+                  }
+                  className="mt-1 w-full accent-palm"
+                />
+              </div>
+              <div>
+                <span className="block text-sm font-bold text-ink">Card border color</span>
+                <div className="mt-1 flex flex-wrap items-center gap-3">
+                  <input
+                    type="color"
+                    aria-label="Review card border color"
+                    value={safeHexForColorInput(form.reviewsCardBorderHex, DEFAULT_PANE_BORDER_HEX)}
+                    onChange={(e) => setForm((f) => ({ ...f, reviewsCardBorderHex: e.target.value }))}
+                    className="h-11 w-14 cursor-pointer rounded border-2 border-palm-mid bg-white p-1"
+                  />
+                  <input
+                    type="text"
+                    value={form.reviewsCardBorderHex ?? DEFAULT_PANE_BORDER_HEX}
+                    onChange={(e) => setForm((f) => ({ ...f, reviewsCardBorderHex: e.target.value }))}
+                    spellCheck={false}
+                    className="min-w-[7rem] flex-1 border-2 border-palm-mid px-2 py-2 font-mono text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <span className="block text-sm font-bold text-ink">Text color</span>
+                <div className="mt-1 flex flex-wrap items-center gap-3">
+                  <input
+                    type="color"
+                    aria-label="Review text color"
+                    value={safeHexForColorInput(form.reviewsTextColorHex, DEFAULT_REVIEWS_TEXT_HEX)}
+                    onChange={(e) => setForm((f) => ({ ...f, reviewsTextColorHex: e.target.value }))}
+                    className="h-11 w-14 cursor-pointer rounded border-2 border-palm-mid bg-white p-1"
+                  />
+                  <input
+                    type="text"
+                    value={form.reviewsTextColorHex ?? DEFAULT_REVIEWS_TEXT_HEX}
+                    onChange={(e) => setForm((f) => ({ ...f, reviewsTextColorHex: e.target.value }))}
+                    spellCheck={false}
+                    className="min-w-[7rem] flex-1 border-2 border-palm-mid px-2 py-2 font-mono text-sm"
+                  />
+                </div>
+              </div>
+              <label className="block text-sm font-bold text-ink">
+                Font size ({form.reviewsFontSizePx ?? 14}px)
+                <input
+                  type="range"
+                  min={11}
+                  max={22}
+                  value={form.reviewsFontSizePx ?? 14}
+                  onChange={(e) => setForm((f) => ({ ...f, reviewsFontSizePx: Number(e.target.value) }))}
+                  className="mt-1 w-full accent-palm"
+                />
+              </label>
+              <div
+                className="flex w-52 flex-col rounded px-3 py-3"
+                style={{
+                  ...reviewCardSurfaceStyle({
+                    reviewsCardBgHex: form.reviewsCardBgHex,
+                    reviewsCardBorderHex: form.reviewsCardBorderHex,
+                    reviewsCardBorderWidthPx: form.reviewsCardBorderWidthPx,
+                  }),
+                  color: form.reviewsTextColorHex ?? DEFAULT_REVIEWS_TEXT_HEX,
+                }}
+              >
+                <p className="font-bold" style={{ fontSize: `${form.reviewsFontSizePx ?? 14}px` }}>
+                  Wonderful experience
+                </p>
+                <p className="mt-2 italic" style={{ fontSize: `${Math.max(11, (form.reviewsFontSizePx ?? 14) - 1)}px` }}>
+                  Great quality and fast shipping. Would order again.
+                </p>
+                <p
+                  className="mt-2 font-medium opacity-85"
+                  style={{ fontSize: `${Math.max(11, (form.reviewsFontSizePx ?? 14) - 1)}px` }}
+                >
+                  By: Sample customer
+                </p>
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm font-bold text-ink">
+              <input
+                type="checkbox"
+                checked={form.reviewsAutoScroll !== false}
+                onChange={(e) => setForm((f) => ({ ...f, reviewsAutoScroll: e.target.checked }))}
+              />
+              Auto-scroll review cards
+            </label>
+            {form.reviewsAutoScroll !== false ? (
+              <>
+                <label className="block text-sm font-bold text-ink">
+                  Scroll direction
+                  <select
+                    value={form.reviewsScrollDirection ?? "left"}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        reviewsScrollDirection: e.target.value === "right" ? "right" : "left",
+                      }))
+                    }
+                    className="mt-1 block w-full border-2 border-palm-mid bg-white px-2 py-2 text-sm"
+                  >
+                    <option value="left">Left</option>
+                    <option value="right">Right</option>
+                  </select>
+                </label>
+                <label className="block text-sm font-bold text-ink">
+                  Auto-scroll speed: {form.reviewsScrollSpeed ?? 5} (1 = slowest, 10 = fastest)
+                  <input
+                    type="range"
+                    min={1}
+                    max={10}
+                    step={1}
+                    value={form.reviewsScrollSpeed ?? 5}
+                    onChange={(e) => setForm((f) => ({ ...f, reviewsScrollSpeed: Number(e.target.value) }))}
+                    className="mt-2 block w-full"
+                  />
+                </label>
+              </>
+            ) : null}
+
+            <p className="text-xs text-ink/60">
+              Shows the newest approved product reviews in a single scrolling row. Manage reviews under{" "}
+              <a href="/settings/reviews" className="font-medium text-lagoon-dark underline">
+                Settings → Reviews
+              </a>
+              .
+            </p>
+          </>
+        ) : null}
+
         {pane.type === "THEATRICAL" ? (
           <>
             <TheatricalPaneEditor
@@ -1326,6 +1516,7 @@ export function HomePanesEditor({
             <option value={PaneTypeEnum.ORDER_SHIPPING_MAP}>Shipped orders map (North America)</option>
             <option value={PaneTypeEnum.ART_SUB}>Art Sub (customer artwork upload)</option>
             <option value={PaneTypeEnum.SUGGESTION_BOX}>Suggestion box (species / design ideas)</option>
+            <option value={PaneTypeEnum.REVIEWS}>Reviews (approved customer testimonials)</option>
             <option value={PaneTypeEnum.THEATRICAL}>Theatrical stage (video, images, text, links)</option>
           </select>
         </label>

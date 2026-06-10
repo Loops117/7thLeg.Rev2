@@ -14,6 +14,8 @@ import {
 export const DEFAULT_PANE_COLOR_HEX = "#faf6ef";
 /** Matches prior `border-palm-mid` storefront look */
 export const DEFAULT_PANE_BORDER_HEX = "#2d6a4f";
+/** Default review card text; matches storefront `--ink`. */
+export const DEFAULT_REVIEWS_TEXT_HEX = "#2c2416";
 
 /** Social pane row: `platform` selects the icon preset; `url` must be http(s). */
 export type SocialPaneLink = {
@@ -115,6 +117,23 @@ export type HomePaneConfig = {
   suggestionBoxHeading?: string;
   /** How many recently approved suggestions to list in the pane. */
   approvedSuggestionsLimit?: number;
+
+  // REVIEWS
+  /** Line under the pane title on the storefront. */
+  reviewsHeading?: string;
+  /** How many approved product reviews to show (site-wide, newest first). */
+  reviewsLimit?: number;
+  reviewsAutoScroll?: boolean;
+  reviewsScrollDirection?: "left" | "right";
+  /** 1 = slowest, 10 = fastest (same scale as product carousel). */
+  reviewsScrollSpeed?: number;
+  /** Small review card background (#rrggbb). */
+  reviewsCardBgHex?: string;
+  reviewsCardBorderHex?: string;
+  reviewsCardBorderWidthPx?: number;
+  /** Review text color (#rrggbb). */
+  reviewsTextColorHex?: string;
+  reviewsFontSizePx?: number;
 
   // THEATRICAL
   theatricalStageAspect?: TheatricalStageAspect;
@@ -323,6 +342,28 @@ export function defaultPaneConfig(type: PaneType): HomePaneConfig {
       giveawayLinkHref: "",
     };
   }
+  if (type === "REVIEWS") {
+    return {
+      backgroundOpacity: DEFAULT_BG,
+      paneColorHex: DEFAULT_PANE_COLOR_HEX,
+      paneBorderWidthPx: 4,
+      paneBorderColorHex: DEFAULT_PANE_BORDER_HEX,
+      title: "What customers say",
+      carouselTypeIds: [],
+      reviewsHeading: "Real feedback from our community.",
+      reviewsLimit: 6,
+      reviewsAutoScroll: true,
+      reviewsScrollDirection: "left",
+      reviewsScrollSpeed: 5,
+      reviewsCardBgHex: DEFAULT_PANE_COLOR_HEX,
+      reviewsCardBorderHex: DEFAULT_PANE_BORDER_HEX,
+      reviewsCardBorderWidthPx: 2,
+      reviewsTextColorHex: DEFAULT_REVIEWS_TEXT_HEX,
+      reviewsFontSizePx: 14,
+      eventId: "",
+      giveawayLinkHref: "",
+    };
+  }
   if (type === "THEATRICAL") {
     return {
       backgroundOpacity: DEFAULT_BG,
@@ -516,6 +557,40 @@ export function parseHomePaneConfig(raw: unknown, type: PaneType): HomePaneConfi
       typeof o.approvedSuggestionsLimit === "number" && !Number.isNaN(o.approvedSuggestionsLimit)
         ? clamp(Math.round(o.approvedSuggestionsLimit), 0, 50)
         : (defaults.approvedSuggestionsLimit ?? 8),
+    reviewsHeading:
+      typeof o.reviewsHeading === "string" ? o.reviewsHeading.slice(0, 500) : (defaults.reviewsHeading ?? ""),
+    reviewsLimit:
+      typeof o.reviewsLimit === "number" && !Number.isNaN(o.reviewsLimit)
+        ? clamp(Math.round(o.reviewsLimit), 1, 48)
+        : (defaults.reviewsLimit ?? 6),
+    reviewsAutoScroll:
+      typeof o.reviewsAutoScroll === "boolean" ? o.reviewsAutoScroll : (defaults.reviewsAutoScroll ?? true),
+    reviewsScrollDirection:
+      o.reviewsScrollDirection === "right" ? "right" : (defaults.reviewsScrollDirection ?? "left"),
+    reviewsScrollSpeed:
+      typeof o.reviewsScrollSpeed === "number" && !Number.isNaN(o.reviewsScrollSpeed)
+        ? clamp(Math.round(o.reviewsScrollSpeed), 1, 10)
+        : (defaults.reviewsScrollSpeed ?? 5),
+    reviewsCardBgHex:
+      typeof o.reviewsCardBgHex === "string" && normalizePaneColorHex(o.reviewsCardBgHex)
+        ? normalizePaneColorHex(o.reviewsCardBgHex)!
+        : (defaults.reviewsCardBgHex ?? DEFAULT_PANE_COLOR_HEX),
+    reviewsCardBorderHex:
+      typeof o.reviewsCardBorderHex === "string" && normalizePaneColorHex(o.reviewsCardBorderHex)
+        ? normalizePaneColorHex(o.reviewsCardBorderHex)!
+        : (defaults.reviewsCardBorderHex ?? DEFAULT_PANE_BORDER_HEX),
+    reviewsCardBorderWidthPx:
+      typeof o.reviewsCardBorderWidthPx === "number" && !Number.isNaN(o.reviewsCardBorderWidthPx)
+        ? clamp(Math.round(o.reviewsCardBorderWidthPx), 0, 12)
+        : (defaults.reviewsCardBorderWidthPx ?? 2),
+    reviewsTextColorHex:
+      typeof o.reviewsTextColorHex === "string" && normalizePaneColorHex(o.reviewsTextColorHex)
+        ? normalizePaneColorHex(o.reviewsTextColorHex)!
+        : (defaults.reviewsTextColorHex ?? DEFAULT_REVIEWS_TEXT_HEX),
+    reviewsFontSizePx:
+      typeof o.reviewsFontSizePx === "number" && !Number.isNaN(o.reviewsFontSizePx)
+        ? clamp(Math.round(o.reviewsFontSizePx), 11, 22)
+        : (defaults.reviewsFontSizePx ?? 14),
 
     theatricalStageAspect: parseTheatricalStageAspect(o.theatricalStageAspect ?? defaults.theatricalStageAspect),
     theatricalStageBgHex: parseTheatricalStageBgHex(o.theatricalStageBgHex ?? defaults.theatricalStageBgHex),
@@ -547,6 +622,23 @@ export function parseHomePaneConfig(raw: unknown, type: PaneType): HomePaneConfi
 export function normalizeArtGroupKey(input: string): string | null {
   const t = input.trim().slice(0, 80);
   return t.length > 0 ? t : null;
+}
+
+/** Opaque review card surface inside a REVIEWS pane strip. */
+export function reviewCardSurfaceStyle(cfg: {
+  reviewsCardBgHex?: string;
+  reviewsCardBorderHex?: string;
+  reviewsCardBorderWidthPx?: number;
+}): CSSProperties {
+  const bg = normalizePaneColorHex(cfg.reviewsCardBgHex ?? "") ?? DEFAULT_PANE_COLOR_HEX;
+  const w = clamp(cfg.reviewsCardBorderWidthPx ?? 2, 0, 12);
+  const borderColor = normalizePaneColorHex(cfg.reviewsCardBorderHex ?? "") ?? DEFAULT_PANE_BORDER_HEX;
+  return {
+    backgroundColor: bg,
+    borderWidth: w,
+    borderStyle: w > 0 ? "solid" : "none",
+    borderColor: w > 0 ? borderColor : "transparent",
+  };
 }
 
 /** Milliseconds between auto-advance ticks; `carouselScrollSpeed` is 1 (slow) … 10 (fast). */

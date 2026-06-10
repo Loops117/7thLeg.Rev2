@@ -44,6 +44,7 @@ const SETTINGS_LINKS: { href: string; label: string }[] = [
   { href: "/settings/loyalty", label: "Loyalty" },
   { href: "/settings/payments", label: "Payments" },
   { href: "/settings/email", label: "Email" },
+  { href: "/settings/reviews", label: "Reviews" },
   { href: "/settings/qr-codes", label: "QR Codes" },
 ];
 
