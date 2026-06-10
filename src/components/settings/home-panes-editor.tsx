@@ -24,7 +24,12 @@ import {
 import { storefrontPathForPageKey } from "@/lib/pane-pages";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { TheatricalPaneEditor } from "@/components/settings/theatrical-pane-editor";
-import { DEFAULT_THEATRICAL_STAGE_BG_HEX } from "@/lib/theatrical-pane";
+import { TheatricalMobilePaneEditor } from "@/components/settings/theatrical-mobile-pane-editor";
+import {
+  cloneTheatricalElements,
+  DEFAULT_THEATRICAL_STAGE_BG_HEX,
+  defaultTheatricalElements,
+} from "@/lib/theatrical-pane";
 
 export type HomePaneRow = {
   id: string;
@@ -1044,18 +1049,110 @@ function PaneCard({
         ) : null}
 
         {pane.type === "THEATRICAL" ? (
-          <TheatricalPaneEditor
-            stageAspect={form.theatricalStageAspect ?? "16:9"}
-            stageMaxHeightPx={form.theatricalStageMaxHeightPx ?? 0}
-            stageBgHex={form.theatricalStageBgHex ?? DEFAULT_THEATRICAL_STAGE_BG_HEX}
-            elements={form.theatricalElements ?? []}
-            onStageAspectChange={(theatricalStageAspect) => setForm((f) => ({ ...f, theatricalStageAspect }))}
-            onStageMaxHeightPxChange={(theatricalStageMaxHeightPx) =>
-              setForm((f) => ({ ...f, theatricalStageMaxHeightPx }))
-            }
-            onStageBgHexChange={(theatricalStageBgHex) => setForm((f) => ({ ...f, theatricalStageBgHex }))}
-            onElementsChange={(theatricalElements) => setForm((f) => ({ ...f, theatricalElements }))}
-          />
+          <>
+            <TheatricalPaneEditor
+              stageAspect={form.theatricalStageAspect ?? "16:9"}
+              stageMaxHeightPx={form.theatricalStageMaxHeightPx ?? 0}
+              stageBgHex={form.theatricalStageBgHex ?? DEFAULT_THEATRICAL_STAGE_BG_HEX}
+              elements={form.theatricalElements ?? []}
+              onStageAspectChange={(theatricalStageAspect) => setForm((f) => ({ ...f, theatricalStageAspect }))}
+              onStageMaxHeightPxChange={(theatricalStageMaxHeightPx) =>
+                setForm((f) => ({ ...f, theatricalStageMaxHeightPx }))
+              }
+              onStageBgHexChange={(theatricalStageBgHex) => setForm((f) => ({ ...f, theatricalStageBgHex }))}
+              onElementsChange={(theatricalElements) => setForm((f) => ({ ...f, theatricalElements }))}
+            />
+
+            <div className="mt-8 space-y-4 border-t-2 border-palm/20 pt-6">
+              <label className="flex cursor-pointer items-start gap-2 text-sm font-bold text-ink">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={!!form.theatricalMobileEnabled}
+                  onChange={(e) => {
+                    const enabled = e.target.checked;
+                    setForm((f) => {
+                      if (!enabled) {
+                        return { ...f, theatricalMobileEnabled: false };
+                      }
+                      const hasMobileElements = (f.theatricalMobileElements?.length ?? 0) > 0;
+                      return {
+                        ...f,
+                        theatricalMobileEnabled: true,
+                        theatricalMobileStageAspect: f.theatricalMobileStageAspect ?? "tall",
+                        theatricalMobileStageBgHex:
+                          f.theatricalMobileStageBgHex ??
+                          f.theatricalStageBgHex ??
+                          DEFAULT_THEATRICAL_STAGE_BG_HEX,
+                        theatricalMobileStageMaxHeightPx: f.theatricalMobileStageMaxHeightPx ?? 0,
+                        theatricalMobileElements: hasMobileElements
+                          ? f.theatricalMobileElements
+                          : cloneTheatricalElements(
+                              f.theatricalElements?.length
+                                ? f.theatricalElements
+                                : defaultTheatricalElements(),
+                            ),
+                      };
+                    });
+                  }}
+                />
+                <span>
+                  Use a separate mobile layout
+                  <span className="mt-0.5 block text-xs font-normal text-ink/65">
+                    When enabled, phones and narrow screens (768px or less) show the mobile stage below instead of the
+                    desktop layout above.
+                  </span>
+                </span>
+              </label>
+
+              {form.theatricalMobileEnabled ? (
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className={btnSecondaryMd}
+                      onClick={() =>
+                        setForm((f) => ({
+                          ...f,
+                          theatricalMobileStageAspect: f.theatricalStageAspect ?? "16:9",
+                          theatricalMobileStageMaxHeightPx: f.theatricalStageMaxHeightPx ?? 0,
+                          theatricalMobileStageBgHex:
+                            f.theatricalStageBgHex ?? DEFAULT_THEATRICAL_STAGE_BG_HEX,
+                          theatricalMobileElements: cloneTheatricalElements(
+                            f.theatricalElements?.length ? f.theatricalElements : defaultTheatricalElements(),
+                          ),
+                        }))
+                      }
+                    >
+                      Copy from desktop layout
+                    </button>
+                  </div>
+                  <TheatricalMobilePaneEditor
+                    stageAspect={form.theatricalMobileStageAspect ?? "tall"}
+                    stageMaxHeightPx={form.theatricalMobileStageMaxHeightPx ?? 0}
+                    stageBgHex={
+                      form.theatricalMobileStageBgHex ??
+                      form.theatricalStageBgHex ??
+                      DEFAULT_THEATRICAL_STAGE_BG_HEX
+                    }
+                    elements={form.theatricalMobileElements ?? []}
+                    onStageAspectChange={(theatricalMobileStageAspect) =>
+                      setForm((f) => ({ ...f, theatricalMobileStageAspect }))
+                    }
+                    onStageMaxHeightPxChange={(theatricalMobileStageMaxHeightPx) =>
+                      setForm((f) => ({ ...f, theatricalMobileStageMaxHeightPx }))
+                    }
+                    onStageBgHexChange={(theatricalMobileStageBgHex) =>
+                      setForm((f) => ({ ...f, theatricalMobileStageBgHex }))
+                    }
+                    onElementsChange={(theatricalMobileElements) =>
+                      setForm((f) => ({ ...f, theatricalMobileElements }))
+                    }
+                  />
+                </>
+              ) : null}
+            </div>
+          </>
         ) : null}
 
         {pane.type === "SOCIAL_LINKS" ? (

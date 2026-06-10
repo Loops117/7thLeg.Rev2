@@ -123,6 +123,13 @@ export type HomePaneConfig = {
   /** Cap stage height (px); 0 = scale with pane width only. */
   theatricalStageMaxHeightPx?: number;
   theatricalElements?: TheatricalPaneElement[];
+
+  /** When true, phones (≤768px) use the mobile theatrical fields below instead of desktop. */
+  theatricalMobileEnabled?: boolean;
+  theatricalMobileStageAspect?: TheatricalStageAspect;
+  theatricalMobileStageBgHex?: string;
+  theatricalMobileStageMaxHeightPx?: number;
+  theatricalMobileElements?: TheatricalPaneElement[];
 };
 
 const DEFAULT_BG = 92;
@@ -328,6 +335,11 @@ export function defaultPaneConfig(type: PaneType): HomePaneConfig {
       theatricalStageBgHex: parseTheatricalStageBgHex(undefined),
       theatricalStageMaxHeightPx: parseTheatricalStageMaxHeightPx(undefined),
       theatricalElements: defaultTheatricalElements(),
+      theatricalMobileEnabled: false,
+      theatricalMobileStageAspect: "tall",
+      theatricalMobileStageBgHex: parseTheatricalStageBgHex(undefined),
+      theatricalMobileStageMaxHeightPx: parseTheatricalStageMaxHeightPx(undefined),
+      theatricalMobileElements: defaultTheatricalElements(),
       eventId: "",
       giveawayLinkHref: "",
     };
@@ -511,6 +523,23 @@ export function parseHomePaneConfig(raw: unknown, type: PaneType): HomePaneConfi
       o.theatricalStageMaxHeightPx ?? defaults.theatricalStageMaxHeightPx,
     ),
     theatricalElements: parseTheatricalElements(o.theatricalElements ?? defaults.theatricalElements),
+
+    theatricalMobileEnabled:
+      typeof o.theatricalMobileEnabled === "boolean"
+        ? o.theatricalMobileEnabled
+        : (defaults.theatricalMobileEnabled ?? false),
+    theatricalMobileStageAspect: parseTheatricalStageAspect(
+      o.theatricalMobileStageAspect ?? defaults.theatricalMobileStageAspect ?? "tall",
+    ),
+    theatricalMobileStageBgHex: parseTheatricalStageBgHex(
+      o.theatricalMobileStageBgHex ?? defaults.theatricalMobileStageBgHex,
+    ),
+    theatricalMobileStageMaxHeightPx: parseTheatricalStageMaxHeightPx(
+      o.theatricalMobileStageMaxHeightPx ?? defaults.theatricalMobileStageMaxHeightPx,
+    ),
+    theatricalMobileElements: parseTheatricalElements(
+      o.theatricalMobileElements ?? defaults.theatricalMobileElements,
+    ),
   };
 }
 

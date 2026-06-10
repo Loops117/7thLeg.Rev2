@@ -1,15 +1,38 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { TheatricalStageFrame } from "@/components/panes/theatrical-stage-frame";
 import {
   resolveTheatricalVideoSrc,
   theatricalElementStyle,
   theatricalTextBoxStyle,
+  THEATRICAL_MOBILE_BREAKPOINT_PX,
   type TheatricalPaneElement,
   type TheatricalStageAspect,
 } from "@/lib/theatrical-pane";
+
+export type TheatricalPaneMobileConfig = {
+  enabled: boolean;
+  stageAspect: TheatricalStageAspect;
+  stageMaxHeightPx: number;
+  stageBgHex: string;
+  elements: TheatricalPaneElement[];
+};
+
+function subscribeTheatricalMobileMq(cb: () => void) {
+  const mq = window.matchMedia(`(max-width: ${THEATRICAL_MOBILE_BREAKPOINT_PX}px)`);
+  mq.addEventListener("change", cb);
+  return () => mq.removeEventListener("change", cb);
+}
+
+function isTheatricalMobileViewport() {
+  return window.matchMedia(`(max-width: ${THEATRICAL_MOBILE_BREAKPOINT_PX}px)`).matches;
+}
+
+function useTheatricalMobileViewport() {
+  return useSyncExternalStore(subscribeTheatricalMobileMq, isTheatricalMobileViewport, () => false);
+}
 import { btnMainMd } from "@/lib/btn-theme-classes";
 
 function TheatricalNativeVideo({
@@ -152,19 +175,27 @@ export function TheatricalPane({
   stageMaxHeightPx,
   stageBgHex,
   elements,
+  mobile,
 }: {
   stageAspect: TheatricalStageAspect;
   stageMaxHeightPx?: number;
   stageBgHex: string;
   elements: TheatricalPaneElement[];
+  mobile?: TheatricalPaneMobileConfig | null;
 }) {
-  const sorted = [...elements].sort((a, b) => a.zIndex - b.zIndex);
+  const isMobileViewport = useTheatricalMobileViewport();
+  const useMobileLayout = isMobileViewport && !!mobile?.enabled;
+  const activeAspect = useMobileLayout ? mobile!.stageAspect : stageAspect;
+  const activeMaxHeight = useMobileLayout ? mobile!.stageMaxHeightPx : (stageMaxHeightPx ?? 0);
+  const activeBg = useMobileLayout ? mobile!.stageBgHex : stageBgHex;
+  const activeElements = useMobileLayout ? mobile!.elements : elements;
+  const sorted = [...activeElements].sort((a, b) => a.zIndex - b.zIndex);
 
   return (
     <TheatricalStageFrame
-      aspect={stageAspect}
-      maxHeightPx={stageMaxHeightPx ?? 0}
-      bgHex={stageBgHex}
+      aspect={activeAspect}
+      maxHeightPx={activeMaxHeight}
+      bgHex={activeBg}
       stageClassName="theatrical-pane__stage rounded-lg border-2 border-palm/20"
     >
       {sorted.map((el) => (

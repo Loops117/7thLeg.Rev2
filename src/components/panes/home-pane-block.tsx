@@ -12,7 +12,8 @@ import { SocialLinksPane } from "@/components/panes/social-links-pane";
 import { ArtSubPane } from "@/components/panes/art-sub-pane";
 import { SuggestionBoxPane } from "@/components/panes/suggestion-box-pane";
 import { TheatricalPane } from "@/components/panes/theatrical-pane";
-import { DEFAULT_THEATRICAL_STAGE_BG_HEX } from "@/lib/theatrical-pane";
+import { DEFAULT_THEATRICAL_STAGE_BG_HEX, type TheatricalPaneElement } from "@/lib/theatrical-pane";
+import type { TheatricalPaneMobileConfig } from "@/components/panes/theatrical-pane";
 import { OrderShippingMapPaneSection } from "@/components/panes/order-shipping-map-pane";
 import type { ApprovedArtGalleryItem } from "@/lib/customer-art-gallery";
 import {
@@ -27,6 +28,21 @@ import type { SiteConfigPublic } from "@/lib/site-config-types";
 import { btnMainMd } from "@/lib/btn-theme-classes";
 
 type PaneRow = Pick<Pane, "id" | "type" | "sortOrder" | "config">;
+
+function buildTheatricalMobileConfig(cfg: ReturnType<typeof parseHomePaneConfig>): TheatricalPaneMobileConfig | null {
+  if (!cfg.theatricalMobileEnabled) return null;
+  const desktopElements = cfg.theatricalElements ?? [];
+  const mobileElements = cfg.theatricalMobileElements ?? [];
+  const elements: TheatricalPaneElement[] =
+    mobileElements.length > 0 ? mobileElements : desktopElements;
+  return {
+    enabled: true,
+    stageAspect: cfg.theatricalMobileStageAspect ?? "tall",
+    stageMaxHeightPx: cfg.theatricalMobileStageMaxHeightPx ?? 0,
+    stageBgHex: cfg.theatricalMobileStageBgHex ?? cfg.theatricalStageBgHex ?? DEFAULT_THEATRICAL_STAGE_BG_HEX,
+    elements,
+  };
+}
 
 function formatEventRange(start: Date, end: Date) {
   try {
@@ -338,6 +354,7 @@ export async function HomePaneBlock({
             stageMaxHeightPx={cfg.theatricalStageMaxHeightPx ?? 0}
             stageBgHex={cfg.theatricalStageBgHex ?? DEFAULT_THEATRICAL_STAGE_BG_HEX}
             elements={cfg.theatricalElements ?? []}
+            mobile={buildTheatricalMobileConfig(cfg)}
           />
         ) : null}
       </div>

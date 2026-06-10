@@ -116,6 +116,13 @@ export function newTheatricalElementId(): string {
   return `el-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+/** Duplicate element rows with fresh ids (e.g. seed mobile layout from desktop). */
+export function cloneTheatricalElements(elements: TheatricalPaneElement[]): TheatricalPaneElement[] {
+  return elements.map((el) => ({ ...el, id: newTheatricalElementId() }));
+}
+
+export const THEATRICAL_MOBILE_BREAKPOINT_PX = 768;
+
 export function defaultTheatricalElements(): TheatricalPaneElement[] {
   return [
     {
