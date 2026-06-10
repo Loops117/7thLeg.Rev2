@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { ProductRecommendationStripCard } from "@/components/product/product-recommendation-strip-card";
+import { ProductRecommendationStripScroll } from "@/components/product/product-recommendation-strip-scroll";
 import { recommendationStripCardHeightPx } from "@/lib/recommendation-strip-layout";
 import type { StorefrontProductCard } from "@/lib/products-storefront";
 import type { StoreRecommendationCardConfig } from "@/lib/store-settings-shared";
@@ -40,7 +41,7 @@ function RecommendationColumn({
         {title}
       </h2>
       <div
-        className="product-recommendation-strip-scroll mt-2 -mx-0.5 px-0.5 pb-1"
+        className="mt-2"
         style={
           {
             "--product-recommendation-card-width": `${cardWidthPx}px`,
@@ -48,22 +49,24 @@ function RecommendationColumn({
           } as CSSProperties
         }
       >
-        <ul className="product-recommendation-strip flex w-max flex-nowrap gap-1.5 sm:gap-2">
-          {products.map((p) => (
-            <ProductRecommendationStripCard
-              key={p.id}
-              product={p}
-              cardWidthPx={cardWidthPx}
-              hoverGlowHex={hoverConfig.hoverGlowHex}
-              hoverGlowThicknessPx={hoverConfig.hoverGlowThicknessPx}
-              hoverZoomPercent={hoverConfig.hoverZoomPercent}
-              eventId={eventId}
-              productDiagonalBrandName={productDiagonalBrandName}
-              productDiagonalNameGapPx={productDiagonalNameGapPx}
-              watermarkOpacityPercent={watermarkOpacityPercent}
-            />
-          ))}
-        </ul>
+        <ProductRecommendationStripScroll>
+          <ul className="product-recommendation-strip flex w-max flex-nowrap gap-1.5 sm:gap-2">
+            {products.map((p) => (
+              <ProductRecommendationStripCard
+                key={p.id}
+                product={p}
+                cardWidthPx={cardWidthPx}
+                hoverGlowHex={hoverConfig.hoverGlowHex}
+                hoverGlowThicknessPx={hoverConfig.hoverGlowThicknessPx}
+                hoverZoomPercent={hoverConfig.hoverZoomPercent}
+                eventId={eventId}
+                productDiagonalBrandName={productDiagonalBrandName}
+                productDiagonalNameGapPx={productDiagonalNameGapPx}
+                watermarkOpacityPercent={watermarkOpacityPercent}
+              />
+            ))}
+          </ul>
+        </ProductRecommendationStripScroll>
       </div>
     </div>
   );

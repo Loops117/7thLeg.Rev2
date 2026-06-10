@@ -152,7 +152,7 @@ export function ProductRecommendationStripCard({
           setAnchor(null);
         }}
       >
-        <div className={hovering ? "invisible" : undefined} aria-hidden={hovering}>
+        <div className={hovering ? "opacity-0" : undefined} aria-hidden={hovering}>
           <StoreProductCard {...cardProps} />
         </div>
       </li>

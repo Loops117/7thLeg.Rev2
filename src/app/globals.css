@@ -829,9 +829,8 @@ body {
   max-width: 100%;
 }
 
-/** Product page — related / you-may-also-want strips */
+/** Product page — related / you-may-also-want strips (scroll via HorizontalScrollRegion) */
 .product-recommendation-strip-scroll {
-  overflow-x: auto;
   overflow-y: visible;
   overscroll-behavior-x: contain;
 }

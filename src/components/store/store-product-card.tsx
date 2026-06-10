@@ -62,6 +62,28 @@ export function StoreProductCard({
   const padTop = isRecStrip || isMini ? "pt-1" : compact ? "pt-2.5" : "pt-3.5";
   const padBottom = isRecStrip || isMini ? "pb-1" : compact ? "pb-2.5" : "pb-3.5";
   const footerTop = isRecStrip || isMini ? "pt-0.5" : "pt-2";
+  const href = `/product/${p.slug}${qs}`;
+
+  const priceFooter = (
+    <>
+      <StoreProductCardPriceRow
+        priceCents={priceCents}
+        showSale={!!(p.displaySale || p.onSale)}
+        variantLabel={defaultVariantLabel}
+        compact={compact}
+        mini={isMini}
+      />
+      {!inStock ? (
+        <p
+          className={`store-product-card__stock-warn mt-1 font-medium ${
+            isRecStrip ? "line-clamp-2 text-[10px] leading-tight" : "text-xs"
+          }`}
+        >
+          {PRODUCT_UNAVAILABLE_LABEL}
+        </p>
+      ) : null}
+    </>
+  );
 
   return (
     <div
@@ -69,7 +91,7 @@ export function StoreProductCard({
       className={`store-product-card relative flex w-full flex-col rounded ${isMini && !isRecStrip ? "" : "h-full"}`}
     >
       <Link
-        href={`/product/${p.slug}${qs}`}
+        href={href}
         className={`flex flex-col ${isRecStrip ? "h-full min-h-0" : isMini ? "" : "min-h-0 flex-1"}`}
       >
         <div
@@ -118,25 +140,13 @@ export function StoreProductCard({
             </p>
           ) : null}
         </div>
-      </Link>
-      <div className={`mt-auto shrink-0 ${padX} ${padBottom} ${footerTop} ${showCart ? "pr-14" : ""}`}>
-        <StoreProductCardPriceRow
-          priceCents={priceCents}
-          showSale={!!(p.displaySale || p.onSale)}
-          variantLabel={defaultVariantLabel}
-          compact={compact}
-          mini={isMini}
-        />
-        {!inStock ? (
-          <p
-            className={`store-product-card__stock-warn mt-1 font-medium ${
-              isRecStrip ? "line-clamp-2 text-[10px] leading-tight" : "text-xs"
-            }`}
-          >
-            {PRODUCT_UNAVAILABLE_LABEL}
-          </p>
+        {!showCart ? (
+          <div className={`mt-auto shrink-0 ${padX} ${padBottom} ${footerTop}`}>{priceFooter}</div>
         ) : null}
-      </div>
+      </Link>
+      {showCart ? (
+        <div className={`mt-auto shrink-0 ${padX} ${padBottom} ${footerTop} pr-14`}>{priceFooter}</div>
+      ) : null}
       {showCart ? (
         <ProductQuickAddButton
           productId={p.id}
