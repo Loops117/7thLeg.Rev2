@@ -13,6 +13,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${origin}/store`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
   ];
 
+  if (config.navInBreedingEnabled) {
+    staticPages.push({
+      url: `${origin}/in-breeding`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.65,
+    });
+  }
   if (config.navFeaturedEnabled) {
     staticPages.push({
       url: `${origin}/featured`,

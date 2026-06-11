@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { ProductRecommendationStripCard } from "@/components/product/product-recommendation-strip-card";
 import { ProductRecommendationStripScroll } from "@/components/product/product-recommendation-strip-scroll";
 import { recommendationStripCardHeightPx } from "@/lib/recommendation-strip-layout";
+import type { ProductBackSource } from "@/lib/product-back-nav";
 import type { StorefrontProductCard } from "@/lib/products-storefront";
 import type { StoreRecommendationCardConfig } from "@/lib/store-settings-shared";
 
@@ -20,6 +21,7 @@ function RecommendationColumn({
   productDiagonalBrandName,
   productDiagonalNameGapPx,
   watermarkOpacityPercent,
+  productBackFrom = null,
 }: {
   title: string;
   headingId: string;
@@ -27,6 +29,7 @@ function RecommendationColumn({
   cardWidthPx: number;
   hoverConfig: StripHoverConfig;
   eventId?: string | null;
+  productBackFrom?: ProductBackSource | null;
   productDiagonalBrandName?: string | null;
   productDiagonalNameGapPx?: number;
   watermarkOpacityPercent?: number;
@@ -63,6 +66,7 @@ function RecommendationColumn({
                 productDiagonalBrandName={productDiagonalBrandName}
                 productDiagonalNameGapPx={productDiagonalNameGapPx}
                 watermarkOpacityPercent={watermarkOpacityPercent}
+                productBackFrom={productBackFrom}
               />
             ))}
           </ul>
@@ -80,12 +84,14 @@ export function ProductRecommendationSections({
   productDiagonalBrandName = null,
   productDiagonalNameGapPx = 8,
   watermarkOpacityPercent = 38,
+  productBackFrom = null,
 }: {
   related: StorefrontProductCard[];
   youMayAlsoWant: StorefrontProductCard[];
   /** From Settings → Store → Product cards. */
   recommendationCardConfig: StoreRecommendationCardConfig;
   eventId?: string | null;
+  productBackFrom?: ProductBackSource | null;
   productDiagonalBrandName?: string | null;
   productDiagonalNameGapPx?: number;
   watermarkOpacityPercent?: number;
@@ -102,6 +108,7 @@ export function ProductRecommendationSections({
       hoverZoomPercent: recommendationCardConfig.hoverZoomPercent,
     },
     eventId,
+    productBackFrom,
     productDiagonalBrandName,
     productDiagonalNameGapPx,
     watermarkOpacityPercent,

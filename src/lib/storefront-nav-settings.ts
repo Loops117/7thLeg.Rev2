@@ -22,6 +22,8 @@ export function normalizeStorefrontNavSettings(row: {
   navAboutLabel?: string | null;
   navGalleryEnabled?: boolean | null;
   navGalleryLabel?: string | null;
+  navInBreedingEnabled?: boolean | null;
+  navInBreedingLabel?: string | null;
 } | null): StorefrontNavSettings {
   const d = STOREFRONT_NAV_LINK_DEFAULTS;
   if (!row) {
@@ -30,6 +32,7 @@ export function normalizeStorefrontNavSettings(row: {
       featured: { ...d.featured },
       gallery: { ...d.gallery },
       about: { ...d.about },
+      inBreeding: { ...d.inBreeding },
     };
   }
   return {
@@ -49,6 +52,10 @@ export function normalizeStorefrontNavSettings(row: {
       enabled: row.navAboutEnabled ?? d.about.enabled,
       label: trimStorefrontNavLabel(row.navAboutLabel ?? "", d.about.label),
     },
+    inBreeding: {
+      enabled: row.navInBreedingEnabled ?? d.inBreeding.enabled,
+      label: trimStorefrontNavLabel(row.navInBreedingLabel ?? "", d.inBreeding.label),
+    },
   };
 }
 
@@ -61,6 +68,8 @@ const navSelect = {
   navAboutLabel: true,
   navGalleryEnabled: true,
   navGalleryLabel: true,
+  navInBreedingEnabled: true,
+  navInBreedingLabel: true,
 } as const;
 
 export async function getStorefrontNavSettings(): Promise<StorefrontNavSettings> {
@@ -76,6 +85,7 @@ export async function getStorefrontNavSettings(): Promise<StorefrontNavSettings>
       featured: { ...STOREFRONT_NAV_LINK_DEFAULTS.featured },
       gallery: { ...STOREFRONT_NAV_LINK_DEFAULTS.gallery },
       about: { ...STOREFRONT_NAV_LINK_DEFAULTS.about },
+      inBreeding: { ...STOREFRONT_NAV_LINK_DEFAULTS.inBreeding },
     };
   }
 }
@@ -93,5 +103,10 @@ export function storefrontNavPrismaData(nav: StorefrontNavSettings) {
     navGalleryLabel: trimStorefrontNavLabel(nav.gallery.label, STOREFRONT_NAV_LINK_DEFAULTS.gallery.label),
     navAboutEnabled: nav.about.enabled,
     navAboutLabel: trimStorefrontNavLabel(nav.about.label, STOREFRONT_NAV_LINK_DEFAULTS.about.label),
+    navInBreedingEnabled: nav.inBreeding.enabled,
+    navInBreedingLabel: trimStorefrontNavLabel(
+      nav.inBreeding.label,
+      STOREFRONT_NAV_LINK_DEFAULTS.inBreeding.label,
+    ),
   };
 }

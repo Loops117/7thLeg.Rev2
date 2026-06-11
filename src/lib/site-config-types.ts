@@ -184,6 +184,8 @@ export type SiteConfigPublic = {
   navGalleryLabel: string;
   navAboutEnabled: boolean;
   navAboutLabel: string;
+  navInBreedingEnabled: boolean;
+  navInBreedingLabel: string;
 };
 
 export type LabelBuilderAdminState = {

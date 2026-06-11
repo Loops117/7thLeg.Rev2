@@ -32,6 +32,7 @@ const FUN_STUFF_LINKS: { href: string; label: string }[] = [
 const SETTINGS_LINKS: { href: string; label: string }[] = [
   { href: "/settings/home", label: "Home" },
   { href: "/settings/store", label: "Store" },
+  { href: "/settings/in-breeding", label: "In Breeding" },
   { href: "/settings/featured", label: "Featured" },
   { href: "/settings/events", label: "Events" },
   { href: "/settings/labels", label: "Labels" },

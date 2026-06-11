@@ -23,6 +23,7 @@ function centsToUsdInput(cents: number): string {
 
 type RowDraft = {
   productActive: boolean;
+  productInBreeding: boolean;
   variantActive: boolean;
   listPriceUsd: string;
   stock: string;
@@ -33,6 +34,7 @@ type RowDraft = {
 function draftFromRow(row: ProductStockingRow): RowDraft {
   return {
     productActive: row.productActive,
+    productInBreeding: row.productInBreeding,
     variantActive: row.variantActive,
     listPriceUsd: centsToUsdInput(row.listPriceCents),
     stock: String(row.stock),
@@ -44,6 +46,7 @@ function draftFromRow(row: ProductStockingRow): RowDraft {
 function draftsEqual(a: RowDraft, b: RowDraft): boolean {
   return (
     a.productActive === b.productActive &&
+    a.productInBreeding === b.productInBreeding &&
     a.variantActive === b.variantActive &&
     a.listPriceUsd === b.listPriceUsd &&
     a.stock === b.stock &&
@@ -91,6 +94,7 @@ function StockingEditorRow({
       variantId: row.variantId,
       variantLabel: row.variantLabel,
       productActive: draft.productActive,
+      productInBreeding: draft.productInBreeding,
       variantActive: draft.variantActive,
       listPriceUsd: draft.listPriceUsd,
       stock,
@@ -127,6 +131,11 @@ function StockingEditorRow({
             Hidden on store
           </span>
         ) : null}
+        {draft.productInBreeding ? (
+          <span className="mt-1 inline-block text-[10px] font-bold uppercase tracking-wide text-palm-mid">
+            In breeding
+          </span>
+        ) : null}
       </td>
       <td className="px-2 py-2 whitespace-nowrap text-ink/85">
         {row.variantCount > 1 ? row.variantLabel : <span className="text-ink/45">—</span>}
@@ -138,6 +147,15 @@ function StockingEditorRow({
           disabled={busy}
           title="Listing visible on store"
           onChange={(e) => setDraft((d) => ({ ...d, productActive: e.target.checked }))}
+        />
+      </td>
+      <td className="px-2 py-2 text-center">
+        <input
+          type="checkbox"
+          checked={draft.productInBreeding}
+          disabled={busy}
+          title="Not for sale — shows on In Breeding page"
+          onChange={(e) => setDraft((d) => ({ ...d, productInBreeding: e.target.checked }))}
         />
       </td>
       <td className="px-2 py-2 text-center">
@@ -241,6 +259,9 @@ function sortRows(
       case "optionOn":
         cmp = Number(a.variantActive) - Number(b.variantActive);
         break;
+      case "inBreeding":
+        cmp = Number(a.productInBreeding) - Number(b.productInBreeding);
+        break;
       default:
         cmp = 0;
     }
@@ -290,6 +311,7 @@ export function ProductStockingAdmin({
     }
     if (quickFilter === "featured") list = list.filter((r) => r.productFeatured);
     if (quickFilter === "sale") list = list.filter((r) => r.productOnSale);
+    if (quickFilter === "inbreeding") list = list.filter((r) => r.productInBreeding);
     if (quickFilter === "outofstock") {
       list = list.filter((r) => !r.unlimitedStock && r.stock <= 0);
     }
@@ -382,6 +404,7 @@ export function ProductStockingAdmin({
         {filterBtn("inactive", "Inactive / hidden")}
         {filterBtn("featured", "Featured")}
         {filterBtn("sale", "On sale")}
+        {filterBtn("inbreeding", "In breeding")}
         {filterBtn("outofstock", "Out of stock")}
       </div>
 
@@ -402,13 +425,16 @@ export function ProductStockingAdmin({
         <p className="text-sm text-ink/70">Nothing matches these filters.</p>
       ) : (
         <div className="max-h-[calc(100dvh-12rem)] overflow-auto rounded border-2 border-palm dark:border-zinc-600">
-          <table className="w-full min-w-[56rem] text-left text-sm">
+          <table className="w-full min-w-[60rem] text-left text-sm">
             <thead className="sticky top-0 z-10 border-b-2 border-palm bg-surf/95 font-bold backdrop-blur-sm dark:border-zinc-600 dark:bg-zinc-800">
               <tr>
                 <th className="px-2 py-2">{headerBtn("Product", "productName")}</th>
                 <th className="px-2 py-2">{headerBtn("Option", "variantLabel")}</th>
                 <th className="px-2 py-2 text-center" title="Listing visible on store">
                   {headerBtn("Listing", "listingOn")}
+                </th>
+                <th className="px-2 py-2 text-center" title="Not for sale — In Breeding page">
+                  {headerBtn("Breeding", "inBreeding")}
                 </th>
                 <th className="px-2 py-2 text-center" title="Option enabled for purchase">
                   {headerBtn("Enabled", "optionOn")}
@@ -437,8 +463,9 @@ export function ProductStockingAdmin({
       )}
 
       <p className="text-xs text-ink/55">
-        <strong>Listing</strong> = whole product visible on the store. <strong>Enabled</strong> = this option can be
-        purchased. <strong>Ship</strong> = shipping units for checkout box sizing (1–10).
+        <strong>Listing</strong> = whole product visible on the store. <strong>Breeding</strong> = not for sale;
+        shown on the In Breeding page with wishlist instead of cart. <strong>Enabled</strong> = this option can be
+        purchased when not in breeding. <strong>Ship</strong> = shipping units for checkout box sizing (1–10).
       </p>
     </div>
   );

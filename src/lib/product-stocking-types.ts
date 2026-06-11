@@ -6,6 +6,7 @@ export type ProductStockingRow = {
   productActive: boolean;
   productFeatured: boolean;
   productOnSale: boolean;
+  productInBreeding: boolean;
   typeIds: string[];
   variantId: string;
   variantLabel: string;
@@ -18,7 +19,14 @@ export type ProductStockingRow = {
   shippingUnits: number;
 };
 
-export type ProductStockingQuickFilter = "all" | "active" | "inactive" | "featured" | "sale" | "outofstock";
+export type ProductStockingQuickFilter =
+  | "all"
+  | "active"
+  | "inactive"
+  | "featured"
+  | "sale"
+  | "inbreeding"
+  | "outofstock";
 
 export type ProductStockingSortKey =
   | "productName"
@@ -27,4 +35,5 @@ export type ProductStockingSortKey =
   | "stock"
   | "shippingUnits"
   | "listingOn"
-  | "optionOn";
+  | "optionOn"
+  | "inBreeding";

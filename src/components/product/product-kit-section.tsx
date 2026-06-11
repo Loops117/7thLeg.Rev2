@@ -10,6 +10,7 @@ import { kitItemUnavailableLabel, kitUnavailableSummary } from "@/lib/product-st
 import { withProductImagePlaceholder } from "@/lib/product-images-public";
 import { formatPriceUsd } from "@/lib/product-slug";
 import { useCoarsePointer } from "@/lib/use-coarse-pointer";
+import { buildProductHref, type ProductBackSource } from "@/lib/product-back-nav";
 import type { StorefrontProductKit, StorefrontKitLine } from "@/lib/product-kits";
 
 const KIT_HOVER_PREVIEW_SIZE_PX = 112;
@@ -40,9 +41,11 @@ function kitPreviewPositionAtCursor(clientX: number, clientY: number, size: numb
 function KitItemListRow({
   item,
   isCurrentProduct,
+  productBackFrom = null,
 }: {
   item: StorefrontKitLine;
   isCurrentProduct: boolean;
+  productBackFrom?: ProductBackSource | null;
 }) {
   const previewId = useId();
   const coarsePointer = useCoarsePointer();
@@ -97,7 +100,7 @@ function KitItemListRow({
     >
       <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5">
         <Link
-          href={`/product/${item.productSlug}`}
+          href={buildProductHref(item.productSlug, { from: productBackFrom ?? undefined })}
           className="font-medium text-palm hover:underline"
         >
           {kitItemLabel(item)}
@@ -165,9 +168,11 @@ function KitBundleFooter({
 export function ProductKitSection({
   kit,
   timedSaleEventId = null,
+  productBackFrom = null,
 }: {
   kit: StorefrontProductKit;
   timedSaleEventId?: string | null;
+  productBackFrom?: ProductBackSource | null;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -211,6 +216,7 @@ export function ProductKitSection({
                 key={`${item.productId}:${item.variantId ?? ""}`}
                 item={item}
                 isCurrentProduct={item.productId === kit.hostProductId}
+                productBackFrom={productBackFrom}
               />
             ))}
           </ul>

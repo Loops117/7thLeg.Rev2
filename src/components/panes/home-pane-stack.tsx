@@ -14,6 +14,7 @@ import { getCarouselProducts, getStorefrontEventListing } from "@/lib/products-s
 import { normalizeArtGroupKey, parseHomePaneConfig } from "@/lib/pane-config";
 import type { SpeciesSuggestionApprovedRow } from "@/lib/species-suggestions";
 import type { ProductReviewPublicRow } from "@/lib/product-reviews";
+import type { ProductBackSource } from "@/lib/product-back-nav";
 
 type PaneRow = Pick<Pane, "id" | "type" | "sortOrder" | "config">;
 
@@ -23,10 +24,13 @@ export async function HomePaneStack({
   panes,
   emptyTitle,
   emptySettingsPath,
+  productBackFrom = null,
 }: {
   panes: PaneRow[];
   emptyTitle: string;
   emptySettingsPath: string;
+  /** Passed to product cards in panes (`?from=` on product links). */
+  productBackFrom?: ProductBackSource | null;
 }) {
   const carouselByPaneId = new Map<string, Awaited<ReturnType<typeof getCarouselProducts>>>();
   await Promise.all(
@@ -130,6 +134,7 @@ export async function HomePaneStack({
             pane.type === "SUGGESTION_BOX" ? (approvedSuggestionsByPaneId.get(pane.id) ?? []) : undefined
           }
           approvedReviews={pane.type === "REVIEWS" ? (approvedReviewsByPaneId.get(pane.id) ?? []) : undefined}
+          productBackFrom={productBackFrom}
         />
       ))}
     </div>

@@ -15,6 +15,8 @@ function mainNavLinks(config: {
   navGalleryLabel: string;
   navAboutEnabled: boolean;
   navAboutLabel: string;
+  navInBreedingEnabled: boolean;
+  navInBreedingLabel: string;
 }): SiteHeaderNavItem[] {
   const links: SiteHeaderNavItem[] = [{ href: "/", label: "Home" }];
   if (config.navShopEnabled) {
@@ -22,6 +24,9 @@ function mainNavLinks(config: {
   }
   if (config.navFeaturedEnabled) {
     links.push({ href: "/featured", label: config.navFeaturedLabel });
+  }
+  if (config.navInBreedingEnabled) {
+    links.push({ href: "/in-breeding", label: config.navInBreedingLabel });
   }
   if (config.navGalleryEnabled) {
     links.push({ href: "/gallery", label: config.navGalleryLabel });

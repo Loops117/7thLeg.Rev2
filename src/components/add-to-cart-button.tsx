@@ -197,7 +197,6 @@ export function AddToCartButton({
       </div>
 
       {error ? <p className="mt-2 text-sm font-medium text-coral">{error}</p> : null}
-      <p className="mt-2 text-xs text-ink/60">Requires a customer account — you’ll be prompted to sign in if needed.</p>
     </form>
   );
 }

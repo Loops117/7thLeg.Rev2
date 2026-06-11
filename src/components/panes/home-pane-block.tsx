@@ -30,6 +30,7 @@ import {
   parseHomePaneConfig,
   paneSectionSurfaceStyle,
 } from "@/lib/pane-config";
+import type { ProductBackSource } from "@/lib/product-back-nav";
 import type { StorefrontProductCard } from "@/lib/products-storefront";
 import type { SiteConfigPublic } from "@/lib/site-config-types";
 import { btnMainMd } from "@/lib/btn-theme-classes";
@@ -69,6 +70,7 @@ export async function HomePaneBlock({
   artGalleryPinAppearance,
   approvedSuggestions,
   approvedReviews,
+  productBackFrom = null,
 }: {
   pane: PaneRow;
   carouselProducts?: StorefrontProductCard[] | null;
@@ -79,6 +81,7 @@ export async function HomePaneBlock({
   artGalleryPinAppearance?: ImageSubmissionPinAppearance;
   approvedSuggestions?: SpeciesSuggestionApprovedRow[];
   approvedReviews?: ProductReviewPublicRow[];
+  productBackFrom?: ProductBackSource | null;
 }) {
   const cfg = parseHomePaneConfig(pane.config, pane.type);
   const surface = paneSectionSurfaceStyle(cfg);
@@ -109,6 +112,8 @@ export async function HomePaneBlock({
     navGalleryLabel: "Gallery",
     navAboutEnabled: true,
     navAboutLabel: "About",
+    navInBreedingEnabled: false,
+    navInBreedingLabel: "In Breeding",
   };
   const branding = await getSiteConfig().catch(() => storeBannerFallback);
   const storeBannerSite = pane.type === "STORE_BANNER" ? branding : null;
@@ -179,6 +184,7 @@ export async function HomePaneBlock({
                   productDiagonalBrandName={productDiagonalBrandName}
                   productDiagonalNameGapPx={branding.productDiagonalNameGapPx}
                   watermarkOpacityPercent={branding.watermarkOpacityPercent}
+                  productFrom={productBackFrom}
                 />
               </div>
             ) : (
@@ -244,6 +250,7 @@ export async function HomePaneBlock({
                         speed1to10={5}
                         eventId={eventBlock.event.kind === EventKind.TIMED ? eventBlock.event.id : undefined}
                         productDiagonalBrandName={productDiagonalBrandName}
+                        productFrom={productBackFrom}
                       />
                     </div>
                   ) : null}

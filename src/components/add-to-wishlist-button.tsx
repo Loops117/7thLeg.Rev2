@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { btnImportantMd, btnSecondaryMd } from "@/lib/btn-theme-classes";
+import { btnImportantMd, btnMainLg, btnSecondaryMd } from "@/lib/btn-theme-classes";
 
 export function AddToWishlistButton({
   productId,
@@ -16,6 +16,8 @@ export function AddToWishlistButton({
   disabled = false,
   initialInWishlist,
   storefrontProductPath,
+  primary = false,
+  availabilityNotifyMessage,
 }: {
   productId: string;
   variantId: string | null;
@@ -28,6 +30,10 @@ export function AddToWishlistButton({
   initialInWishlist: boolean;
   /** e.g. `/product/my-slug` for `revalidatePath` after add/remove. */
   storefrontProductPath: string;
+  /** Primary PDP CTA (replaces add-to-cart on in-breeding products). */
+  primary?: boolean;
+  /** Shown below the button on breeding product pages. */
+  availabilityNotifyMessage?: string | null;
 }) {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -75,32 +81,57 @@ export function AddToWishlistButton({
     router,
   ]);
 
+  const sectionClass = primary ? "mt-6 border-t border-palm/15 pt-6" : "mt-4";
+  const buttonClass = primary
+    ? inWishlist
+      ? btnImportantMd
+      : btnMainLg
+    : inWishlist
+      ? btnImportantMd
+      : btnSecondaryMd;
+
   if (status === "loading") {
     return (
-      <button type="button" disabled className={`mt-4 w-full sm:w-auto ${btnSecondaryMd} text-ink/50`}>
-        Wishlist…
-      </button>
+      <div className={sectionClass}>
+        <button type="button" disabled className={`w-full sm:w-auto ${buttonClass} text-ink/50`}>
+          Wishlist…
+        </button>
+      </div>
     );
   }
 
   if (!session?.user || session.user.role !== "customer") {
     return (
-      <p className="mt-4 text-sm text-ink/80">
-        <Link
-          href={`/login?callbackUrl=${encodeURIComponent(callbackUrl || "/")}`}
-          className="font-bold text-lagoon-dark underline"
-        >
-          Log in
-        </Link>{" "}
-        to save items to your wishlist.
-      </p>
+      <div className={sectionClass}>
+        {primary ? (
+          <Link
+            href={`/login?callbackUrl=${encodeURIComponent(callbackUrl || "/")}`}
+            className={`inline-block w-full text-center sm:w-auto ${btnMainLg}`}
+          >
+            Add to wishlist
+          </Link>
+        ) : (
+          <p className="text-sm text-ink/80">
+            <Link
+              href={`/login?callbackUrl=${encodeURIComponent(callbackUrl || "/")}`}
+              className="font-bold text-lagoon-dark underline"
+            >
+              Log in
+            </Link>{" "}
+            to save items to your wishlist.
+          </p>
+        )}
+        {availabilityNotifyMessage ? (
+          <p className="mt-2 text-sm text-ink/70">{availabilityNotifyMessage}</p>
+        ) : null}
+      </div>
     );
   }
 
   const addBlocked = !inWishlist && disabled;
 
   return (
-    <div className="mt-4">
+    <div className={sectionClass}>
       {inWishlist ? (
         <p className="mb-2 text-sm font-semibold text-palm dark:text-emerald-300">This product is in your wishlist.</p>
       ) : null}
@@ -108,12 +139,15 @@ export function AddToWishlistButton({
         type="button"
         disabled={pending || addBlocked}
         onClick={onToggle}
-        className={`w-full sm:w-auto ${inWishlist ? btnImportantMd : btnSecondaryMd} disabled:cursor-not-allowed`}
+        className={`w-full sm:w-auto ${buttonClass} disabled:cursor-not-allowed`}
       >
         {pending ? (inWishlist ? "Removing…" : "Saving…") : inWishlist ? "Remove from wishlist" : "Add to wishlist"}
       </button>
       {addBlocked ? (
-        <p className="mt-1 text-xs text-ink/60">Pick an available option to add this item to your wishlist.</p>
+        <p className="mt-1 text-xs text-ink/60">Pick an option to add this item to your wishlist.</p>
+      ) : null}
+      {availabilityNotifyMessage ? (
+        <p className="mt-2 text-sm text-ink/70">{availabilityNotifyMessage}</p>
       ) : null}
       {msg ? <p className="mt-2 text-xs font-semibold text-lagoon-dark">{msg}</p> : null}
     </div>

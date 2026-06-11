@@ -13,10 +13,12 @@ import {
 } from "@/lib/product-images-public";
 import {
   PRODUCT_BREEDING_HINT,
+  PRODUCT_BREEDING_WISHLIST_NOTIFY,
   PRODUCT_OUT_OF_STOCK_LABEL,
   productInBreeding,
   productUnavailableHint,
   variantIsPurchasable,
+  variantIsWishlistable,
 } from "@/lib/product-stock";
 import {
   unitCentsForVariantQuantity,
@@ -101,15 +103,19 @@ export function ProductVariantShop({
   /** From `?variant=` (e.g. gallery product pins). */
   initialSelectedVariantId?: string | null;
 }) {
-  const purchasable = variants.filter(variantIsPurchasable);
+  const breeding = productInBreeding({ inBreeding });
+  const purchasable = variants.filter((v) => variantIsPurchasable(v));
+  const selectable = variants.filter((v) => variantIsWishlistable(v, breeding));
   const [selectedVariantId, setSelectedVariantId] = useState(() => {
     if (variants.length === 0) return "";
     const fromUrl = initialSelectedVariantId?.trim();
     if (fromUrl && variants.some((v) => v.id === fromUrl)) return fromUrl;
-    if (purchasable.length === 1) return purchasable[0].id;
-    return purchasable[0]?.id ?? "";
+    const pool = breeding ? selectable : purchasable;
+    if (pool.length === 1) return pool[0].id;
+    return pool[0]?.id ?? "";
   });
 
+  const selectableKey = selectable.map((v) => v.id).join(",");
   const purchasableKey = purchasable.map((v) => v.id).join(",");
   useEffect(() => {
     if (variants.length === 0) return;
@@ -118,14 +124,15 @@ export function ProductVariantShop({
       setSelectedVariantId(fromUrl);
       return;
     }
-    if (purchasable.length === 0) {
+    const pool = breeding ? selectable : purchasable;
+    if (pool.length === 0) {
       setSelectedVariantId("");
       return;
     }
     setSelectedVariantId((cur) =>
-      cur && variants.some((v) => v.id === cur) ? cur : purchasable[0].id,
+      cur && variants.some((v) => v.id === cur) ? cur : pool[0].id,
     );
-  }, [variants.length, purchasableKey, initialSelectedVariantId]);
+  }, [variants.length, selectableKey, purchasableKey, breeding, initialSelectedVariantId]);
 
   const hasVariants = variants.length > 0;
   const gallery = productPageGalleryAll(images);
@@ -176,7 +183,7 @@ export function ProductVariantShop({
   const wishlistVariantId = variants.length > 0 ? (selectedVariantId || null) : null;
   const canWishlist =
     variants.length === 0 ||
-    Boolean(selectedVariantId && purchasable.some((v) => v.id === selectedVariantId));
+    Boolean(selectedVariantId && selectable.some((v) => v.id === selectedVariantId));
 
   const stockLine = (() => {
     if (productInBreeding({ inBreeding })) return PRODUCT_BREEDING_HINT;
@@ -275,7 +282,7 @@ export function ProductVariantShop({
             <h2 className="text-sm font-black uppercase tracking-wide text-palm">Choose an option</h2>
             <div className="mt-3 flex flex-wrap gap-2">
               {variants.map((v, idx) => {
-                const ok = variantIsPurchasable(v);
+                const ok = breeding ? variantIsWishlistable(v, true) : variantIsPurchasable(v);
                 const sel = v.id === selectedVariantId;
                 const btnStyle = variantPickerButtonStyle(v, idx, variants.length, sel);
                 return (
@@ -316,38 +323,55 @@ export function ProductVariantShop({
           </p>
         ) : null}
 
-        <AddToCartButton
-          productId={productId}
-          productUnlimited={productUnlimited}
-          canPurchase={canPurchase}
-          unavailableHint={productUnavailableHint({ inBreeding })}
-          timedSaleEventId={timedSaleEventId}
-          variants={variants.map((v) => ({
-            id: v.id,
-            label: v.label,
-            stock: v.stock,
-            unlimitedStock: v.unlimitedStock,
-            active: v.active,
-          }))}
-          selectedVariantId={variants.length ? selectedVariantId : undefined}
-          onVariantSelect={variants.length ? setSelectedVariantId : undefined}
-          quantity={quantity}
-          onQuantityChange={setQuantity}
-          priceTiersJson={priceTiersJson}
-          listUnitCents={listUnitCents}
-          maxQuantity={maxQuantity}
-        />
+        {breeding ? (
+          <AddToWishlistButton
+            productId={productId}
+            variantId={wishlistVariantId}
+            unitPriceCentsAtAdd={unitPriceCents}
+            timedSaleEventIdAtAdd={timedSaleEventId}
+            callbackUrl={wishlistCallbackUrl}
+            disabled={!canWishlist}
+            initialInWishlist={initialInWishlist}
+            storefrontProductPath={`/product/${productSlug}`}
+            primary
+            availabilityNotifyMessage={PRODUCT_BREEDING_WISHLIST_NOTIFY}
+          />
+        ) : (
+          <>
+            <AddToCartButton
+              productId={productId}
+              productUnlimited={productUnlimited}
+              canPurchase={canPurchase}
+              unavailableHint={productUnavailableHint({ inBreeding })}
+              timedSaleEventId={timedSaleEventId}
+              variants={variants.map((v) => ({
+                id: v.id,
+                label: v.label,
+                stock: v.stock,
+                unlimitedStock: v.unlimitedStock,
+                active: v.active,
+              }))}
+              selectedVariantId={variants.length ? selectedVariantId : undefined}
+              onVariantSelect={variants.length ? setSelectedVariantId : undefined}
+              quantity={quantity}
+              onQuantityChange={setQuantity}
+              priceTiersJson={priceTiersJson}
+              listUnitCents={listUnitCents}
+              maxQuantity={maxQuantity}
+            />
 
-        <AddToWishlistButton
-          productId={productId}
-          variantId={wishlistVariantId}
-          unitPriceCentsAtAdd={unitPriceCents}
-          timedSaleEventIdAtAdd={timedSaleEventId}
-          callbackUrl={wishlistCallbackUrl}
-          disabled={!canWishlist}
-          initialInWishlist={initialInWishlist}
-          storefrontProductPath={`/product/${productSlug}`}
-        />
+            <AddToWishlistButton
+              productId={productId}
+              variantId={wishlistVariantId}
+              unitPriceCentsAtAdd={unitPriceCents}
+              timedSaleEventIdAtAdd={timedSaleEventId}
+              callbackUrl={wishlistCallbackUrl}
+              disabled={!canWishlist}
+              initialInWishlist={initialInWishlist}
+              storefrontProductPath={`/product/${productSlug}`}
+            />
+          </>
+        )}
 
         {(variantDescriptionHtml || descriptionHtml.trim()) ? (
           <div className="mt-8 space-y-6 border-t border-palm/15 pt-6">

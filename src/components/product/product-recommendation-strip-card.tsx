@@ -8,6 +8,7 @@ import {
   recommendationStripGlowBleedPx,
   recommendationStripPreviewHeightPx,
 } from "@/lib/recommendation-strip-layout";
+import type { ProductBackSource } from "@/lib/product-back-nav";
 import type { StorefrontProductCard } from "@/lib/products-storefront";
 
 type PreviewAnchor = {
@@ -40,6 +41,7 @@ function anchorFromCardRect(
 
 type SharedCardProps = {
   eventId?: string | null;
+  productBackFrom?: ProductBackSource | null;
   productDiagonalBrandName?: string | null;
   productDiagonalNameGapPx?: number;
   watermarkOpacityPercent?: number;
@@ -52,6 +54,7 @@ export function ProductRecommendationStripCard({
   hoverGlowThicknessPx = 4,
   hoverZoomPercent = 125,
   eventId = null,
+  productBackFrom = null,
   productDiagonalBrandName = null,
   productDiagonalNameGapPx = 8,
   watermarkOpacityPercent = 38,
@@ -79,6 +82,7 @@ export function ProductRecommendationStripCard({
     recommendationStrip: true as const,
     fillImage: true as const,
     eventId,
+    productFrom: productBackFrom,
     productDiagonalBrandName,
     productDiagonalNameGapPx,
     watermarkOpacityPercent,

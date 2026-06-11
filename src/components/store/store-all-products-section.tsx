@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, useCallback, type CSSProperties } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo, type CSSProperties } from "react";
+import { loadInBreedingProductPage } from "@/app/actions/in-breeding-products";
 import { loadStoreProductPage } from "@/app/actions/store-products";
 import type { StorefrontProductCard, StorefrontTypeFilterNav } from "@/lib/products-storefront";
 import { StoreProductCard } from "@/components/store/store-product-card";
@@ -33,6 +34,8 @@ export function StoreAllProductsSection({
   productDiagonalNameGapPx = 8,
   watermarkOpacityPercent = 38,
   catalogCardWidthPx = 176,
+  catalogPath = "/store",
+  catalogVariant = "store",
 }: {
   baseProducts: StorefrontProductCard[];
   totalCount: number;
@@ -49,10 +52,16 @@ export function StoreAllProductsSection({
   watermarkOpacityPercent?: number;
   /** Fixed width for catalog grid cards (from Settings → Store → Product cards). */
   catalogCardWidthPx?: number;
+  catalogPath?: string;
+  catalogVariant?: "store" | "inBreeding";
 }) {
+  const loadProducts = useMemo(
+    () => (catalogVariant === "inBreeding" ? loadInBreedingProductPage : loadStoreProductPage),
+    [catalogVariant],
+  );
   const [query, setQuery] = useState(() => (initialQuery ?? "").trim());
   const [debouncedQ, setDebouncedQ] = useState(() => (initialQuery ?? "").trim());
-  const pathname = "/store";
+  const pathname = catalogPath;
   const [rows, setRows] = useState<StorefrontProductCard[]>(baseProducts);
   const [total, setTotal] = useState(totalCount);
   const [hasMore, setHasMore] = useState(() => baseProducts.length < totalCount);
@@ -82,7 +91,7 @@ export function StoreAllProductsSection({
   const refetchFirstPage = useCallback(async () => {
     setListLoading(true);
     try {
-      const r = await loadStoreProductPage({
+      const r = await loadProducts({
         skip: 0,
         typeSlug: activeSlug,
         eventId,
@@ -97,7 +106,7 @@ export function StoreAllProductsSection({
     } finally {
       setListLoading(false);
     }
-  }, [activeSlug, eventId, debouncedQ, pageSize]);
+  }, [activeSlug, eventId, debouncedQ, pageSize, loadProducts]);
 
   useEffect(() => {
     if (skipFirstListFetch.current) {
@@ -116,7 +125,7 @@ export function StoreAllProductsSection({
     if (!hasMore || loadMoreLoading) return;
     setLoadMoreLoading(true);
     try {
-      const r = await loadStoreProductPage({
+      const r = await loadProducts({
         skip: rows.length,
         typeSlug: activeSlug,
         eventId,
@@ -174,12 +183,12 @@ export function StoreAllProductsSection({
         <div className="mt-4 space-y-2">
           {typeFilterNav.breadcrumb.length > 0 ? (
             <nav className="flex flex-wrap items-center gap-1 text-sm text-ink/80" aria-label="Type path">
-              <Link href="/store" className="font-medium text-lagoon-dark underline">
+              <Link href={catalogPath} className="font-medium text-lagoon-dark underline">
                 All types
               </Link>
               {typeFilterNav.breadcrumb.map((crumb, i) => {
                 const isLast = i === typeFilterNav.breadcrumb.length - 1;
-                const href = `/store?type=${encodeURIComponent(crumb.slug)}`;
+                const href = `${catalogPath}?type=${encodeURIComponent(crumb.slug)}`;
                 return (
                   <span key={crumb.slug} className="flex items-center gap-1">
                     <span aria-hidden className="text-ink/40">
@@ -199,13 +208,13 @@ export function StoreAllProductsSection({
           ) : null}
           <nav className="flex flex-wrap gap-2" aria-label="Filter by product type">
             {!activeSlug ? (
-              <FilterChip href="/store" active label="All types" />
+              <FilterChip href={catalogPath} active label="All types" />
             ) : (
               <FilterChip
                 href={
                   typeFilterNav.breadcrumb.length > 1
-                    ? `/store?type=${encodeURIComponent(typeFilterNav.breadcrumb[typeFilterNav.breadcrumb.length - 2]!.slug)}`
-                    : "/store"
+                    ? `${catalogPath}?type=${encodeURIComponent(typeFilterNav.breadcrumb[typeFilterNav.breadcrumb.length - 2]!.slug)}`
+                    : catalogPath
                 }
                 active={false}
                 label="← Up"
@@ -214,7 +223,7 @@ export function StoreAllProductsSection({
             {typeFilterNav.chips.map((t) => (
               <FilterChip
                 key={t.id}
-                href={`/store?type=${encodeURIComponent(t.slug)}`}
+                href={`${catalogPath}?type=${encodeURIComponent(t.slug)}`}
                 active={activeSlug === t.slug}
                 label={`${t.name} (${t.productCount})`}
               />
@@ -223,7 +232,7 @@ export function StoreAllProductsSection({
         </div>
       ) : !eventId ? (
         <nav className="mt-4 flex flex-wrap gap-2" aria-label="Filter by product type">
-          <FilterChip href="/store" active={!activeSlug} label="All types" />
+          <FilterChip href={catalogPath} active={!activeSlug} label="All types" />
         </nav>
       ) : null}
 
@@ -241,17 +250,27 @@ export function StoreAllProductsSection({
               </Link>
             </>
           ) : totalCatalogSize === 0 ? (
-            <>
-              No products yet. Sign in to{" "}
-              <Link href="/settings/products" className="font-medium text-lagoon-dark underline">
-                Settings → Products
-              </Link>{" "}
-              to add your first item.
-            </>
+            catalogVariant === "inBreeding" ? (
+              <>
+                No products marked <strong>In breeding</strong> yet. Edit a product in{" "}
+                <Link href="/settings/products" className="font-medium text-lagoon-dark underline">
+                  Settings → Catalog
+                </Link>{" "}
+                and enable the flag.
+              </>
+            ) : (
+              <>
+                No products yet. Sign in to{" "}
+                <Link href="/settings/products" className="font-medium text-lagoon-dark underline">
+                  Settings → Products
+                </Link>{" "}
+                to add your first item.
+              </>
+            )
           ) : !eventId && activeSlug && total === 0 && totalCatalogSize > 0 ? (
             <>
               No products in this type.{" "}
-              <Link href="/store" className="font-medium text-lagoon-dark underline">
+              <Link href={catalogPath} className="font-medium text-lagoon-dark underline">
                 Clear filter
               </Link>
             </>
@@ -275,7 +294,9 @@ export function StoreAllProductsSection({
                 hover={hover}
                 catalogGrid
                 eventId={eventId}
-                showQuickAdd
+                showQuickAdd={catalogVariant !== "inBreeding"}
+                showQuickWishlist={catalogVariant === "inBreeding"}
+                productFrom={catalogVariant === "inBreeding" ? "in-breeding" : "store"}
                 productDiagonalBrandName={productDiagonalBrandName}
                 productDiagonalNameGapPx={productDiagonalNameGapPx}
                 watermarkOpacityPercent={watermarkOpacityPercent}

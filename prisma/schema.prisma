@@ -202,6 +202,19 @@ model SiteConfig {
   /// Main header link to `/gallery` (customer image submissions).
   navGalleryEnabled Boolean @default(true) @map("nav_gallery_enabled")
   navGalleryLabel String @default("Gallery") @map("nav_gallery_label")
+  /// Main header link to `/in-breeding`.
+  navInBreedingEnabled Boolean @default(false) @map("nav_in_breeding_enabled")
+  navInBreedingLabel String @default("In Breeding") @map("nav_in_breeding_label")
+  /// Public `/in-breeding` page (when false, route returns not found).
+  inBreedingPageEnabled Boolean @default(true) @map("in_breeding_page_enabled")
+  inBreedingPageTitle String @default("In Breeding") @map("in_breeding_page_title")
+  inBreedingBannerEnabled Boolean @default(false) @map("in_breeding_banner_enabled")
+  inBreedingBannerHtml String @default("") @db.Text @map("in_breeding_banner_html")
+  inBreedingFeaturedStripEnabled Boolean @default(false) @map("in_breeding_featured_strip_enabled")
+  inBreedingFeaturedStripConfig Json? @map("in_breeding_featured_strip_config")
+  inBreedingProductCardConfig Json? @map("in_breeding_product_card_config")
+  inBreedingFooterEnabled Boolean @default(false) @map("in_breeding_footer_enabled")
+  inBreedingFooterHtml String @default("") @db.Text @map("in_breeding_footer_html")
   /// Public site footer content & layout (`lib/site-footer-settings.ts`).
   siteFooterConfig Json? @map("site_footer_config")
   /// JSON: per-tool guide HTML + tour popup copy for /labels editor (see label-editor-help.ts).

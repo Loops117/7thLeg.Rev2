@@ -11,6 +11,7 @@ export default async function FeaturedPage() {
       panes={panes}
       emptyTitle="Featured"
       emptySettingsPath={settingsPathForPageKey(PageKey.FEATURED)}
+      productBackFrom="featured"
     />
   );
 }

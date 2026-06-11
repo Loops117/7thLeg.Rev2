@@ -36,6 +36,11 @@ const LINK_META: Record<StorefrontNavLinkId, { title: string; publicPath: string
     publicPath: "/about",
     defaultLabel: STOREFRONT_NAV_LINK_DEFAULTS.about.label,
   },
+  inBreeding: {
+    title: "In Breeding",
+    publicPath: "/in-breeding",
+    defaultLabel: STOREFRONT_NAV_LINK_DEFAULTS.inBreeding.label,
+  },
 };
 
 export function StorefrontNavHeaderPanel({

@@ -26,6 +26,7 @@ export async function getProductStockingRowsForAdmin(): Promise<ProductStockingR
       active: true,
       featured: true,
       onSale: true,
+      inBreeding: true,
       basePriceCents: true,
       types: { select: { typeId: true } },
       variants: {
@@ -55,6 +56,7 @@ export async function getProductStockingRowsForAdmin(): Promise<ProductStockingR
         productActive: product.active,
         productFeatured: product.featured,
         productOnSale: product.onSale,
+        productInBreeding: product.inBreeding,
         typeIds,
         variantId: variant.id,
         variantLabel: variant.label,
@@ -77,6 +79,7 @@ export type SaveProductStockingRowInput = {
   variantId: string;
   variantLabel: string;
   productActive: boolean;
+  productInBreeding: boolean;
   variantActive: boolean;
   listPriceUsd: string;
   stock: number;
@@ -105,12 +108,16 @@ export async function saveProductStockingRowAction(
 
     await prisma.product.update({
       where: { id: input.productId },
-      data: { active: !!input.productActive },
+      data: {
+        active: !!input.productActive,
+        inBreeding: !!input.productInBreeding,
+      },
     });
 
     revalidatePath("/settings/products/stocking");
     revalidatePath("/settings/products");
     revalidatePath("/store");
+    revalidatePath("/in-breeding");
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Could not save row." };

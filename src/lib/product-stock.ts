@@ -7,6 +7,8 @@ export const PRODUCT_OUT_OF_STOCK_OPTION_SUFFIX = " (Out of Stock)";
 /** Storefront copy — admin-marked breeding (not for sale). */
 export const PRODUCT_BREEDING_LABEL = "Breeding in Progress";
 export const PRODUCT_BREEDING_HINT = "Breeding in Progress — check back later.";
+export const PRODUCT_BREEDING_WISHLIST_NOTIFY =
+  "We'll notify you when this species is available.";
 export const PRODUCT_BREEDING_KIT_SUMMARY = "One or more items: Breeding in Progress.";
 export const PRODUCT_BREEDING_OPTION_SUFFIX = " (Breeding in Progress)";
 
@@ -70,6 +72,16 @@ export function variantIsPurchasable(v: {
   stock: number;
 }): boolean {
   return v.active && (v.unlimitedStock || v.stock > 0);
+}
+
+/** Wishlist: breeding items allow any active option; otherwise same as purchasable. */
+export function variantIsWishlistable(
+  v: { active: boolean; unlimitedStock: boolean; stock: number },
+  inBreeding: boolean,
+): boolean {
+  if (!v.active) return false;
+  if (inBreeding) return true;
+  return variantIsPurchasable(v);
 }
 
 function productHasPurchasableStock(p: ProductStockShape): boolean {

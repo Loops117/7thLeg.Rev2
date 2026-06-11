@@ -61,6 +61,8 @@ const fallback: SiteConfigPublic = {
   navGalleryLabel: "Gallery",
   navAboutEnabled: true,
   navAboutLabel: "About",
+  navInBreedingEnabled: false,
+  navInBreedingLabel: "In Breeding",
 };
 
 export const getSiteConfig = cache(async function getSiteConfig(): Promise<SiteConfigPublic> {
@@ -94,6 +96,8 @@ export const getSiteConfig = cache(async function getSiteConfig(): Promise<SiteC
       navGalleryLabel: nav.gallery.label,
       navAboutEnabled: nav.about.enabled,
       navAboutLabel: nav.about.label,
+      navInBreedingEnabled: nav.inBreeding.enabled,
+      navInBreedingLabel: nav.inBreeding.label,
     };
   } catch {
     return { ...fallback };

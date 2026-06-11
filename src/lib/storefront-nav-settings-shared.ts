@@ -1,4 +1,4 @@
-export type StorefrontNavLinkId = "shop" | "featured" | "gallery" | "about";
+export type StorefrontNavLinkId = "shop" | "featured" | "gallery" | "about" | "inBreeding";
 
 export type StorefrontNavLinkState = {
   enabled: boolean;
@@ -12,6 +12,7 @@ export const STOREFRONT_NAV_LINK_DEFAULTS: StorefrontNavSettings = {
   featured: { enabled: true, label: "Featured" },
   gallery: { enabled: true, label: "Gallery" },
   about: { enabled: true, label: "About" },
+  inBreeding: { enabled: false, label: "In Breeding" },
 };
 
 export const MAX_STOREFRONT_NAV_LABEL_LEN = 32;

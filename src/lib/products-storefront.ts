@@ -46,6 +46,7 @@ export const storefrontProductSelect = {
 async function buildStorefrontListWhere(
   typeSlug: string | null | undefined,
   search: string | null | undefined,
+  inBreedingOnly = false,
 ): Promise<Prisma.ProductWhereInput> {
   const slug = typeSlug?.trim() || null;
   const q = search?.trim() || null;
@@ -53,6 +54,7 @@ async function buildStorefrontListWhere(
 
   return {
     active: true,
+    ...(inBreedingOnly ? { inBreeding: true } : {}),
     ...(q
       ? {
           OR: [
@@ -102,6 +104,40 @@ export async function getStorefrontFeaturedStrip(take: number) {
   const n = Math.min(48, Math.max(1, Math.floor(take)));
   return prisma.product.findMany({
     where: { active: true, featured: true },
+    take: n,
+    orderBy: { name: "asc" },
+    select: storefrontProductSelect,
+  });
+}
+
+export async function countStorefrontInBreedingProducts(
+  typeSlug: string | null | undefined,
+  search: string | null | undefined,
+) {
+  return prisma.product.count({ where: await buildStorefrontListWhere(typeSlug, search, true) });
+}
+
+export async function getStorefrontInBreedingProductsPage(
+  skip: number,
+  take: number,
+  typeSlug: string | null | undefined,
+  search: string | null | undefined,
+) {
+  const t = Math.min(100, Math.max(1, Math.floor(take)));
+  return prisma.product.findMany({
+    where: await buildStorefrontListWhere(typeSlug, search, true),
+    orderBy: [{ featured: "desc" }, { name: "asc" }],
+    skip: Math.max(0, Math.floor(skip)),
+    take: t,
+    select: storefrontProductSelect,
+  });
+}
+
+/** Featured products that are also marked in breeding. */
+export async function getStorefrontInBreedingFeaturedStrip(take: number) {
+  const n = Math.min(48, Math.max(1, Math.floor(take)));
+  return prisma.product.findMany({
+    where: { active: true, inBreeding: true, featured: true },
     take: n,
     orderBy: { name: "asc" },
     select: storefrontProductSelect,

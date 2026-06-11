@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth as readAuthSession } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { ProductBackLink } from "@/components/product/product-back-link";
 import { ProductJsonLd } from "@/components/product/product-json-ld";
 import { getSeoPublicConfig } from "@/lib/site-config";
 import { buildProductMetadata } from "@/lib/seo-metadata";
@@ -33,10 +33,11 @@ import { getProductRecommendationsForStorefront } from "@/lib/product-recommenda
 import { productFooterCssVariables } from "@/lib/theme-config";
 import { getStoreSettings } from "@/lib/store-settings";
 import { loadResolvedPublicThemeFromDb } from "@/lib/theme-config-server";
+import { parseProductBackSource, resolveProductBackNav } from "@/lib/product-back-nav";
 
 type Props = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ event?: string; variant?: string; review?: string }>;
+  searchParams: Promise<{ event?: string; variant?: string; review?: string; from?: string }>;
 };
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
@@ -90,7 +91,9 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 
 export default async function ProductPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const { event: eventParam, variant: variantParam, review: reviewParam } = await searchParams;
+  const { event: eventParam, variant: variantParam, review: reviewParam, from: fromParam } =
+    await searchParams;
+  const productBackFrom = parseProductBackSource(fromParam);
   const eventId = eventParam?.trim() || null;
   const initialVariantId = variantParam?.trim() || null;
   const [product, sitePub, publicTheme, storeSettings] = await Promise.all([
@@ -113,6 +116,10 @@ export default async function ProductPage({ params, searchParams }: Props) {
   }
 
   const productDiagonalBrandName = sitePub.productDiagonalBrandOverlay ? sitePub.companyName : null;
+  const productBackNav = resolveProductBackNav(productBackFrom, {
+    store: sitePub.navShopLabel,
+    inBreeding: sitePub.navInBreedingLabel,
+  });
 
   const session = await readAuthSession().catch(() => null);
   const sessionCustomerId = session?.user?.role === "customer" && session.user.id ? session.user.id : null;
@@ -188,11 +195,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
         }}
         siteName={sitePub.companyName}
       />
-      <p className="text-sm font-medium text-lagoon-dark">
-        <Link href="/store" className="underline">
-          ← Store
-        </Link>
-      </p>
+      <ProductBackLink {...productBackNav} />
 
       <ProductVariantShop
         productId={product.id}
@@ -238,7 +241,9 @@ export default async function ProductPage({ params, searchParams }: Props) {
         initialSelectedVariantId={initialVariantId}
       />
 
-      {kit ? <ProductKitSection kit={kit} timedSaleEventId={eventId} /> : null}
+      {kit ? (
+        <ProductKitSection kit={kit} timedSaleEventId={eventId} productBackFrom={productBackFrom} />
+      ) : null}
 
       <CustomerSuppliedProductImages
         images={customerSuppliedImages}
@@ -253,6 +258,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
         youMayAlsoWant={recommendations.youMayAlsoWant}
         recommendationCardConfig={storeSettings.storeRecommendationCardConfig}
         eventId={eventId}
+        productBackFrom={productBackFrom}
         productDiagonalBrandName={productDiagonalBrandName}
         productDiagonalNameGapPx={sitePub.productDiagonalNameGapPx}
         watermarkOpacityPercent={sitePub.watermarkOpacityPercent}

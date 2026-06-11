@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { StoreProductCard } from "@/components/store/store-product-card";
 import { HorizontalScrollRegion } from "@/components/ui/horizontal-scroll-region";
 import { carouselAutoScrollIntervalMs } from "@/lib/pane-config";
+import type { ProductBackSource } from "@/lib/product-back-nav";
 import type { StorefrontProductCard } from "@/lib/products-storefront";
 
 export function ProductCarouselStrip({
@@ -15,6 +16,7 @@ export function ProductCarouselStrip({
   productDiagonalBrandName = null,
   productDiagonalNameGapPx = 8,
   watermarkOpacityPercent = 38,
+  productFrom = null,
 }: {
   products: StorefrontProductCard[];
   autoScroll: boolean;
@@ -25,6 +27,7 @@ export function ProductCarouselStrip({
   productDiagonalBrandName?: string | null;
   productDiagonalNameGapPx?: number;
   watermarkOpacityPercent?: number;
+  productFrom?: ProductBackSource | null;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const innerRowRef = useRef<HTMLDivElement>(null);
@@ -87,6 +90,7 @@ export function ProductCarouselStrip({
               productDiagonalBrandName={productDiagonalBrandName}
               productDiagonalNameGapPx={productDiagonalNameGapPx}
               watermarkOpacityPercent={watermarkOpacityPercent}
+              productFrom={productFrom}
             />
           </div>
         ))}

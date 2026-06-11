@@ -29,8 +29,8 @@ export default async function ProductStockingPage() {
     <div>
       <h1 className="border-b-4 border-palm pb-3 text-2xl font-black text-palm">Product stocking</h1>
       <p className="mt-4 max-w-3xl text-sm text-ink/80">
-        Bulk-edit listing visibility, option availability, price, quantity, and shipping units for every product
-        variation. Use search and filters to work through a type or flag at a time.
+        Bulk-edit listing visibility, in-breeding status, option availability, price, quantity, and shipping units
+        for every product variation. Use search and filters to work through a type or flag at a time.
       </p>
       <div className="mt-8">
         <ProductStockingAdmin initialRows={rows} filterTypes={filterTypes} typeHierarchy={types} />

@@ -32,11 +32,18 @@ export async function typeIdsForStoreFilter(slug: string): Promise<string[] | nu
   return index.descendantsOf(type.id);
 }
 
-export async function countActiveProductsInTypeSubtree(typeId: string): Promise<number> {
+export async function countActiveProductsInTypeSubtree(
+  typeId: string,
+  extraWhere?: { inBreeding?: boolean },
+): Promise<number> {
   const index = await loadProductTypeIndex();
   const ids = index.descendantsOf(typeId);
   return prisma.product.count({
-    where: { active: true, types: { some: { typeId: { in: ids } } } },
+    where: {
+      active: true,
+      ...(extraWhere?.inBreeding ? { inBreeding: true } : {}),
+      types: { some: { typeId: { in: ids } } },
+    },
   });
 }
 
@@ -46,7 +53,11 @@ export type StorefrontTypeFilterNav = {
 };
 
 /** Drill-down chips: roots when no filter; children of active type otherwise. */
-export async function getStorefrontTypeFilterNav(activeSlug: string | null): Promise<StorefrontTypeFilterNav> {
+export async function getStorefrontTypeFilterNav(
+  activeSlug: string | null,
+  options?: { inBreedingOnly?: boolean },
+): Promise<StorefrontTypeFilterNav> {
+  const inBreedingOnly = !!options?.inBreedingOnly;
   const index = await loadProductTypeIndex();
   const active = activeSlug?.trim() ? index.getBySlug(activeSlug.trim()) : undefined;
   const activeOk = active?.storefrontVisible ? active : undefined;
@@ -67,7 +78,10 @@ export async function getStorefrontTypeFilterNav(activeSlug: string | null): Pro
       id: t.id,
       name: t.name,
       slug: t.slug,
-      productCount: await countActiveProductsInTypeSubtree(t.id),
+      productCount: await countActiveProductsInTypeSubtree(
+        t.id,
+        inBreedingOnly ? { inBreeding: true } : undefined,
+      ),
     })),
   );
 

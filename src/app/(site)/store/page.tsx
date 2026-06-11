@@ -227,6 +227,7 @@ function FeaturedStrip({
               product={p}
               hover={hover}
               compact
+              productFrom="store"
               productDiagonalBrandName={productDiagonalBrandName}
               productDiagonalNameGapPx={productDiagonalNameGapPx}
               watermarkOpacityPercent={watermarkOpacityPercent}

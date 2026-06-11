@@ -3,13 +3,19 @@
 import Link from "next/link";
 import { useRef } from "react";
 import { ProductQuickAddButton } from "@/components/product-quick-add-button";
+import { ProductQuickWishlistButton } from "@/components/product-quick-wishlist-button";
 import { StoreProductCardPriceRow } from "@/components/store/store-product-card-price-row";
 import { ProductDiagonalBrandOverlay } from "@/components/store/product-diagonal-brand-overlay";
 import { ProductVariantBadge, storefrontVariantCount } from "@/components/store/product-variant-badge";
 import { storefrontDisplayImageUrl } from "@/lib/product-images-public";
-import { productCardAppearsInStock, productCardUnavailableLabel } from "@/lib/product-stock";
+import {
+  productCardAppearsInStock,
+  productCardUnavailableLabel,
+  productInBreeding,
+} from "@/lib/product-stock";
 import { parseVariantPriceDisplay } from "@/lib/product-variant-price-display";
 import { productListPriceCents, storefrontDefaultVariantLabel } from "@/lib/product-list-price-cents";
+import { buildProductHref, type ProductBackSource } from "@/lib/product-back-nav";
 import type { StorefrontProductCard } from "@/lib/products-storefront";
 
 export function StoreProductCard({
@@ -22,6 +28,8 @@ export function StoreProductCard({
   fillImage = false,
   eventId,
   showQuickAdd = false,
+  showQuickWishlist = false,
+  productFrom = null,
   productDiagonalBrandName,
   productDiagonalNameGapPx = 8,
   watermarkOpacityPercent = 38,
@@ -41,12 +49,15 @@ export function StoreProductCard({
   eventId?: string | null;
   /** Quick add is for the store catalog grid only, not product detail or featured strips. */
   showQuickAdd?: boolean;
+  /** In-breeding catalog grid: quick wishlist where quick add would appear. */
+  showQuickWishlist?: boolean;
+  /** Catalog the shopper came from — sets `?from=` on the product link for the back button. */
+  productFrom?: ProductBackSource | null;
   productDiagonalBrandName?: string | null;
   productDiagonalNameGapPx?: number;
   watermarkOpacityPercent?: number;
 }) {
   const img = storefrontDisplayImageUrl(p.images);
-  const qs = eventId?.trim() ? `?event=${encodeURIComponent(eventId.trim())}` : "";
   const inStock = productCardAppearsInStock(p);
   const unavailableLabel = productCardUnavailableLabel(p);
   const listPriceCents = productListPriceCents(p.basePriceCents, p.variants);
@@ -59,11 +70,13 @@ export function StoreProductCard({
   const isCatalogGrid = catalogGrid && !compact && !mini;
   const imageFillsFrame = isCatalogGrid || fillImage;
   const showCart = showQuickAdd && inStock;
+  const showWishlist = showQuickWishlist && productInBreeding(p);
+  const showQuickAction = showCart || showWishlist;
   const padX = isRecStrip || isMini ? "px-1" : compact ? "px-2.5" : "px-3.5";
   const padTop = isRecStrip || isMini ? "pt-1" : compact ? "pt-2.5" : "pt-3.5";
   const padBottom = isRecStrip || isMini ? "pb-1" : compact ? "pb-2.5" : "pb-3.5";
   const footerTop = isRecStrip || isMini ? "pt-0.5" : "pt-2";
-  const href = `/product/${p.slug}${qs}`;
+  const href = buildProductHref(p.slug, { eventId, from: productFrom ?? undefined });
 
   const priceFooter = (
     <>
@@ -141,11 +154,11 @@ export function StoreProductCard({
             </p>
           ) : null}
         </div>
-        {!showCart ? (
+        {!showQuickAction ? (
           <div className={`mt-auto shrink-0 ${padX} ${padBottom} ${footerTop}`}>{priceFooter}</div>
         ) : null}
       </Link>
-      {showCart ? (
+      {showQuickAction ? (
         <div className={`mt-auto shrink-0 ${padX} ${padBottom} ${footerTop} pr-14`}>{priceFooter}</div>
       ) : null}
       {showCart ? (
@@ -155,6 +168,22 @@ export function StoreProductCard({
           basePriceCents={priceCents}
           variants={p.variants}
           canPurchase
+          timedSaleEventId={eventId}
+          variantPriceDisplay={parseVariantPriceDisplay(p.variantPriceDisplay)}
+          compact
+          pickerMode="card-overlay"
+          overlayHostRef={cardRef}
+          className="absolute bottom-2 right-2 z-10"
+        />
+      ) : null}
+      {showWishlist ? (
+        <ProductQuickWishlistButton
+          productId={p.id}
+          productName={p.name}
+          productSlug={p.slug}
+          basePriceCents={priceCents}
+          variants={p.variants}
+          inBreeding
           timedSaleEventId={eventId}
           variantPriceDisplay={parseVariantPriceDisplay(p.variantPriceDisplay)}
           compact

@@ -22,7 +22,9 @@ function revalidateStorefrontNav() {
   revalidatePath("/featured");
   revalidatePath("/gallery");
   revalidatePath("/about");
+  revalidatePath("/in-breeding");
   revalidatePath("/settings/store");
+  revalidatePath("/settings/in-breeding");
   revalidatePath("/settings/featured");
   revalidatePath("/settings/image-submission");
   revalidatePath("/settings/about");

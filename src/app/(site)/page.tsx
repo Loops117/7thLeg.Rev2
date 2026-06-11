@@ -11,6 +11,7 @@ export default async function HomePage() {
       panes={panes}
       emptyTitle="Home"
       emptySettingsPath={settingsPathForPageKey(PageKey.HOME)}
+      productBackFrom="home"
     />
   );
 }
