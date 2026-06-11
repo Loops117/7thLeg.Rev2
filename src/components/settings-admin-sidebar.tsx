@@ -23,6 +23,7 @@ const PRODUCT_LINKS: { href: string; label: string }[] = [
 const INSIGHTS_LINKS: { href: string; label: string }[] = [
   { href: "/settings/reports", label: "Reports" },
   { href: "/settings/suggestions", label: "Suggestions" },
+  { href: "/settings/wishlist", label: "Wishlist" },
 ];
 
 const FUN_STUFF_LINKS: { href: string; label: string }[] = [
