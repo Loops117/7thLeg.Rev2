@@ -381,6 +381,7 @@ async function upsertProductFromRow(
             active: row.active,
             featured: row.featured,
             onSale: row.onSale,
+            inBreeding: row.inBreeding,
             saleEndsAt,
             variantPriceDisplay,
           },
@@ -462,6 +463,7 @@ async function upsertProductFromRow(
         active: row.active,
         featured: row.featured,
         onSale: row.onSale,
+        inBreeding: row.inBreeding,
         saleEndsAt: row.onSale ? saleEndsAt : null,
         variantPriceDisplay,
       },
@@ -603,6 +605,7 @@ function buildProductsCatalogCsv(
         defaultV?.pickerFgHex ?? "",
         defaultV?.pickerBorderHex ?? "",
         String(defaultV?.shippingUnits ?? 1),
+        p.inBreeding ? "yes" : "no",
       ]),
     );
   }

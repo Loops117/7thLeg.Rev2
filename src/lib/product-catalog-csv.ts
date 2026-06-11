@@ -123,6 +123,7 @@ export const PRODUCT_CATALOG_CSV_HEADERS = [
   "default_picker_fg_hex",
   "default_picker_border_hex",
   "default_shipping_units",
+  "in_breeding",
 ] as const;
 
 export const EXTRA_VARIANTS_CSV_HEADERS = [
@@ -178,6 +179,7 @@ export type ParsedProductCatalogRow = {
   defaultPickerFgHex: string;
   defaultPickerBorderHex: string;
   defaultShippingUnits: string;
+  inBreeding: boolean;
 };
 
 export type ParsedExtraVariantRow = {
@@ -272,6 +274,7 @@ export function parseProductsCatalogCsv(text: string): CsvParseResult<ParsedProd
       defaultPickerFgHex: cell(line, headerKeys, "default_picker_fg_hex"),
       defaultPickerBorderHex: cell(line, headerKeys, "default_picker_border_hex"),
       defaultShippingUnits: cell(line, headerKeys, "default_shipping_units"),
+      inBreeding: parseYesNo(cell(line, headerKeys, "in_breeding"), false),
     });
   }
 
