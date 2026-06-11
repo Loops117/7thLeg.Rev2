@@ -23,6 +23,7 @@ export const storefrontProductSelect = {
   unlimitedQuantity: true,
   featured: true,
   onSale: true,
+  inBreeding: true,
   variantPriceDisplay: true,
   images: {
     orderBy: { sortOrder: "asc" as const },

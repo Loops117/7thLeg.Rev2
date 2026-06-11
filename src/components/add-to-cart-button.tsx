@@ -11,10 +11,7 @@ import {
   productTierBreakdownAtQuantity,
   productUnitCentsDisplay,
 } from "@/lib/product-price-tiers-storefront";
-import {
-  PRODUCT_UNAVAILABLE_HINT,
-  PRODUCT_UNAVAILABLE_OPTION_SUFFIX,
-} from "@/lib/product-stock";
+import { PRODUCT_OUT_OF_STOCK_OPTION_SUFFIX } from "@/lib/product-stock";
 import { formatPriceUsd } from "@/lib/product-slug";
 
 type VariantOpt = {
@@ -30,6 +27,8 @@ type Props = {
   productUnlimited: boolean;
   variants: VariantOpt[];
   canPurchase: boolean;
+  /** Shown when `canPurchase` is false (breeding vs out of stock). */
+  unavailableHint?: string;
   /** TIMED storefront `?event=` id — persists event sale pricing on the cart row. */
   timedSaleEventId?: string | null;
   /** When set, variant selection is controlled by parent (e.g. product page gallery). */
@@ -54,6 +53,7 @@ export function AddToCartButton({
   productUnlimited: _productUnlimited,
   variants,
   canPurchase,
+  unavailableHint = "Out of Stock — check back later.",
   timedSaleEventId,
   selectedVariantId: controlledVariantId,
   onVariantSelect,
@@ -93,7 +93,7 @@ export function AddToCartButton({
 
   if (!canPurchase) {
     return (
-      <p className="mt-6 text-sm font-medium text-coral">{PRODUCT_UNAVAILABLE_HINT}</p>
+      <p className="mt-6 text-sm font-medium text-coral">{unavailableHint}</p>
     );
   }
 
@@ -157,7 +157,7 @@ export function AddToCartButton({
             {selectable.map((v) => (
               <option key={v.id} value={v.id}>
                 {v.label}
-                {!v.unlimitedStock && v.stock <= 0 ? PRODUCT_UNAVAILABLE_OPTION_SUFFIX : ""}
+                {!v.unlimitedStock && v.stock <= 0 ? PRODUCT_OUT_OF_STOCK_OPTION_SUFFIX : ""}
               </option>
             ))}
           </select>

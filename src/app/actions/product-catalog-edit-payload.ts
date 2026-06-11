@@ -64,6 +64,7 @@ export async function getProductCatalogEditPayload(id: string): Promise<ProductC
     active: product.active,
     featured: product.featured,
     onSale: product.onSale,
+    inBreeding: product.inBreeding,
     saleEndsAt: saleIso.slice(0, 16),
     typeIds: product.types.map((t) => t.typeId),
     footerIds: product.footers.map((f) => f.footerId),

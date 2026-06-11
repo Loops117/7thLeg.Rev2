@@ -49,6 +49,7 @@ export type CreateProductInput = {
   active: boolean;
   featured: boolean;
   onSale: boolean;
+  inBreeding: boolean;
   saleEndsAt?: string;
   typeIds: string[];
   /** Extra automatic footers attached to this product (in addition to type defaults). */
@@ -136,6 +137,7 @@ export async function createProduct(input: CreateProductInput): Promise<CreatePr
           active: input.active !== false,
           featured: !!input.featured,
           onSale: !!input.onSale,
+          inBreeding: !!input.inBreeding,
           saleEndsAt,
           variantPriceDisplay: parseVariantPriceDisplay(input.variantPriceDisplay),
         },
@@ -195,6 +197,7 @@ export type UpdateProductInput = {
   active: boolean;
   featured: boolean;
   onSale: boolean;
+  inBreeding: boolean;
   saleEndsAt?: string;
   typeIds: string[];
   footerIds: string[];
@@ -295,6 +298,7 @@ export async function updateProduct(input: UpdateProductInput): Promise<UpdatePr
           active: !!input.active,
           featured: !!input.featured,
           onSale: !!input.onSale,
+          inBreeding: !!input.inBreeding,
           saleEndsAt: input.onSale ? saleEndsAt : null,
           ...(input.variantPriceDisplay !== undefined
             ? { variantPriceDisplay: parseVariantPriceDisplay(input.variantPriceDisplay) }

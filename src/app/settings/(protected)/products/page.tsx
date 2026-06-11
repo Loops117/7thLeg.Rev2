@@ -24,6 +24,7 @@ export default async function SettingsProductsPage({ searchParams }: Props) {
         active: true,
         featured: true,
         onSale: true,
+        inBreeding: true,
         types: { select: { typeId: true } },
         variants: {
           orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
@@ -74,6 +75,7 @@ export default async function SettingsProductsPage({ searchParams }: Props) {
     active: p.active,
     featured: p.featured,
     onSale: p.onSale,
+    inBreeding: p.inBreeding,
     typeIds: p.types.map((t) => t.typeId),
   }));
 

@@ -14,6 +14,7 @@ export type ProductListRow = {
   active: boolean;
   featured: boolean;
   onSale: boolean;
+  inBreeding: boolean;
   typeIds: string[];
 };
 
@@ -51,6 +52,7 @@ export type ProductEditInitial = {
   active: boolean;
   featured: boolean;
   onSale: boolean;
+  inBreeding: boolean;
   saleEndsAt: string;
   typeIds: string[];
   footerIds: string[];

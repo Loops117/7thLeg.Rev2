@@ -6,7 +6,7 @@ import { EventGiveawayEntryForm } from "@/components/event-giveaway-entry-form";
 import { storefrontDisplayImageUrl } from "@/lib/product-images-public";
 import { StoreProductCardPriceRow } from "@/components/store/store-product-card-price-row";
 import { storefrontDefaultVariantLabel } from "@/lib/product-list-price-cents";
-import { PRODUCT_UNAVAILABLE_LABEL, productCardAppearsInStock } from "@/lib/product-stock";
+import { productCardAppearsInStock, productCardUnavailableLabel } from "@/lib/product-stock";
 import { getStorefrontEventListing } from "@/lib/products-storefront";
 import { isEventActive } from "@/lib/event-pricing";
 import type { StorefrontProductCard } from "@/lib/products-storefront";
@@ -111,8 +111,8 @@ export default async function PublicEventPage({ params }: Props) {
                           variantLabel={defaultVariantLabel}
                         />
                       </div>
-                      {!productCardAppearsInStock(p) ? (
-                        <p className="mt-1 text-xs text-coral">{PRODUCT_UNAVAILABLE_LABEL}</p>
+                      {productCardUnavailableLabel(p) ? (
+                        <p className="mt-1 text-xs text-coral">{productCardUnavailableLabel(p)}</p>
                       ) : null}
                     </div>
                   </Link>

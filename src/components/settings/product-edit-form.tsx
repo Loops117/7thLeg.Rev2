@@ -34,6 +34,7 @@ function emptyCreateDefaults(): Omit<ProductEditInitial, "id"> & { id: "" } {
     active: true,
     featured: false,
     onSale: false,
+    inBreeding: false,
     saleEndsAt: "",
     typeIds: [],
     footerIds: [],
@@ -93,6 +94,7 @@ export function ProductEditForm({
   const [active, setActive] = useState(base.active);
   const [featured, setFeatured] = useState(base.featured);
   const [onSale, setOnSale] = useState(base.onSale);
+  const [inBreeding, setInBreeding] = useState(base.inBreeding);
   const [saleEndsAt, setSaleEndsAt] = useState(base.saleEndsAt);
   const [typeIds, setTypeIds] = useState<string[]>(base.typeIds);
   const [footerIds, setFooterIds] = useState<string[]>(base.footerIds);
@@ -114,6 +116,7 @@ export function ProductEditForm({
       setActive(d.active);
       setFeatured(d.featured);
       setOnSale(d.onSale);
+      setInBreeding(d.inBreeding);
       setSaleEndsAt(d.saleEndsAt);
       setTypeIds(d.typeIds);
       setFooterIds(d.footerIds);
@@ -131,6 +134,7 @@ export function ProductEditForm({
     setActive(initial.active);
     setFeatured(initial.featured);
     setOnSale(initial.onSale);
+    setInBreeding(initial.inBreeding);
     setSaleEndsAt(initial.saleEndsAt);
     setTypeIds(initial.typeIds);
     setFooterIds(initial.footerIds);
@@ -191,6 +195,7 @@ export function ProductEditForm({
           active,
           featured,
           onSale,
+          inBreeding,
           saleEndsAt,
           typeIds,
           footerIds,
@@ -226,6 +231,7 @@ export function ProductEditForm({
         active,
         featured,
         onSale,
+        inBreeding,
         saleEndsAt,
         typeIds,
         footerIds,
@@ -336,6 +342,13 @@ export function ProductEditForm({
         <input type="checkbox" checked={onSale} onChange={(e) => setOnSale(e.target.checked)} />
         On sale
       </label>
+      <label className="flex items-center gap-2 text-sm font-bold text-ink">
+        <input type="checkbox" checked={inBreeding} onChange={(e) => setInBreeding(e.target.checked)} />
+        In breeding
+      </label>
+      <p className="-mt-2 text-xs text-ink/60">
+        Breeding items are not for sale. Cards show &ldquo;Breeding in Progress&rdquo; instead of out-of-stock.
+      </p>
       {onSale ? (
         <label className="block text-sm font-bold text-ink">
           Sale ends (optional)

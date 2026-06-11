@@ -7,7 +7,7 @@ import { StoreProductCardPriceRow } from "@/components/store/store-product-card-
 import { ProductDiagonalBrandOverlay } from "@/components/store/product-diagonal-brand-overlay";
 import { ProductVariantBadge, storefrontVariantCount } from "@/components/store/product-variant-badge";
 import { storefrontDisplayImageUrl } from "@/lib/product-images-public";
-import { PRODUCT_UNAVAILABLE_LABEL, productCardAppearsInStock } from "@/lib/product-stock";
+import { productCardAppearsInStock, productCardUnavailableLabel } from "@/lib/product-stock";
 import { parseVariantPriceDisplay } from "@/lib/product-variant-price-display";
 import { productListPriceCents, storefrontDefaultVariantLabel } from "@/lib/product-list-price-cents";
 import type { StorefrontProductCard } from "@/lib/products-storefront";
@@ -48,6 +48,7 @@ export function StoreProductCard({
   const img = storefrontDisplayImageUrl(p.images);
   const qs = eventId?.trim() ? `?event=${encodeURIComponent(eventId.trim())}` : "";
   const inStock = productCardAppearsInStock(p);
+  const unavailableLabel = productCardUnavailableLabel(p);
   const listPriceCents = productListPriceCents(p.basePriceCents, p.variants);
   const priceCents = p.displayPriceCents ?? listPriceCents;
   const cardRef = useRef<HTMLDivElement>(null);
@@ -73,15 +74,15 @@ export function StoreProductCard({
         compact={compact}
         mini={isMini}
       />
-      {!inStock ? (
-        <p
-          className={`store-product-card__stock-warn mt-1 font-medium ${
-            isRecStrip ? "line-clamp-2 text-[10px] leading-tight" : "text-xs"
-          }`}
-        >
-          {PRODUCT_UNAVAILABLE_LABEL}
-        </p>
-      ) : null}
+        {unavailableLabel ? (
+          <p
+            className={`store-product-card__stock-warn mt-1 font-medium ${
+              isRecStrip ? "line-clamp-2 text-[10px] leading-tight" : "text-xs"
+            }`}
+          >
+            {unavailableLabel}
+          </p>
+        ) : null}
     </>
   );
 

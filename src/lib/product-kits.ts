@@ -1,7 +1,7 @@
 import { storefrontDisplayImageUrl } from "@/lib/product-images-public";
 import { MIN_PRODUCT_KIT_ITEMS, orderKitItemsWithHostFirst } from "@/lib/product-kits-shared";
 import { unitCentsForVariantQuantity } from "@/lib/product-price-tiers";
-import { productAppearsInStock, variantIsPurchasable } from "@/lib/product-stock";
+import { productAppearsInStock, productInBreeding, variantIsPurchasable } from "@/lib/product-stock";
 import { getEventPriceOverlayForProduct } from "@/lib/products-storefront";
 import { prisma } from "@/lib/prisma";
 
@@ -19,6 +19,7 @@ export type StorefrontKitLine = {
   unitPriceCents: number;
   imageUrl: string;
   inStock: boolean;
+  inBreeding: boolean;
 };
 
 export type StorefrontProductKit = {
@@ -80,6 +81,7 @@ async function unitPriceForKitItem(
     id: string;
     basePriceCents: number;
     onSale: boolean;
+    inBreeding: boolean;
     unlimitedQuantity: boolean;
     quantity: number;
     variants: {
@@ -95,25 +97,26 @@ async function unitPriceForKitItem(
   },
   variantId: string | null,
   timedSaleEventId: string | null,
-): Promise<{ unitPriceCents: number; variantLabel: string | null; inStock: boolean }> {
+): Promise<{ unitPriceCents: number; variantLabel: string | null; inStock: boolean; inBreeding: boolean }> {
   const variants = product.variants;
   let variantLabel: string | null = null;
-  let inStock = productAppearsInStock(product);
+  const inBreeding = productInBreeding(product);
+  let inStock = !inBreeding && productAppearsInStock(product);
 
   let fallbackUnit = product.basePriceCents;
   if (variants.length === 0) {
     fallbackUnit = product.basePriceCents;
   } else if (variantId) {
     const v = variants.find((x) => x.id === variantId);
-    if (!v) return { unitPriceCents: 0, variantLabel: null, inStock: false };
+    if (!v) return { unitPriceCents: 0, variantLabel: null, inStock: false, inBreeding };
     variantLabel = v.label;
     fallbackUnit = product.basePriceCents + v.priceDeltaCents;
-    inStock = variantIsPurchasable(v);
+    inStock = !inBreeding && variantIsPurchasable(v);
   } else if (variants.length === 1) {
     const v = variants[0]!;
     variantLabel = v.label;
     fallbackUnit = product.basePriceCents + v.priceDeltaCents;
-    inStock = variantIsPurchasable(v);
+    inStock = !inBreeding && variantIsPurchasable(v);
   }
 
   const vrec = variantId ? variants.find((x) => x.id === variantId) ?? null : variants.length === 1 ? variants[0]! : null;
@@ -133,7 +136,7 @@ async function unitPriceForKitItem(
     if (overlay) unit = overlay.displayPriceCents;
   }
 
-  return { unitPriceCents: unit, variantLabel, inStock };
+  return { unitPriceCents: unit, variantLabel, inStock, inBreeding };
 }
 
 export async function getProductKitForStorefront(
@@ -153,6 +156,7 @@ export async function getProductKitForStorefront(
               slug: true,
               basePriceCents: true,
               onSale: true,
+              inBreeding: true,
               active: true,
               quantity: true,
               unlimitedQuantity: true,
@@ -207,6 +211,7 @@ export async function getProductKitForStorefront(
       unitPriceCents: priced.unitPriceCents,
       imageUrl: storefrontDisplayImageUrl(p.images, row.variantId),
       inStock: priced.inStock,
+      inBreeding: priced.inBreeding,
     });
   }
 

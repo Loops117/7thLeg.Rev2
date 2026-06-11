@@ -688,7 +688,8 @@ export function ProductsAdminPanel({
                       <td className="px-3 py-2 text-xs text-ink/70">
                         {p.featured ? "Featured " : ""}
                         {p.onSale ? "Sale " : ""}
-                        {!p.featured && !p.onSale ? "—" : ""}
+                        {p.inBreeding ? "Breeding " : ""}
+                        {!p.featured && !p.onSale && !p.inBreeding ? "—" : ""}
                       </td>
                       <td className="px-2 py-2 text-center">
                         <ProductCatalogActionsMenu

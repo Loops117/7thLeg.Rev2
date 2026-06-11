@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { useEffect, useId, useState, useTransition, type CSSProperties } from "react";
 import { addProductKitToCartAction } from "@/app/actions/store-cart";
 import { btnMainMd } from "@/lib/btn-theme-classes";
-import { PRODUCT_UNAVAILABLE_KIT_SUMMARY, PRODUCT_UNAVAILABLE_LABEL } from "@/lib/product-stock";
+import { kitItemUnavailableLabel, kitUnavailableSummary } from "@/lib/product-stock";
 import { withProductImagePlaceholder } from "@/lib/product-images-public";
 import { formatPriceUsd } from "@/lib/product-slug";
 import { useCoarsePointer } from "@/lib/use-coarse-pointer";
@@ -109,8 +109,8 @@ function KitItemListRow({
         ) : null}
       </div>
       <span className="shrink-0 text-xs font-bold text-ink/80">{formatPriceUsd(item.unitPriceCents)}</span>
-      {!item.inStock ? (
-        <span className="w-full text-xs font-medium text-coral sm:w-auto">{PRODUCT_UNAVAILABLE_LABEL}</span>
+      {kitItemUnavailableLabel(item) ? (
+        <span className="w-full text-xs font-medium text-coral sm:w-auto">{kitItemUnavailableLabel(item)}</span>
       ) : null}
       {preview}
     </li>
@@ -153,8 +153,8 @@ function KitBundleFooter({
         >
           {pending ? "Adding…" : "Add kit to cart"}
         </button>
-        {!allInStock ? (
-          <p className="text-center text-[11px] font-medium text-coral">{PRODUCT_UNAVAILABLE_KIT_SUMMARY}</p>
+        {kitUnavailableSummary(kit.items) ? (
+          <p className="text-center text-[11px] font-medium text-coral">{kitUnavailableSummary(kit.items)}</p>
         ) : null}
         {error ? <p className="text-center text-[11px] font-medium text-coral">{error}</p> : null}
       </div>

@@ -617,6 +617,8 @@ model Product {
   active          Boolean   @default(true)
   featured        Boolean   @default(false)
   onSale          Boolean   @default(false)
+  /// When true, not for sale; storefront shows breeding copy instead of out-of-stock.
+  inBreeding      Boolean   @default(false) @map("in_breeding")
   saleEndsAt      DateTime?
   /// Optional multiplier on points earned for this product (1.0000 = default). Null = 1.
   pointsMultiplier Decimal? @db.Decimal(8, 4)

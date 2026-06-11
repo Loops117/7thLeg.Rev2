@@ -4,7 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { normalizeVariantSku } from "@/lib/variant-sku";
 import { effectiveEventSalePriceCents, isEventActive } from "@/lib/event-pricing";
 import { unitCentsForVariantQuantity } from "@/lib/product-price-tiers";
-import { productAppearsInStock, productUnavailableError, variantIsPurchasable } from "@/lib/product-stock";
+import {
+  productAppearsInStock,
+  productInBreeding,
+  productUnavailableError,
+  variantIsPurchasable,
+} from "@/lib/product-stock";
 import { productInEventLinkedCatalog } from "@/lib/event-catalog-scope";
 import { computeKitDiscountForCartItems } from "@/lib/product-kits";
 import { storefrontDisplayImageUrl } from "@/lib/product-images-public";
@@ -99,6 +104,7 @@ export async function priceCartMerchandiseForOwner(owner: CartOwner): Promise<
               slug: true,
               basePriceCents: true,
               active: true,
+              inBreeding: true,
               quantity: true,
               unlimitedQuantity: true,
               images: {
@@ -179,6 +185,9 @@ export async function priceCartMerchandiseForOwner(owner: CartOwner): Promise<
   for (const line of cart.items) {
     const p = line.product;
     if (!p.active) return { ok: false, error: `${p.name} is no longer available.` };
+    if (productInBreeding(p)) {
+      return { ok: false, error: productUnavailableError(p.name, undefined, true) };
+    }
 
     const variants = p.variants;
     let variantId: string | null = line.variantId;

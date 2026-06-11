@@ -11,7 +11,13 @@ import {
   storefrontImageUrl,
   type ProductGalleryImageRow,
 } from "@/lib/product-images-public";
-import { PRODUCT_UNAVAILABLE_LABEL, variantIsPurchasable } from "@/lib/product-stock";
+import {
+  PRODUCT_BREEDING_HINT,
+  PRODUCT_OUT_OF_STOCK_LABEL,
+  productInBreeding,
+  productUnavailableHint,
+  variantIsPurchasable,
+} from "@/lib/product-stock";
 import {
   unitCentsForVariantQuantity,
   type ProductPriceTier,
@@ -54,6 +60,7 @@ export function ProductVariantShop({
   productUnlimited,
   productQuantity,
   canPurchase,
+  inBreeding = false,
   images,
   variants,
   productDiagonalBrandName = null,
@@ -76,6 +83,7 @@ export function ProductVariantShop({
   productUnlimited: boolean;
   productQuantity: number;
   canPurchase: boolean;
+  inBreeding?: boolean;
   images: ImgRow[];
   variants: VariantRow[];
   productDiagonalBrandName?: string | null;
@@ -171,13 +179,14 @@ export function ProductVariantShop({
     Boolean(selectedVariantId && purchasable.some((v) => v.id === selectedVariantId));
 
   const stockLine = (() => {
+    if (productInBreeding({ inBreeding })) return PRODUCT_BREEDING_HINT;
     if (variants.length === 0) {
-      if (!productUnlimited && productQuantity <= 0) return PRODUCT_UNAVAILABLE_LABEL;
+      if (!productUnlimited && productQuantity <= 0) return PRODUCT_OUT_OF_STOCK_LABEL;
       return productUnlimited ? "Made to order — always available" : `${productQuantity} in stock`;
     }
     if (!selectedVar || !selectedVar.active) return "This option is unavailable.";
     if (selectedVar.unlimitedStock) return "In stock for this option";
-    if (selectedVar.stock <= 0) return PRODUCT_UNAVAILABLE_LABEL;
+    if (selectedVar.stock <= 0) return PRODUCT_OUT_OF_STOCK_LABEL;
     return `${selectedVar.stock} in stock for this option`;
   })();
 
@@ -311,6 +320,7 @@ export function ProductVariantShop({
           productId={productId}
           productUnlimited={productUnlimited}
           canPurchase={canPurchase}
+          unavailableHint={productUnavailableHint({ inBreeding })}
           timedSaleEventId={timedSaleEventId}
           variants={variants.map((v) => ({
             id: v.id,

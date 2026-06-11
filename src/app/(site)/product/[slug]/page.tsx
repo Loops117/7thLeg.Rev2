@@ -153,6 +153,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const showSale = overlay?.displaySale ?? product.onSale;
 
   const canPurchase = productCanPurchase({
+    inBreeding: product.inBreeding,
     quantity: product.quantity,
     unlimitedQuantity: product.unlimitedQuantity,
     variants: product.variants,
@@ -206,6 +207,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
         productUnlimited={!!product.unlimitedQuantity}
         productQuantity={product.quantity}
         canPurchase={canPurchase}
+        inBreeding={product.inBreeding}
         images={product.images.map((im) => ({
           id: im.id,
           url: im.url,
