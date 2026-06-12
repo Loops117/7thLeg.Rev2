@@ -6,7 +6,15 @@ import { loadInBreedingProductPage } from "@/app/actions/in-breeding-products";
 import { loadStoreProductPage } from "@/app/actions/store-products";
 import type { StorefrontProductCard, StorefrontTypeFilterNav } from "@/lib/products-storefront";
 import { StoreProductCard } from "@/components/store/store-product-card";
-import { btnChip, btnChipActive, btnSecondaryMd } from "@/lib/btn-theme-classes";
+import {
+  btnChip,
+  btnChipActive,
+  btnChipBreedingFilter,
+  btnChipBreedingFilterActive,
+  btnChipStockFilter,
+  btnChipStockFilterActive,
+  btnSecondaryMd,
+} from "@/lib/btn-theme-classes";
 
 function setSearchInUrl(pathname: string, nextQ: string, preserve: { type?: string | null; event?: string | null }) {
   if (typeof window === "undefined") return;
@@ -67,7 +75,10 @@ export function StoreAllProductsSection({
   const [hasMore, setHasMore] = useState(() => baseProducts.length < totalCount);
   const [listLoading, setListLoading] = useState(false);
   const [loadMoreLoading, setLoadMoreLoading] = useState(false);
+  const [showOutOfStock, setShowOutOfStock] = useState(true);
+  const [showInBreeding, setShowInBreeding] = useState(true);
   const skipFirstListFetch = useRef(true);
+  const showStoreVisibilityToggles = catalogVariant === "store" && !eventId;
 
   // Reset when the server hands us a new first page (navigation / initial).
   useEffect(() => {
@@ -78,6 +89,12 @@ export function StoreAllProductsSection({
     setDebouncedQ((initialQuery ?? "").trim());
     skipFirstListFetch.current = true;
   }, [baseProducts, totalCount, activeSlug, eventId, initialQuery]);
+
+  useEffect(() => {
+    if (!showStoreVisibilityToggles) return;
+    setShowOutOfStock(true);
+    setShowInBreeding(true);
+  }, [activeSlug, eventId, showStoreVisibilityToggles]);
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedQ(query), 200);
@@ -97,6 +114,9 @@ export function StoreAllProductsSection({
         eventId,
         q: debouncedQ || null,
         take: pageSize,
+        ...(showStoreVisibilityToggles
+          ? { showOutOfStock, showInBreeding }
+          : {}),
       });
       if (r.ok) {
         setRows(r.products);
@@ -106,7 +126,7 @@ export function StoreAllProductsSection({
     } finally {
       setListLoading(false);
     }
-  }, [activeSlug, eventId, debouncedQ, pageSize, loadProducts]);
+  }, [activeSlug, eventId, debouncedQ, pageSize, loadProducts, showStoreVisibilityToggles, showOutOfStock, showInBreeding]);
 
   useEffect(() => {
     if (skipFirstListFetch.current) {
@@ -119,7 +139,7 @@ export function StoreAllProductsSection({
       skipFirstListFetch.current = false;
     }
     void refetchFirstPage();
-  }, [debouncedQ, activeSlug, eventId, refetchFirstPage, initialQuery]);
+  }, [debouncedQ, activeSlug, eventId, refetchFirstPage, initialQuery, showOutOfStock, showInBreeding]);
 
   async function loadMore() {
     if (!hasMore || loadMoreLoading) return;
@@ -131,6 +151,9 @@ export function StoreAllProductsSection({
         eventId,
         q: debouncedQ || null,
         take: pageSize,
+        ...(showStoreVisibilityToggles
+          ? { showOutOfStock, showInBreeding }
+          : {}),
       });
       if (r.ok) {
         const seen = new Set(rows.map((p) => p.id));
@@ -236,6 +259,23 @@ export function StoreAllProductsSection({
         </nav>
       ) : null}
 
+      {showStoreVisibilityToggles ? (
+        <nav className="mt-3 flex flex-wrap gap-2" aria-label="Stock visibility">
+          <VisibilityFilterChip
+            label="Out of stock"
+            pressed={showOutOfStock}
+            onToggle={() => setShowOutOfStock((v) => !v)}
+            tone="stock"
+          />
+          <VisibilityFilterChip
+            label="In breeding"
+            pressed={showInBreeding}
+            onToggle={() => setShowInBreeding((v) => !v)}
+            tone="breeding"
+          />
+        </nav>
+      ) : null}
+
       {listLoading && rows.length === 0 ? (
         <p className="mt-6 text-ink/70">Loading products…</p>
       ) : null}
@@ -337,5 +377,36 @@ function FilterChip({ href, active, label }: { href: string; active: boolean; la
     >
       {label}
     </Link>
+  );
+}
+
+function VisibilityFilterChip({
+  label,
+  pressed,
+  onToggle,
+  tone,
+}: {
+  label: string;
+  pressed: boolean;
+  onToggle: () => void;
+  tone: "stock" | "breeding";
+}) {
+  const className =
+    tone === "stock"
+      ? pressed
+        ? btnChipStockFilterActive
+        : btnChipStockFilter
+      : pressed
+        ? btnChipBreedingFilterActive
+        : btnChipBreedingFilter;
+  return (
+    <button
+      type="button"
+      aria-pressed={pressed}
+      onClick={onToggle}
+      className={className}
+    >
+      {label}
+    </button>
   );
 }

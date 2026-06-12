@@ -23,6 +23,7 @@ import { parseProductPriceTiersJson, priceTiersJsonForDb } from "@/lib/product-p
 import { ProductTypeIndex } from "@/lib/product-type-index";
 import { loadProductTypeIndex } from "@/lib/product-type-tree";
 import { syncProductRecommendations } from "@/lib/product-recommendations";
+import { sanitizeProductSpeciesListInput } from "@/lib/product-species-list";
 import { parseVariantPriceDisplay } from "@/lib/product-variant-price-display";
 import type { Prisma } from "@/generated/prisma/client";
 import { csvWithUtf8Bom, readUploadedCsvText } from "@/lib/csv-text-encoding";
@@ -361,6 +362,19 @@ async function upsertProductFromRow(
     row.variantPriceDisplay.trim() || "difference",
   );
 
+  const speciesFields = sanitizeProductSpeciesListInput({
+    speciesAutoAdd: row.speciesAutoAdd,
+    speciesListSpecies: row.speciesListSpecies,
+    speciesListInsectType: row.speciesListInsectType,
+    speciesListMorphName: row.speciesListMorphName,
+    speciesListCommonName: row.speciesListCommonName,
+    speciesListSource: row.speciesListSource,
+  });
+  if ("error" in speciesFields) {
+    log(logs, row.rowNumber, key, "rejected", speciesFields.error);
+    return "rejected";
+  }
+
   if (!existing) {
     const slug = await uniqueSlug(slugBase);
     const listCents = parsePriceToCents(row.defaultListPrice.trim() || "0");
@@ -382,6 +396,7 @@ async function upsertProductFromRow(
             featured: row.featured,
             onSale: row.onSale,
             inBreeding: row.inBreeding,
+            ...speciesFields,
             saleEndsAt,
             variantPriceDisplay,
           },
@@ -464,6 +479,7 @@ async function upsertProductFromRow(
         featured: row.featured,
         onSale: row.onSale,
         inBreeding: row.inBreeding,
+        ...speciesFields,
         saleEndsAt: row.onSale ? saleEndsAt : null,
         variantPriceDisplay,
       },
@@ -606,6 +622,12 @@ function buildProductsCatalogCsv(
         defaultV?.pickerBorderHex ?? "",
         String(defaultV?.shippingUnits ?? 1),
         p.inBreeding ? "yes" : "no",
+        p.speciesAutoAdd ? "yes" : "no",
+        p.speciesListSpecies,
+        p.speciesListInsectType,
+        p.speciesListMorphName,
+        p.speciesListCommonName,
+        p.speciesListSource,
       ]),
     );
   }

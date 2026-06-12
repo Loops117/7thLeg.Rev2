@@ -7,6 +7,7 @@ import type { ProductEditInitial } from "@/lib/products-admin-types";
 import { loadProductTypeIndex } from "@/lib/product-type-tree";
 import { prisma } from "@/lib/prisma";
 import { parseVariantPriceDisplay } from "@/lib/product-variant-price-display";
+import { sanitizeProductSpeciesListInput } from "@/lib/product-species-list";
 import { parsePriceToCents, slugifyProductName } from "@/lib/product-slug";
 
 async function requireAdmin() {
@@ -50,6 +51,12 @@ export type CreateProductInput = {
   featured: boolean;
   onSale: boolean;
   inBreeding: boolean;
+  speciesAutoAdd?: boolean;
+  speciesListSpecies?: string;
+  speciesListInsectType?: string;
+  speciesListMorphName?: string;
+  speciesListCommonName?: string;
+  speciesListSource?: string;
   saleEndsAt?: string;
   typeIds: string[];
   /** Extra automatic footers attached to this product (in addition to type defaults). */
@@ -74,6 +81,18 @@ export async function createProduct(input: CreateProductInput): Promise<CreatePr
   const basePriceCents = priceRaw === "" ? 0 : parsePriceToCents(input.basePrice);
   if (basePriceCents === null) {
     return { ok: false, error: "Enter a valid price (e.g. 12.99)." };
+  }
+
+  const speciesFields = sanitizeProductSpeciesListInput({
+    speciesAutoAdd: !!input.speciesAutoAdd,
+    speciesListSpecies: input.speciesListSpecies ?? "",
+    speciesListInsectType: input.speciesListInsectType ?? "",
+    speciesListMorphName: input.speciesListMorphName ?? "",
+    speciesListCommonName: input.speciesListCommonName ?? "",
+    speciesListSource: input.speciesListSource ?? "",
+  });
+  if ("error" in speciesFields) {
+    return { ok: false, error: speciesFields.error };
   }
 
   const quantity = input.unlimitedQuantity
@@ -138,6 +157,7 @@ export async function createProduct(input: CreateProductInput): Promise<CreatePr
           featured: !!input.featured,
           onSale: !!input.onSale,
           inBreeding: !!input.inBreeding,
+          ...speciesFields,
           saleEndsAt,
           variantPriceDisplay: parseVariantPriceDisplay(input.variantPriceDisplay),
         },
@@ -198,6 +218,12 @@ export type UpdateProductInput = {
   featured: boolean;
   onSale: boolean;
   inBreeding: boolean;
+  speciesAutoAdd?: boolean;
+  speciesListSpecies?: string;
+  speciesListInsectType?: string;
+  speciesListMorphName?: string;
+  speciesListCommonName?: string;
+  speciesListSource?: string;
   saleEndsAt?: string;
   typeIds: string[];
   footerIds: string[];
@@ -224,6 +250,18 @@ export async function updateProduct(input: UpdateProductInput): Promise<UpdatePr
   const name = input.name.trim();
   if (!name) {
     return { ok: false, error: "Name is required." };
+  }
+
+  const speciesFields = sanitizeProductSpeciesListInput({
+    speciesAutoAdd: !!input.speciesAutoAdd,
+    speciesListSpecies: input.speciesListSpecies ?? "",
+    speciesListInsectType: input.speciesListInsectType ?? "",
+    speciesListMorphName: input.speciesListMorphName ?? "",
+    speciesListCommonName: input.speciesListCommonName ?? "",
+    speciesListSource: input.speciesListSource ?? "",
+  });
+  if ("error" in speciesFields) {
+    return { ok: false, error: speciesFields.error };
   }
 
   let basePriceCents: number | null = null;
@@ -299,6 +337,7 @@ export async function updateProduct(input: UpdateProductInput): Promise<UpdatePr
           featured: !!input.featured,
           onSale: !!input.onSale,
           inBreeding: !!input.inBreeding,
+          ...speciesFields,
           saleEndsAt: input.onSale ? saleEndsAt : null,
           ...(input.variantPriceDisplay !== undefined
             ? { variantPriceDisplay: parseVariantPriceDisplay(input.variantPriceDisplay) }

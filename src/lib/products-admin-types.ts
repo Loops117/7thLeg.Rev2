@@ -53,6 +53,12 @@ export type ProductEditInitial = {
   featured: boolean;
   onSale: boolean;
   inBreeding: boolean;
+  speciesAutoAdd: boolean;
+  speciesListSpecies: string;
+  speciesListInsectType: string;
+  speciesListMorphName: string;
+  speciesListCommonName: string;
+  speciesListSource: string;
   saleEndsAt: string;
   typeIds: string[];
   footerIds: string[];

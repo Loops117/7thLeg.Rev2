@@ -124,6 +124,12 @@ export const PRODUCT_CATALOG_CSV_HEADERS = [
   "default_picker_border_hex",
   "default_shipping_units",
   "in_breeding",
+  "species_auto_add",
+  "species_list_species",
+  "species_list_insect_type",
+  "species_list_morph_name",
+  "species_list_common_name",
+  "species_list_source",
 ] as const;
 
 export const EXTRA_VARIANTS_CSV_HEADERS = [
@@ -180,6 +186,12 @@ export type ParsedProductCatalogRow = {
   defaultPickerBorderHex: string;
   defaultShippingUnits: string;
   inBreeding: boolean;
+  speciesAutoAdd: boolean;
+  speciesListSpecies: string;
+  speciesListInsectType: string;
+  speciesListMorphName: string;
+  speciesListCommonName: string;
+  speciesListSource: string;
 };
 
 export type ParsedExtraVariantRow = {
@@ -275,6 +287,12 @@ export function parseProductsCatalogCsv(text: string): CsvParseResult<ParsedProd
       defaultPickerBorderHex: cell(line, headerKeys, "default_picker_border_hex"),
       defaultShippingUnits: cell(line, headerKeys, "default_shipping_units"),
       inBreeding: parseYesNo(cell(line, headerKeys, "in_breeding"), false),
+      speciesAutoAdd: parseYesNo(cell(line, headerKeys, "species_auto_add"), false),
+      speciesListSpecies: cell(line, headerKeys, "species_list_species"),
+      speciesListInsectType: cell(line, headerKeys, "species_list_insect_type"),
+      speciesListMorphName: cell(line, headerKeys, "species_list_morph_name"),
+      speciesListCommonName: cell(line, headerKeys, "species_list_common_name"),
+      speciesListSource: cell(line, headerKeys, "species_list_source"),
     });
   }
 

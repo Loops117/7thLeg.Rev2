@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { saveGuestCheckoutContactAction } from "@/app/actions/guest-checkout";
+import { btnMainMd } from "@/lib/btn-theme-classes";
 import type { GuestCheckoutContact } from "@/lib/guest-checkout-contact";
 
 type Props = {
@@ -15,8 +16,14 @@ type Props = {
   contactSaved?: boolean;
 };
 
-const inputClass =
-  "mt-1 w-full border-2 border-palm-mid bg-white px-3 py-2 text-base text-ink outline-none focus:border-lagoon focus:ring-2 focus:ring-lagoon/30";
+const fieldClass = "cart-field mt-1 text-base";
+
+function formatSavedAddress(contact: GuestCheckoutContact): string {
+  const line2 = contact.addressLine2 ? `, ${contact.addressLine2}` : "";
+  const country =
+    contact.country && contact.country !== "US" ? `, ${contact.country}` : "";
+  return `${contact.addressLine1}${line2}, ${contact.city}, ${contact.stateRegion} ${contact.postalCode}${country}`;
+}
 
 export function GuestCheckoutContactPanel({
   initialContact,
@@ -28,6 +35,7 @@ export function GuestCheckoutContactPanel({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(contactSaved);
+  const [editing, setEditing] = useState(!contactSaved);
   const [contact, setContact] = useState<GuestCheckoutContact | null>(
     contactSaved ? initialContact : null,
   );
@@ -41,15 +49,18 @@ export function GuestCheckoutContactPanel({
       if (!res.ok) {
         setError(res.error);
         setSaved(false);
+        setEditing(true);
         return;
       }
       setContact(res.contact);
       setSaved(true);
+      setEditing(false);
       router.refresh();
     });
   }
 
   const emailValue = accountEmail?.trim() || contact?.email || initialContact?.email || "";
+  const displayContact = contact ?? initialContact;
 
   return (
     <div className="cart-panel">
@@ -68,123 +79,149 @@ export function GuestCheckoutContactPanel({
           <> Changes here apply to this order only — update your profile under Account if you want them saved permanently.</>
         )}
       </p>
-      {saved && contact ? (
-        <p className="mt-3 rounded border border-lagoon/35 bg-lagoon/10 px-3 py-3 text-sm text-ink/90">
-          <span className="font-bold text-lagoon-dark">Saved for checkout</span> — shipping to{" "}
-          <strong>{contact.displayName}</strong>
-          {guestMode ? <> ({contact.email})</> : null}
-          <br />
-          {contact.addressLine1}
-          {contact.addressLine2 ? `, ${contact.addressLine2}` : ""}, {contact.city}, {contact.stateRegion}{" "}
-          {contact.postalCode}
-          {contact.country && contact.country !== "US" ? `, ${contact.country}` : ""}
-        </p>
-      ) : null}
       {error ? <p className="mt-2 text-sm font-medium text-coral">{error}</p> : null}
-      <form onSubmit={onSubmit} className="mt-4 grid gap-3 sm:grid-cols-2">
-        {guestMode ? (
-          <label className="block text-sm font-bold text-ink sm:col-span-2">
-            Email
-            <input
-              type="email"
-              name="email"
-              required
-              autoComplete="email"
-              defaultValue={emailValue}
-              className={inputClass}
-            />
-          </label>
-        ) : (
-          <div className="sm:col-span-2">
-            <p className="text-sm font-bold text-ink">Email</p>
-            <p className="mt-1 font-mono text-sm text-ink/85">{emailValue}</p>
-          </div>
-        )}
-        <label className="block text-sm font-bold text-ink sm:col-span-2">
-          Full name
-          <input
-            type="text"
-            name="displayName"
-            required
-            autoComplete="name"
-            defaultValue={contact?.displayName ?? initialContact?.displayName ?? ""}
-            className={inputClass}
-          />
-        </label>
-        <label className="block text-sm font-bold text-ink sm:col-span-2">
-          Address line 1
-          <input
-            type="text"
-            name="addressLine1"
-            required
-            autoComplete="address-line1"
-            defaultValue={contact?.addressLine1 ?? initialContact?.addressLine1 ?? ""}
-            className={inputClass}
-          />
-        </label>
-        <label className="block text-sm font-bold text-ink sm:col-span-2">
-          Address line 2 <span className="font-normal text-ink/55">(optional)</span>
-          <input
-            type="text"
-            name="addressLine2"
-            autoComplete="address-line2"
-            defaultValue={contact?.addressLine2 ?? initialContact?.addressLine2 ?? ""}
-            className={inputClass}
-          />
-        </label>
-        <label className="block text-sm font-bold text-ink">
-          City
-          <input
-            type="text"
-            name="city"
-            required
-            autoComplete="address-level2"
-            defaultValue={contact?.city ?? initialContact?.city ?? ""}
-            className={inputClass}
-          />
-        </label>
-        <label className="block text-sm font-bold text-ink">
-          State / region
-          <input
-            type="text"
-            name="stateRegion"
-            required
-            autoComplete="address-level1"
-            defaultValue={contact?.stateRegion ?? initialContact?.stateRegion ?? ""}
-            className={inputClass}
-          />
-        </label>
-        <label className="block text-sm font-bold text-ink">
-          Postal code
-          <input
-            type="text"
-            name="postalCode"
-            required
-            autoComplete="postal-code"
-            defaultValue={contact?.postalCode ?? initialContact?.postalCode ?? ""}
-            className={inputClass}
-          />
-        </label>
-        <label className="block text-sm font-bold text-ink">
-          Country
-          <input
-            type="text"
-            name="country"
-            autoComplete="country-name"
-            defaultValue={contact?.country ?? initialContact?.country ?? "US"}
-            className={inputClass}
-          />
-        </label>
-        <div className="sm:col-span-2">
+      {saved && displayContact && !editing ? (
+        <div className="cart-panel__inset mt-3">
+          <p className="text-sm font-bold text-lagoon-dark">Saved for checkout</p>
+          <p className="cart-panel__text mt-2">
+            <strong className="text-[var(--product-card-title)]">{displayContact.displayName}</strong>
+            {guestMode ? <> · {displayContact.email}</> : null}
+            <br />
+            {formatSavedAddress(displayContact)}
+          </p>
+          {!guestMode && emailValue ? (
+            <p className="cart-panel__muted mt-2">
+              Email: <span className="font-mono">{emailValue}</span>
+            </p>
+          ) : null}
           <button
-            type="submit"
+            type="button"
             disabled={pending}
-            className="border-2 border-palm bg-palm px-4 py-2 text-sm font-bold text-white hover:bg-palm-mid disabled:opacity-50"
+            onClick={() => setEditing(true)}
+            className={`${btnMainMd} mt-3`}
           >
-            {pending ? "Saving…" : saved ? "Update shipping address" : "Save shipping address"}
+            Edit address
           </button>
         </div>
-      </form>
+      ) : (
+        <form onSubmit={onSubmit} className="mt-4 grid gap-3 sm:grid-cols-2">
+          {guestMode ? (
+            <label className="cart-panel__label block text-sm font-bold sm:col-span-2">
+              Email
+              <input
+                type="email"
+                name="email"
+                required
+                autoComplete="email"
+                defaultValue={emailValue}
+                className={fieldClass}
+              />
+            </label>
+          ) : (
+            <div className="sm:col-span-2">
+              <p className="cart-panel__label text-sm font-bold">Email</p>
+              <p className="cart-panel__text mt-1 font-mono text-sm">{emailValue}</p>
+            </div>
+          )}
+          <label className="cart-panel__label block text-sm font-bold sm:col-span-2">
+            Full name
+            <input
+              type="text"
+              name="displayName"
+              required
+              autoComplete="name"
+              defaultValue={displayContact?.displayName ?? ""}
+              className={fieldClass}
+            />
+          </label>
+          <label className="cart-panel__label block text-sm font-bold sm:col-span-2">
+            Address line 1
+            <input
+              type="text"
+              name="addressLine1"
+              required
+              autoComplete="address-line1"
+              defaultValue={displayContact?.addressLine1 ?? ""}
+              className={fieldClass}
+            />
+          </label>
+          <label className="cart-panel__label block text-sm font-bold sm:col-span-2">
+            Address line 2 <span className="font-normal cart-panel__muted">(optional)</span>
+            <input
+              type="text"
+              name="addressLine2"
+              autoComplete="address-line2"
+              defaultValue={displayContact?.addressLine2 ?? ""}
+              className={fieldClass}
+            />
+          </label>
+          <label className="cart-panel__label block text-sm font-bold">
+            City
+            <input
+              type="text"
+              name="city"
+              required
+              autoComplete="address-level2"
+              defaultValue={displayContact?.city ?? ""}
+              className={fieldClass}
+            />
+          </label>
+          <label className="cart-panel__label block text-sm font-bold">
+            State / region
+            <input
+              type="text"
+              name="stateRegion"
+              required
+              autoComplete="address-level1"
+              defaultValue={displayContact?.stateRegion ?? ""}
+              className={fieldClass}
+            />
+          </label>
+          <label className="cart-panel__label block text-sm font-bold">
+            Postal code
+            <input
+              type="text"
+              name="postalCode"
+              required
+              autoComplete="postal-code"
+              defaultValue={displayContact?.postalCode ?? ""}
+              className={fieldClass}
+            />
+          </label>
+          <label className="cart-panel__label block text-sm font-bold">
+            Country
+            <input
+              type="text"
+              name="country"
+              autoComplete="country-name"
+              defaultValue={displayContact?.country ?? "US"}
+              className={fieldClass}
+            />
+          </label>
+          <div className="flex flex-wrap gap-2 sm:col-span-2">
+            <button
+              type="submit"
+              disabled={pending}
+              className={btnMainMd}
+            >
+              {pending ? "Saving…" : saved ? "Update shipping address" : "Save shipping address"}
+            </button>
+            {saved && displayContact ? (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => {
+                  setEditing(false);
+                  setError("");
+                }}
+                className="border-2 border-[color-mix(in_srgb,var(--product-card-border)_55%,transparent)] bg-transparent px-4 py-2 text-sm font-bold text-[var(--product-card-title)] hover:bg-[color-mix(in_srgb,var(--product-card-title)_8%,var(--product-card-bg)_92%)] disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            ) : null}
+          </div>
+        </form>
+      )}
     </div>
   );
 }

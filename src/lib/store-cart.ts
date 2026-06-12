@@ -130,6 +130,10 @@ export type CartLineView = {
   variantLabel: string | null;
   /** When line was added as part of a kit bundle. */
   kitBundleLabel: string | null;
+  /** Product configured for species-list auto-add on purchase. */
+  speciesListEligible: boolean;
+  /** Customer checkout preference (signed-in customers only). */
+  addToSpeciesList: boolean;
 };
 
 /** Cart totals + priced lines shared with checkout (timed sale persists on cart items; coupon stored on cart). */
@@ -174,6 +178,8 @@ export async function getCartPricingForCartPage(owner: CartOwner): Promise<
         baseUnitPriceCents: r.baseUnitPriceCents,
         variantLabel: r.variantLabelSnap,
         kitBundleLabel,
+        speciesListEligible: r.speciesListEligible,
+        addToSpeciesList: r.addToSpeciesList,
       };
     }),
     merchandiseSubtotalCents: priced.merchandiseSubtotalCents,

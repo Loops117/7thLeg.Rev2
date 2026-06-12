@@ -2,6 +2,7 @@
 
 import { adminFieldsetClass } from "@/lib/admin-surface-classes";
 import { btnSecondaryMd } from "@/lib/btn-theme-classes";
+import { DEFAULT_SPECIES_LIST_SOURCE } from "@/lib/product-species-list";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -35,6 +36,12 @@ function emptyCreateDefaults(): Omit<ProductEditInitial, "id"> & { id: "" } {
     featured: false,
     onSale: false,
     inBreeding: false,
+    speciesAutoAdd: false,
+    speciesListSpecies: "",
+    speciesListInsectType: "",
+    speciesListMorphName: "",
+    speciesListCommonName: "",
+    speciesListSource: DEFAULT_SPECIES_LIST_SOURCE,
     saleEndsAt: "",
     typeIds: [],
     footerIds: [],
@@ -95,6 +102,12 @@ export function ProductEditForm({
   const [featured, setFeatured] = useState(base.featured);
   const [onSale, setOnSale] = useState(base.onSale);
   const [inBreeding, setInBreeding] = useState(base.inBreeding);
+  const [speciesAutoAdd, setSpeciesAutoAdd] = useState(base.speciesAutoAdd);
+  const [speciesListSpecies, setSpeciesListSpecies] = useState(base.speciesListSpecies);
+  const [speciesListInsectType, setSpeciesListInsectType] = useState(base.speciesListInsectType);
+  const [speciesListMorphName, setSpeciesListMorphName] = useState(base.speciesListMorphName);
+  const [speciesListCommonName, setSpeciesListCommonName] = useState(base.speciesListCommonName);
+  const [speciesListSource, setSpeciesListSource] = useState(base.speciesListSource);
   const [saleEndsAt, setSaleEndsAt] = useState(base.saleEndsAt);
   const [typeIds, setTypeIds] = useState<string[]>(base.typeIds);
   const [footerIds, setFooterIds] = useState<string[]>(base.footerIds);
@@ -117,6 +130,12 @@ export function ProductEditForm({
       setFeatured(d.featured);
       setOnSale(d.onSale);
       setInBreeding(d.inBreeding);
+      setSpeciesAutoAdd(d.speciesAutoAdd);
+      setSpeciesListSpecies(d.speciesListSpecies);
+      setSpeciesListInsectType(d.speciesListInsectType);
+      setSpeciesListMorphName(d.speciesListMorphName);
+      setSpeciesListCommonName(d.speciesListCommonName);
+      setSpeciesListSource(d.speciesListSource);
       setSaleEndsAt(d.saleEndsAt);
       setTypeIds(d.typeIds);
       setFooterIds(d.footerIds);
@@ -135,6 +154,12 @@ export function ProductEditForm({
     setFeatured(initial.featured);
     setOnSale(initial.onSale);
     setInBreeding(initial.inBreeding);
+    setSpeciesAutoAdd(initial.speciesAutoAdd);
+    setSpeciesListSpecies(initial.speciesListSpecies);
+    setSpeciesListInsectType(initial.speciesListInsectType);
+    setSpeciesListMorphName(initial.speciesListMorphName);
+    setSpeciesListCommonName(initial.speciesListCommonName);
+    setSpeciesListSource(initial.speciesListSource);
     setSaleEndsAt(initial.saleEndsAt);
     setTypeIds(initial.typeIds);
     setFooterIds(initial.footerIds);
@@ -196,6 +221,12 @@ export function ProductEditForm({
           featured,
           onSale,
           inBreeding,
+          speciesAutoAdd,
+          speciesListSpecies,
+          speciesListInsectType,
+          speciesListMorphName,
+          speciesListCommonName,
+          speciesListSource,
           saleEndsAt,
           typeIds,
           footerIds,
@@ -232,6 +263,12 @@ export function ProductEditForm({
         featured,
         onSale,
         inBreeding,
+        speciesAutoAdd,
+        speciesListSpecies,
+        speciesListInsectType,
+        speciesListMorphName,
+        speciesListCommonName,
+        speciesListSource,
         saleEndsAt,
         typeIds,
         footerIds,
@@ -349,6 +386,70 @@ export function ProductEditForm({
       <p className="-mt-2 text-xs text-ink/60">
         Breeding items are not for sale. Cards show &ldquo;Breeding in Progress&rdquo; instead of out-of-stock.
       </p>
+      <fieldset className={adminFieldsetClass}>
+        <legend className="text-sm font-bold text-ink">Species list (on purchase)</legend>
+        <p className="mb-3 text-xs text-ink/60">
+          When enabled, signed-in customers can add this product to their species list at checkout (default on). One
+          product maps to one species + morph; quantity tiers share the same mapping.
+        </p>
+        <label className="flex items-start gap-2 text-sm font-bold text-ink">
+          <input
+            type="checkbox"
+            checked={speciesAutoAdd}
+            onChange={(e) => setSpeciesAutoAdd(e.target.checked)}
+            className="mt-1"
+          />
+          <span>Auto-add on purchase</span>
+        </label>
+        {speciesAutoAdd ? (
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm font-bold text-ink sm:col-span-2">
+              Species <span className="text-coral">*</span>
+              <input
+                value={speciesListSpecies}
+                onChange={(e) => setSpeciesListSpecies(e.target.value)}
+                className="mt-1 w-full border-2 border-palm-mid px-2 py-2 text-sm"
+                placeholder="e.g. Armadillidium maculatum"
+              />
+            </label>
+            <label className="block text-sm font-bold text-ink">
+              Insect type
+              <input
+                value={speciesListInsectType}
+                onChange={(e) => setSpeciesListInsectType(e.target.value)}
+                className="mt-1 w-full border-2 border-palm-mid px-2 py-2 text-sm"
+                placeholder="e.g. Isopod"
+              />
+            </label>
+            <label className="block text-sm font-bold text-ink">
+              Morph name
+              <input
+                value={speciesListMorphName}
+                onChange={(e) => setSpeciesListMorphName(e.target.value)}
+                className="mt-1 w-full border-2 border-palm-mid px-2 py-2 text-sm"
+                placeholder="e.g. Zebra"
+              />
+            </label>
+            <label className="block text-sm font-bold text-ink sm:col-span-2">
+              Common name
+              <input
+                value={speciesListCommonName}
+                onChange={(e) => setSpeciesListCommonName(e.target.value)}
+                className="mt-1 w-full border-2 border-palm-mid px-2 py-2 text-sm"
+                placeholder="e.g. Zebra Isopod"
+              />
+            </label>
+            <label className="block text-sm font-bold text-ink sm:col-span-2">
+              Source
+              <input
+                value={speciesListSource}
+                onChange={(e) => setSpeciesListSource(e.target.value)}
+                className="mt-1 w-full border-2 border-palm-mid px-2 py-2 text-sm"
+              />
+            </label>
+          </div>
+        ) : null}
+      </fieldset>
       {onSale ? (
         <label className="block text-sm font-bold text-ink">
           Sale ends (optional)

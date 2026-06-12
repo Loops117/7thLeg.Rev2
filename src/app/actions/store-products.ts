@@ -25,6 +25,8 @@ type Args = {
   eventId: string | null;
   q: string | null;
   take?: number;
+  showOutOfStock?: boolean;
+  showInBreeding?: boolean;
 };
 
 export async function loadStoreProductPage(
@@ -50,9 +52,13 @@ export async function loadStoreProductPage(
       return { ok: true, products, total, hasMore, pageSize: take };
     }
 
+    const visibility = {
+      showOutOfStock: args.showOutOfStock !== false,
+      showInBreeding: args.showInBreeding !== false,
+    };
     const [total, products] = await Promise.all([
-      countStorefrontProducts(typeSlug, q),
-      getStorefrontProductsPage(skip, take, typeSlug, q),
+      countStorefrontProducts(typeSlug, q, visibility),
+      getStorefrontProductsPage(skip, take, typeSlug, q, visibility),
     ]);
     const hasMore = skip + products.length < total;
     return { ok: true, products, total, hasMore, pageSize: take };

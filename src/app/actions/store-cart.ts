@@ -294,6 +294,40 @@ export async function removeCartLineAction(lineId: string): Promise<CartActionRe
   return { ok: true };
 }
 
+export async function setCartItemAddToSpeciesListAction(
+  lineId: string,
+  addToSpeciesList: boolean,
+): Promise<CartActionResult> {
+  const ownerResult = await requireCartOwner();
+  if (!ownerResult.ok) return { ok: false, error: ownerResult.error };
+  if (isGuestOwner(ownerResult.owner)) {
+    return { ok: false, error: "Sign in to manage your species list at checkout." };
+  }
+
+  const line = await prisma.cartItem.findFirst({
+    where: { id: lineId, cart: cartOwnerWhere(ownerResult.owner) },
+    include: {
+      product: {
+        select: { speciesAutoAdd: true, speciesListSpecies: true },
+      },
+    },
+  });
+  if (!line) return { ok: false, error: "Line not found." };
+
+  const { isProductSpeciesListEligible } = await import("@/lib/product-species-list");
+  if (!isProductSpeciesListEligible(line.product)) {
+    return { ok: false, error: "This item is not eligible for the species list." };
+  }
+
+  await prisma.cartItem.update({
+    where: { id: lineId },
+    data: { addToSpeciesList: !!addToSpeciesList },
+  });
+
+  revalidatePath("/cart");
+  return { ok: true };
+}
+
 export async function setCartShippingOptionAction(shippingOptionId: string): Promise<CartActionResult> {
   const ownerResult = await requireCartOwner();
   if (!ownerResult.ok) return { ok: false, error: ownerResult.error };

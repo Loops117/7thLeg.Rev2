@@ -3,6 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { effectiveEventSalePriceCents, eventDisplayPriceForBase, isEventActive } from "@/lib/event-pricing";
 import { productListPriceCents } from "@/lib/product-list-price-cents";
 import { productTypeOrderBy } from "@/lib/product-type-order";
+import {
+  compareStorefrontCatalogProducts,
+  matchesStoreCatalogVisibility,
+  resolveStoreCatalogVisibility,
+  type StoreCatalogVisibility,
+} from "@/lib/store-catalog-sort";
 import { expandEventTypeIds, typeIdsForStoreFilter } from "@/lib/product-type-tree";
 export {
   getStorefrontTypeFilterNav,
@@ -43,6 +49,20 @@ export const storefrontProductSelect = {
   },
 } satisfies Prisma.ProductSelect;
 
+type StorefrontProductRow = Prisma.ProductGetPayload<{ select: typeof storefrontProductSelect }>;
+
+const storefrontSortSelect = {
+  id: true,
+  name: true,
+  featured: true,
+  inBreeding: true,
+  quantity: true,
+  unlimitedQuantity: true,
+  variants: {
+    select: { active: true, unlimitedStock: true, stock: true },
+  },
+} satisfies Prisma.ProductSelect;
+
 async function buildStorefrontListWhere(
   typeSlug: string | null | undefined,
   search: string | null | undefined,
@@ -76,11 +96,46 @@ async function buildStorefrontListWhere(
   };
 }
 
+async function listStorefrontCatalogPage(
+  where: Prisma.ProductWhereInput,
+  skip: number,
+  take: number,
+  visibility?: StoreCatalogVisibility,
+) {
+  const vis = resolveStoreCatalogVisibility(visibility);
+  const sortRows = await prisma.product.findMany({
+    where,
+    select: storefrontSortSelect,
+  });
+  const sorted = sortRows
+    .filter((p) => matchesStoreCatalogVisibility(p, vis))
+    .sort(compareStorefrontCatalogProducts);
+  const total = sorted.length;
+  const pageIds = sorted.slice(Math.max(0, Math.floor(skip)), Math.max(0, Math.floor(skip)) + take).map((p) => p.id);
+  if (pageIds.length === 0) {
+    return { products: [] as StorefrontProductRow[], total };
+  }
+  const full = await prisma.product.findMany({
+    where: { id: { in: pageIds } },
+    select: storefrontProductSelect,
+  });
+  const byId = new Map(full.map((p) => [p.id, p]));
+  const products = pageIds.map((id) => byId.get(id)).filter((p): p is NonNullable<typeof p> => !!p);
+  return { products, total };
+}
+
 export async function countStorefrontProducts(
   typeSlug: string | null | undefined,
   search: string | null | undefined,
+  visibility?: StoreCatalogVisibility,
 ) {
-  return prisma.product.count({ where: await buildStorefrontListWhere(typeSlug, search) });
+  const where = await buildStorefrontListWhere(typeSlug, search);
+  const vis = resolveStoreCatalogVisibility(visibility);
+  const sortRows = await prisma.product.findMany({
+    where,
+    select: storefrontSortSelect,
+  });
+  return sortRows.filter((p) => matchesStoreCatalogVisibility(p, vis)).length;
 }
 
 export async function getStorefrontProductsPage(
@@ -88,15 +143,12 @@ export async function getStorefrontProductsPage(
   take: number,
   typeSlug: string | null | undefined,
   search: string | null | undefined,
+  visibility?: StoreCatalogVisibility,
 ) {
   const t = Math.min(100, Math.max(1, Math.floor(take)));
-  return prisma.product.findMany({
-    where: await buildStorefrontListWhere(typeSlug, search),
-    orderBy: [{ featured: "desc" }, { name: "asc" }],
-    skip: Math.max(0, Math.floor(skip)),
-    take: t,
-    select: storefrontProductSelect,
-  });
+  const where = await buildStorefrontListWhere(typeSlug, search);
+  const { products } = await listStorefrontCatalogPage(where, Math.max(0, Math.floor(skip)), t, visibility);
+  return products;
 }
 
 /** Featured products only (store strip), bounded — avoids loading the full catalog. */
@@ -173,7 +225,7 @@ export async function getStorefrontProducts(typeSlug?: string | null, search?: s
   });
 }
 
-type StorefrontProductBase = Awaited<ReturnType<typeof getStorefrontProducts>>[number];
+type StorefrontProductBase = StorefrontProductRow;
 
 /** Card row; optional display fields are set when an event applies timed-sale pricing. */
 export type StorefrontProductCard = StorefrontProductBase & {

@@ -16,6 +16,12 @@ export const btnSecondaryMd = `${base} btn-secondary px-3 py-1.5 text-xs sm:px-4
 export const btnChip = `${base} btn-secondary btn-chip rounded-full px-3 py-1.5 text-sm`;
 export const btnChipActive = `${base} btn-secondary btn-chip btn-chip--active rounded-full px-3 py-1.5 text-sm`;
 
+/** Store catalog visibility toggles — same chip shape, accent border/fill. */
+export const btnChipStockFilter = `${btnChip} btn-chip--stock-filter`;
+export const btnChipStockFilterActive = `${btnChipActive} btn-chip--stock-filter`;
+export const btnChipBreedingFilter = `${btnChip} btn-chip--breeding-filter`;
+export const btnChipBreedingFilterActive = `${btnChipActive} btn-chip--breeding-filter`;
+
 export const btnImportant = `${base} btn-important`;
 export const btnImportantSm = `${base} btn-important px-2 py-1 text-[11px] sm:px-2.5 sm:text-xs`;
 export const btnImportantMd = `${base} btn-important px-4 py-2 text-xs sm:text-sm`;

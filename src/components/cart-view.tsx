@@ -10,6 +10,7 @@ import { removeCartLabelLineAction } from "@/app/actions/label-cart";
 import {
   removeCartLineAction,
   setCartAppliedLoyaltyPointsAction,
+  setCartItemAddToSpeciesListAction,
   setCartItemQuantityAction,
   setCartShippingOptionAction,
 } from "@/app/actions/store-cart";
@@ -180,6 +181,15 @@ export function CartView({
     });
   }
 
+  function toggleSpeciesList(lineId: string, addToSpeciesList: boolean) {
+    setError("");
+    startTransition(async () => {
+      const res = await setCartItemAddToSpeciesListAction(lineId, addToSpeciesList);
+      if (!res.ok) setError(res.error);
+      else router.refresh();
+    });
+  }
+
   function remove(lineId: string) {
     setError("");
     startTransition(async () => {
@@ -242,8 +252,26 @@ export function CartView({
                 </p>
               ) : null}
               <p className="mt-1 text-sm text-ink">{formatPriceUsd(line.unitPriceCents)} each</p>
+              {!guestMode && line.speciesListEligible ? (
+                <label className="mt-3 flex items-start gap-2 text-sm cart-panel__text">
+                  <input
+                    type="checkbox"
+                    checked={line.addToSpeciesList}
+                    disabled={pending}
+                    onChange={(e) => toggleSpeciesList(line.id, e.target.checked)}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    Add to my{" "}
+                    <Link href="/account/species" className="font-bold text-lagoon-dark underline">
+                      species list
+                    </Link>{" "}
+                    when I purchase
+                  </span>
+                </label>
+              ) : null}
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <label className="text-sm text-ink/80">
+                <label className="text-sm cart-panel__text">
                   Qty
                   <input
                     key={`${line.id}-${line.quantity}`}
@@ -252,7 +280,7 @@ export function CartView({
                     max={99}
                     defaultValue={line.quantity}
                     disabled={pending}
-                    className="ml-2 w-16 border-2 border-palm-mid px-2 py-1 text-center"
+                    className="cart-field ml-2 w-16 px-2 py-1 text-center"
                     onBlur={(e) => {
                       const v = parseInt(e.target.value, 10);
                       if (!Number.isNaN(v)) updateQty(line.id, v);

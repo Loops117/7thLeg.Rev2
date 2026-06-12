@@ -13,6 +13,7 @@ import {
 import { productInEventLinkedCatalog } from "@/lib/event-catalog-scope";
 import { computeKitDiscountForCartItems } from "@/lib/product-kits";
 import { storefrontDisplayImageUrl } from "@/lib/product-images-public";
+import { isProductSpeciesListEligible } from "@/lib/product-species-list";
 import { loadProductTypeIndex } from "@/lib/product-type-tree";
 
 export const CART_PRICING_SCOPE_NONE = "__none__" as const;
@@ -50,6 +51,7 @@ export type PricedCheckoutLineSnapshot = {
   quantity: number;
   unitPriceCents: number;
   lineTotalCents: number;
+  addToSpeciesList: boolean;
 };
 
 export type PricedCartForCustomerRow = PricedCheckoutLineSnapshot & {
@@ -58,6 +60,7 @@ export type PricedCartForCustomerRow = PricedCheckoutLineSnapshot & {
   imageUrl: string | null;
   baseUnitPriceCents: number;
   productKitInstanceId: string | null;
+  speciesListEligible: boolean;
 };
 
 export async function priceCartMerchandiseForOwner(owner: CartOwner): Promise<
@@ -94,6 +97,7 @@ export async function priceCartMerchandiseForOwner(owner: CartOwner): Promise<
           productId: true,
           variantId: true,
           quantity: true,
+          addToSpeciesList: true,
           timedSaleEventId: true,
           productKitInstanceId: true,
           productKitId: true,
@@ -105,6 +109,8 @@ export async function priceCartMerchandiseForOwner(owner: CartOwner): Promise<
               basePriceCents: true,
               active: true,
               inBreeding: true,
+              speciesAutoAdd: true,
+              speciesListSpecies: true,
               quantity: true,
               unlimitedQuantity: true,
               images: {
@@ -301,6 +307,8 @@ export async function priceCartMerchandiseForOwner(owner: CartOwner): Promise<
       lineTotalCents: unitFinal * qty,
       baseUnitPriceCents,
       productKitInstanceId: line.productKitInstanceId,
+      addToSpeciesList: line.addToSpeciesList,
+      speciesListEligible: isProductSpeciesListEligible(p),
     });
   }
 

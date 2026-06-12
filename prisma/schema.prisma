@@ -445,6 +445,8 @@ model CustomerSpeciesEntry {
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
+  orderLineItemSpeciesGrants OrderLineItemSpeciesGrant[]
+
   @@index([customerId, species])
   @@map("customer_species_entries")
 }
@@ -632,6 +634,13 @@ model Product {
   onSale          Boolean   @default(false)
   /// When true, not for sale; storefront shows breeding copy instead of out-of-stock.
   inBreeding      Boolean   @default(false) @map("in_breeding")
+  /// When true and species_list_species is set, paid orders can auto-add to the customer's species list.
+  speciesAutoAdd       Boolean @default(false) @map("species_auto_add")
+  speciesListSpecies   String  @default("") @map("species_list_species")
+  speciesListInsectType String @default("") @map("species_list_insect_type")
+  speciesListMorphName String  @default("") @map("species_list_morph_name")
+  speciesListCommonName String @default("") @map("species_list_common_name")
+  speciesListSource    String  @default("7th Leg") @map("species_list_source")
   saleEndsAt      DateTime?
   /// Optional multiplier on points earned for this product (1.0000 = default). Null = 1.
   pointsMultiplier Decimal? @db.Decimal(8, 4)
@@ -1347,8 +1356,25 @@ model OrderLineItem {
   quantity         Int
   unitPriceCents   Int
   lineTotalCents   Int
+  /// Customer opted in at checkout to add this line to their species list on fulfillment.
+  addToSpeciesList Boolean @default(true) @map("add_to_species_list")
+
+  speciesGrant OrderLineItemSpeciesGrant?
 
   @@map("order_line_items")
+}
+
+/// Idempotent record that species-list auto-add ran for an order line (fulfillment retries).
+model OrderLineItemSpeciesGrant {
+  orderLineItemId        String   @id @map("order_line_item_id")
+  orderLineItem          OrderLineItem @relation(fields: [orderLineItemId], references: [id], onDelete: Cascade)
+  customerSpeciesEntryId String?  @map("customer_species_entry_id")
+  customerSpeciesEntry   CustomerSpeciesEntry? @relation(fields: [customerSpeciesEntryId], references: [id], onDelete: SetNull)
+  /// created | appended | skipped
+  action                 String
+  createdAt              DateTime @default(now()) @map("created_at")
+
+  @@map("order_line_item_species_grants")
 }
 
 model PointsLedger {
@@ -1431,6 +1457,8 @@ model CartItem {
   productKitInstanceId String? @map("product_kit_instance_id")
   productKitId         String? @map("product_kit_id")
   productKit           ProductKit? @relation(fields: [productKitId], references: [id], onDelete: SetNull)
+  /// Customer checkout preference: add eligible product to species list on purchase.
+  addToSpeciesList     Boolean @default(true) @map("add_to_species_list")
 
   @@unique([cartId, productId, variantId, pricingScopeKey, productKitInstanceId])
   @@index([productKitInstanceId])

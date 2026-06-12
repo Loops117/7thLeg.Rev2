@@ -125,6 +125,20 @@ export async function fulfillPaidOrder(orderId: string, ctx: FulfillmentContext)
     }
 
     if (order.customerId) {
+      const { grantSpeciesFromPaidOrder } = await import("@/lib/grant-species-from-order");
+      await grantSpeciesFromPaidOrder(
+        tx,
+        { id: order.id, customerId: order.customerId, createdAt: order.createdAt },
+        order.lineItems.map((li) => ({
+          id: li.id,
+          addToSpeciesList: li.addToSpeciesList,
+          unitPriceCents: li.unitPriceCents,
+          product: li.product,
+        })),
+      );
+    }
+
+    if (order.customerId) {
       const cartRow = await tx.cart.findUnique({ where: { customerId: order.customerId } });
       if (cartRow) {
         await snapshotCartLabelsToOrder(order.id, cartRow.id, tx);
@@ -151,6 +165,7 @@ export async function fulfillPaidOrder(orderId: string, ctx: FulfillmentContext)
 
   if (fulfilled) {
     revalidatePath("/account");
+    revalidatePath("/account/species");
     revalidatePath("/account/points");
     revalidatePath("/cart");
     revalidatePath("/store");

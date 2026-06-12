@@ -62,6 +62,7 @@ export async function createFreshPendingCheckoutOrder(
     quantity: l.quantity,
     unitPriceCents: l.unitPriceCents,
     lineTotalCents: l.lineTotalCents,
+    addToSpeciesList: l.addToSpeciesList,
   }));
 
   const [eligibleShippingOpts, siteCfg, cartShippingLines] = await Promise.all([
