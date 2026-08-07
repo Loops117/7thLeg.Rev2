@@ -1,0 +1,17 @@
+# Example local-managed Cloudflare Tunnel config.
+# Copy to %USERPROFILE%\.cloudflared\config.yml after:
+#   cloudflared tunnel login
+#   cloudflared tunnel create 7thleg-realtime
+# Fill tunnel UUID + credentials-file path from ~/.cloudflared/<uuid>.json
+#
+# Prefer dashboard "remotely managed" tunnels for less YAML hassle.
+
+tunnel: REPLACE_WITH_TUNNEL_UUID
+credentials-file: C:\Users\REPLACE\.cloudflared\REPLACE_WITH_TUNNEL_UUID.json
+
+ingress:
+  # On the R620 use http://127.0.0.1:7813
+  # From a remote PC that can reach GSA, use the public IP + game port:
+  - hostname: game.7thleg.com
+    service: http://99.184.242.69:7813
+  - service: http_status:404

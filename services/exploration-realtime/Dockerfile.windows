@@ -1,0 +1,41 @@
+# Windows Server Core + portable Node for GameServerApp (Windows containers).
+# Host for GSA is Windows Server 2019 → ltsc2019 base.
+#
+# On Windows 11 build PCs, use: docker build --isolation=hyperv ...
+#
+#   docker build --isolation=hyperv -f Dockerfile.windows -t YOURUSER/7thleg-realtime:win-ltsc2019 .
+#   docker push YOURUSER/7thleg-realtime:win-ltsc2019
+
+FROM mcr.microsoft.com/windows/servercore:ltsc2019
+
+SHELL ["powershell", "-NoProfile", "-Command", "$ErrorActionPreference='Stop'; $ProgressPreference='SilentlyContinue';"]
+
+# Portable Node (zip) — MSI installs often hang in Server Core containers
+RUN $ver = 'v22.17.0'; \
+    $url = ('https://nodejs.org/dist/{0}/node-{0}-win-x64.zip' -f $ver); \
+    Invoke-WebRequest -Uri $url -OutFile C:\node.zip; \
+    Expand-Archive -Path C:\node.zip -DestinationPath C:\nodejs-tmp -Force; \
+    Move-Item ('C:\nodejs-tmp\node-{0}-win-x64' -f $ver) C:\nodejs; \
+    Remove-Item C:\node.zip, C:\nodejs-tmp -Recurse -Force; \
+    $machinePath = [Environment]::GetEnvironmentVariable('Path', 'Machine'); \
+    [Environment]::SetEnvironmentVariable('Path', ('C:\nodejs;' + $machinePath), 'Machine'); \
+    $env:PATH = 'C:\nodejs;' + $env:PATH; \
+    node -v; \
+    npm -v
+
+WORKDIR C:\\app
+
+COPY package.json package-lock.json* ./
+RUN $env:PATH = 'C:\nodejs;' + [Environment]::GetEnvironmentVariable('Path', 'Machine'); \
+    npm install --omit=dev
+
+COPY server.js ./
+
+ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=3100
+
+EXPOSE 3100
+
+# Use full path so CMD does not depend on PATH quirks
+CMD ["C:\\nodejs\\node.exe", "C:\\app\\server.js"]
